@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: eb4c239c77f0e634fa6c46af45c4e89b, type: 3}
+  m_Name: EquipmentItemBaseDataList
+  m_EditorClassIdentifier: Assembly-CSharp::MmInventory.EquipmentItemBaseDataList
+  itemList:
+  - itemId: 1
+    name: "\u6C99\u6F20\u4E4B\u9E70"
+    iconPath: 
+    dataSize: {x: 2, y: 1}
+    itemType: 0
+    itemStackType: 0
+    maxStackCount: 1
+  - itemId: 2
+    name: uiz
+    iconPath: 
+    dataSize: {x: 2, y: 2}
+    itemType: 0
+    itemStackType: 0
+    maxStackCount: 1
