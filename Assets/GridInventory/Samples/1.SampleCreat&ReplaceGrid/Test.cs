@@ -11,14 +11,14 @@ public class Test : MonoBehaviour
     public InventoryItemView item1x1B;
     public InventoryItemView item1x1C;
     public InventoryItemView item2x2A;
-    internal void Init(InventoryViewModel inventoryViewModel, Dictionary<string, InventoryItemView> itemViewDict)
+    internal void Init(GridMainContainerView gridMainContainerView,InventoryViewModel inventoryViewModel, Dictionary<string, InventoryItemView> itemViewDict)
     {
-        item1X2A.Init();
-        item1X2B.Init();
-        item1x1A.Init();
-        item1x1B.Init();
-        item1x1C.Init();
-        item2x2A.Init();
+        item1X2A.Init(gridMainContainerView.IGridAudioAndAnimation);
+        item1X2B.Init(gridMainContainerView.IGridAudioAndAnimation);
+        item1x1A.Init(gridMainContainerView.IGridAudioAndAnimation);
+        item1x1B.Init(gridMainContainerView.IGridAudioAndAnimation);
+        item1x1C.Init(gridMainContainerView.IGridAudioAndAnimation);
+        item2x2A.Init(gridMainContainerView.IGridAudioAndAnimation);
 
         inventoryViewModel.PlaceItem(item1X2A.ItemData, new Vector2Int(0, 0));
         inventoryViewModel.PlaceItem(item1X2B.ItemData, new Vector2Int(3, 0));

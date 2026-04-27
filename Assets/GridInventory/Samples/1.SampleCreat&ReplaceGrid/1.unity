@@ -5163,6 +5163,7 @@ MonoBehaviour:
   canvas: {fileID: 1091831167}
   CellPrefab: {fileID: 3177196617155781839, guid: 1e82f8c07f88ff44195453d71348a4ac, type: 3}
   gridRowAndCloumns: {x: 6, y: 8}
+  IGridAudioAndAnimation: {fileID: 1310149204}
   test: {fileID: 1310149202}
 --- !u!1 &819414269
 GameObject:
@@ -8145,8 +8146,9 @@ GameObject:
   m_Component:
   - component: {fileID: 1310149203}
   - component: {fileID: 1310149202}
+  - component: {fileID: 1310149204}
   m_Layer: 0
-  m_Name: tEST
+  m_Name: Test
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -8185,6 +8187,18 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1310149204
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1310149201}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ac654ce573f663849acf33f3c187daf2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TestAudioAndAnima
 --- !u!1 &1317247400
 GameObject:
   m_ObjectHideFlags: 0

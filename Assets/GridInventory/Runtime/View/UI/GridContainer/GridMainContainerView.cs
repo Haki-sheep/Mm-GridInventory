@@ -27,8 +27,8 @@ namespace MmInventory
         [Header("GridView系组件")]
         [SerializeField] private InventoryViewModel inventoryViewModel;
         [SerializeField] private FrameBoardView frameBoardView;
-
         [SerializeField] private InventoryItemView[] itemViews;
+
         [Header("Canvas")]
         [SerializeField] private Canvas canvas;
         private Camera canvasCamera;
@@ -38,6 +38,7 @@ namespace MmInventory
         public const int gridSize = 100;
         public const int spacing = 0;
         public Vector2Int gridRowAndCloumns = Vector2Int.zero;
+        public TestAudioAndAnima IGridAudioAndAnimation;
 
         [Header("表现层物品管理容器")]
         private Dictionary<string, InventoryItemView> itemViewDict = new();
@@ -96,7 +97,7 @@ namespace MmInventory
 
 
             // ----------------------测试---------------------------
-            test.Init(inventoryViewModel,itemViewDict);
+            test.Init(this,inventoryViewModel,itemViewDict);
        
         }
 

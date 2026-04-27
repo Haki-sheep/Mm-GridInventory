@@ -70,6 +70,7 @@
     <Compile Include="Assets\GridInventory\Runtime\Model\PersistenceItemData\Base\Container\ContainerItemBaseData.cs" />
     <Compile Include="Assets\GridInventory\Runtime\Model\RunTimeItemData\RunTimeItemDataMgr.cs" />
     <Compile Include="Assets\GridInventory\Runtime\Model\PersistenceItemData\SpecialItems\Material\MouseItem.cs" />
+    <Compile Include="Assets\GridInventory\Runtime\View\UI\GridContainer\IGridContainerAudioAndView.cs" />
     <Compile Include="Assets\GridInventory\Runtime\Model\PersistenceItemData\SpecialItems\Equipment\Guns\DesertEagleItem.cs" />
     <Compile Include="Assets\GridInventory\Samples\1.SampleCreat&amp;ReplaceGrid\Test.cs" />
     <Compile Include="Assets\Samples\Addressables\2.9.1\Custom Build and Playmode Scripts\LoadSceneForCustomBuild.cs" />
@@ -87,6 +88,7 @@
     <Compile Include="Assets\GridInventory\Runtime\Model\PersistenceItemData\Base\Consumable\ConsumableItemBaseDataList.cs" />
     <Compile Include="Assets\GridInventory\Runtime\Model\PersistenceItemData\SpecialItems\Material\KeyboardItem.cs" />
     <Compile Include="Assets\TutorialInfo\Scripts\Readme.cs" />
+    <Compile Include="Assets\GridInventory\Samples\1.SampleCreat&amp;ReplaceGrid\TestAudioAndAnima.cs" />
     <Compile Include="Assets\GridInventory\Runtime\View\UI\GridContainer\GridMainContainerView.Operate.cs" />
     <Compile Include="Assets\GridInventory\Runtime\Services\Frame\Singonton.cs" />
     <Compile Include="Assets\GridInventory\Runtime\Model\PersistenceItemData\SpecialItems\Consumable\BandageItem.cs" />

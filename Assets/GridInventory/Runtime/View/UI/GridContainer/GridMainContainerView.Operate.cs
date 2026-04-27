@@ -29,6 +29,8 @@ namespace MmInventory
         private bool hasFrameBoardStateCache = false;
         // 拖拽缓存锚点
         private Vector2Int cachedFrameBoardAnchorPos = new Vector2Int(int.MinValue, int.MinValue);
+        // 拖拽物起始层级
+        private int dragStartSiblingIndex = -1;
 
         [SerializeField, ReadOnly, LabelText("预览锚点")]
         private Vector2Int dragPreviewAnchorPos;
@@ -38,9 +40,6 @@ namespace MmInventory
 
         // View - 高亮格子与吸附框
         private int curHighLightCellIndex = -1;
-
-        // 拖动物品缓存
-
 
 
         #region ItemEvent
@@ -74,10 +73,17 @@ namespace MmInventory
 
             if (activeItem is null) return;
             if (!TryGetMousePosInGrid(eventData.position, out var mouseOnGridPos, out _)) return;
+            
+            // 选中物品音效
+            if(IGridAudioAndAnimation is not null)
+            {
+                IGridAudioAndAnimation.OnSelectItem();
+            }
 
             // 设置拖拽物品信息
             draggingItem = activeItem;
             draggingItemRectTransform = activeItem.ItemRectTransform;
+            dragStartSiblingIndex = draggingItemRectTransform.GetSiblingIndex();
 
             // 禁用父容器滚动
             scrollRect.enabled = false;
@@ -93,6 +99,10 @@ namespace MmInventory
             dragStartOffset = mouseOnGridPos - dragStartAnchorPos;
 
             if (!inventoryViewModel.TryRemoveItem(dragStartAnchorPos).IsSuccess) return;
+
+            // frameBoard 永远最高，拖拽物次高
+            draggingItemRectTransform.SetAsLastSibling();
+            frameBoardView.transform.SetAsLastSibling();
         }
 
         #endregion
@@ -106,6 +116,7 @@ namespace MmInventory
                 // Debug.LogError("GridMainContainerView: 拖拽物品的RectTransform为空");
                 return;
             }
+            draggingItemRectTransform.SetAsLastSibling();
             draggingItemRectTransform.position = eventData.position;
 
             // 计算网格坐标
@@ -149,6 +160,7 @@ namespace MmInventory
                                frameSize);
             cachedFrameBoardAnchorPos = dragPreviewAnchorPos;
             hasFrameBoardStateCache = true;
+            frameBoardView.transform.SetAsLastSibling();
         }
 
         #endregion
@@ -157,6 +169,12 @@ namespace MmInventory
         private void EndDragHandler(PointerEventData eventData)
         {
             if (draggingItem is null) return;
+
+            // 松手时物品音效
+            if(IGridAudioAndAnimation is not null)
+            {
+                IGridAudioAndAnimation.OnDeselectItem();
+            }
 
             // 松手时需要再计算一次预判锚点 避免抖动问题
             if (!TryGetMousePosInGrid(eventData.position, out var mouseOnGridPos, out _))
@@ -215,7 +233,15 @@ namespace MmInventory
             var normalSize = GetItemUISize(draggingItem.ItemData.DataSize);
             frameBoardView.SetFrameBoardView(EFrameBoard.Normal, normalPos, normalSize);
 
-            // 顶置显示吸附框
+            // 恢复拖拽物层级，避免拖拽后长期处于高层
+            if (draggingItemRectTransform is not null)
+            {
+                int maxIndex = Mathf.Max(0, draggingItemRectTransform.parent.childCount - 1);
+                int safeIndex = Mathf.Clamp(dragStartSiblingIndex, 0, maxIndex);
+                draggingItemRectTransform.SetSiblingIndex(safeIndex);
+            }
+
+            // 吸附框保持最高层级。
             frameBoardView.transform.SetAsLastSibling();
 
             activeItem = null;
@@ -223,6 +249,7 @@ namespace MmInventory
             scrollRect.enabled = true;
             curHighLightCellIndex = -1;
             draggingItem = null;
+            dragStartSiblingIndex = -1;
             hasFrameBoardStateCache = false;
         }
         #endregion
