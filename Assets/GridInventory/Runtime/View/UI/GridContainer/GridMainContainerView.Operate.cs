@@ -27,6 +27,7 @@ namespace MmInventory
         private Vector2Int dragStartAnchorPos;
         // 拖拽缓存
         private bool hasFrameBoardStateCache = false;
+        // 拖拽缓存锚点
         private Vector2Int cachedFrameBoardAnchorPos = new Vector2Int(int.MinValue, int.MinValue);
 
         [SerializeField, ReadOnly, LabelText("预览锚点")]
