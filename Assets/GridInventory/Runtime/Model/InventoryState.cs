@@ -4,7 +4,6 @@ using UnityEngine;
 
 namespace MmInventory
 {
-
     public enum ESwapState
     {
         CanNotSwap,
@@ -29,21 +28,24 @@ namespace MmInventory
         private Vector2Int gridInventorySize;
 
         // 锚点数组
-        private RunTimeItemData[] runTimeItemDataList;
+        private RunTimeItemData[] runTimeItemDataArray;
 
         // 占用掩码
         private bool[] mask;
 
-        // 临时容器
+        // 占用者数组 用于记录每个格子的占用者
+        private RunTimeItemData[] occupancyOwnerArray;
+
+        /// <summary> 临时容器 用于交换时存储被覆盖的一堆小物品 </summary>
         private readonly HashSet<RunTimeItemData> tempItemList = new();
 
-        public IReadOnlyList<RunTimeItemData> RunTimeItemDatas => runTimeItemDataList;
 
         public InventoryState(Vector2Int gridInventorySize)
         {
             this.gridInventorySize = gridInventorySize;
             int totalCount = gridInventorySize.x * gridInventorySize.y;
-            runTimeItemDataList = new RunTimeItemData[totalCount];
+            runTimeItemDataArray = new RunTimeItemData[totalCount];
+            occupancyOwnerArray = new RunTimeItemData[totalCount];
             mask = new bool[totalCount];
         }
 
@@ -57,16 +59,71 @@ namespace MmInventory
         private static Vector2Int GetOccupiedSize(RunTimeItemData item) => item.DataSize;
 
         /// <summary>
+        /// 更新占用信息
+        /// </summary>
+        /// <param name="item">物品</param>
+        /// <param name="anchorPos">锚点</param>
+        /// <param name="occupied">是否占用</param>
+        private void WriteOccupancy(RunTimeItemData item, Vector2Int anchorPos, bool occupied)
+        {
+            if (item is null) return;
+
+            var occupiedSize = GetOccupiedSize(item);
+            for (int x = 0; x < occupiedSize.x; x++)
+            {
+                for (int y = 0; y < occupiedSize.y; y++)
+                {
+                    var targetPos = new Vector2Int(anchorPos.x + x, anchorPos.y + y);
+                    if (!IsInside(targetPos)) continue;
+
+                    int idx = ToIndex(targetPos);
+                    mask[idx] = occupied;
+                    occupancyOwnerArray[idx] = occupied ? item : null;
+                }
+            }
+        }
+
+        /// <summary>
+        /// 设置锚点物品并更新占用信息
+        /// </summary>
+        /// <param name="anchorPos">锚点</param>
+        /// <param name="item">物品</param>
+        private void SetAnchorItem(Vector2Int anchorPos, RunTimeItemData item)
+        {
+            runTimeItemDataArray[ToIndex(anchorPos)] = item;
+            WriteOccupancy(item, anchorPos, true);
+        }
+
+        /// <summary>
+        /// 移除锚点物品并更新占用信息
+        /// </summary>
+        /// <param name="anchorPos">锚点</param>
+        /// <returns>是否成功</returns>
+        private bool RemoveAnchorItem(Vector2Int anchorPos)
+        {
+            if (!IsInside(anchorPos)) return false;
+
+            int index = ToIndex(anchorPos);
+            var item = runTimeItemDataArray[index];
+            if (item is null) return false;
+
+            runTimeItemDataArray[index] = null;
+            WriteOccupancy(item, anchorPos, false);
+            return true;
+        }
+
+        /// <summary>
         /// 更新占用掩码
         /// </summary>
         private void UpdateMask()
         {
-            // 清空旧掩码
+            // 清空旧掩码和占用者数组
             Array.Fill(mask, false);
+            Array.Fill(occupancyOwnerArray, null);
 
-            for (int i = 0; i < runTimeItemDataList.Length; i++)
+            for (int i = 0; i < runTimeItemDataArray.Length; i++)
             {
-                var item = runTimeItemDataList[i];
+                var item = runTimeItemDataArray[i];
                 if (item is null) continue;
 
                 // 1. 获取锚点坐标(物品左上角)
@@ -93,7 +150,10 @@ namespace MmInventory
                             continue;
 
                         // 标记掩码
-                        mask[ToIndex(targetPos)] = true;
+                        int idx = ToIndex(targetPos);
+                        mask[idx] = true;
+                        // 标记占用者
+                        occupancyOwnerArray[idx] = item;
                     }
                 }
             }
@@ -151,8 +211,7 @@ namespace MmInventory
             if (itemData is null || !CanPlace(itemData, anchorPos))
                 return false;
 
-            runTimeItemDataList[ToIndex(anchorPos)] = itemData;
-            UpdateMask();
+            SetAnchorItem(anchorPos, itemData);
             return true;
         }
 
@@ -251,8 +310,10 @@ namespace MmInventory
             int aIndex = ToIndex(plan.aItemData.AnchorPos);
             int bIndex = ToIndex(plan.bItemData.AnchorPos);
 
-            // 备份原始数据
-            var backup = (RunTimeItemData[])runTimeItemDataList.Clone();
+            // 备份原始数据 : 物品数组、掩码、占用者数组
+            var backupItemArray = (RunTimeItemData[])runTimeItemDataArray.Clone();
+            var backupMask = (bool[])mask.Clone();
+            var backupOccupancyOwner = (RunTimeItemData[])occupancyOwnerArray.Clone();
 
             bool canSwap = false;
             bool shouldRollback = true;
@@ -278,9 +339,9 @@ namespace MmInventory
 
                 if (canSwap && commit)
                 {
-                    for (int i = 0; i < runTimeItemDataList.Length; i++)
+                    for (int i = 0; i < runTimeItemDataArray.Length; i++)
                     {
-                        var item = runTimeItemDataList[i];
+                        var item = runTimeItemDataArray[i];
                         if (item is null) continue;
                         item.SetAnchorPos(ToPosition(i));
                     }
@@ -293,8 +354,9 @@ namespace MmInventory
             {
                 if (shouldRollback)
                 {
-                    runTimeItemDataList = backup;
-                    UpdateMask();
+                    runTimeItemDataArray = backupItemArray;
+                    mask = backupMask;
+                    occupancyOwnerArray = backupOccupancyOwner;
                 }
             }
         }
@@ -340,7 +402,6 @@ namespace MmInventory
             if (overlapItems.Count == 0) return false;
 
             RunTimeItemData fullCoveredItem = null;
-            // TODO:
             foreach (var overlapItem in overlapItems)
             {
                 var swapPlan = GetSwapPlan(dragItemData, overlapItem);
@@ -404,9 +465,10 @@ namespace MmInventory
 
             Debug.Log("尝试交换相同尺寸物品");
 
-            runTimeItemDataList[aIndex] = null;
-            runTimeItemDataList[bIndex] = null;
-            UpdateMask();
+            runTimeItemDataArray[aIndex] = null;
+            runTimeItemDataArray[bIndex] = null;
+            WriteOccupancy(aItemData, aItemData.AnchorPos, false);
+            WriteOccupancy(bItemData, bItemData.AnchorPos, false);
 
             // 尺寸相同则直接尝试交换
             if (!CanPlace(aItemData, bItemData.AnchorPos))
@@ -415,8 +477,7 @@ namespace MmInventory
             }
 
             // 尝试放旧物品到新锚点
-            runTimeItemDataList[bIndex] = aItemData;
-            UpdateMask();
+            SetAnchorItem(bItemData.AnchorPos, aItemData);
 
             // 在旧物品放到新锚点后 尝试新物品放到旧锚点
             if (!CanPlace(bItemData, aItemData.AnchorPos))
@@ -424,8 +485,7 @@ namespace MmInventory
                 return false;
             }
 
-            runTimeItemDataList[aIndex] = bItemData;
-            UpdateMask();
+            SetAnchorItem(aItemData.AnchorPos, bItemData);
             return true;
         }
         #endregion
@@ -470,8 +530,7 @@ namespace MmInventory
                 return false;
             }
             // 放置大物品到新锚点
-            runTimeItemDataList[ToIndex(placeAnchorPos)] = largeItemData;
-            UpdateMask();
+            SetAnchorItem(placeAnchorPos, largeItemData);
 
             foreach (var item in tempItemList)
             {
@@ -486,8 +545,7 @@ namespace MmInventory
                         var candidate = new Vector2Int(i, j);
                         if (!CanPlace(item, candidate)) continue;
 
-                        runTimeItemDataList[ToIndex(candidate)] = item;
-                        UpdateMask();
+                        SetAnchorItem(candidate, item);
                         placed = true;
                         break;
                     }
@@ -496,8 +554,7 @@ namespace MmInventory
                 // 如果小物品被大物品的新位置所覆盖 则尝试放到背包之中任意第一个可放置位置
                 if (!placed && FindSetAtFirst(item, out Vector2Int anchorPos))
                 {
-                    runTimeItemDataList[ToIndex(anchorPos)] = item;
-                    UpdateMask();
+                    SetAnchorItem(anchorPos, item);
                     placed = true;
                 }
 
@@ -526,8 +583,7 @@ namespace MmInventory
             if (!CanPlace(smallItemData, placeAnchorPos))
                 return false;
 
-            runTimeItemDataList[ToIndex(placeAnchorPos)] = smallItemData;
-            UpdateMask();
+            SetAnchorItem(placeAnchorPos, smallItemData);
 
             // 大物品尝试放到小物品的位置
             // 如果不能放则在背包中找空位去放
@@ -535,15 +591,13 @@ namespace MmInventory
             {
                 if (FindSetAtFirst(largeItemData, out Vector2Int anchorPos))
                 {
-                    runTimeItemDataList[ToIndex(anchorPos)] = largeItemData;
-                    UpdateMask();
+                    SetAnchorItem(anchorPos, largeItemData);
                     return true;
                 }
                 return false;
             }
 
-            runTimeItemDataList[ToIndex(smallItemData.AnchorPos)] = largeItemData;
-            UpdateMask();
+            SetAnchorItem(smallItemData.AnchorPos, largeItemData);
 
             return true;
 
@@ -598,13 +652,7 @@ namespace MmInventory
         /// </summary>
         public bool RemoveAt(Vector2Int anchorPos)
         {
-            int index = ToIndex(anchorPos);
-            if (!IsInside(anchorPos) || runTimeItemDataList[index] is null)
-                return false;
-
-            runTimeItemDataList[index] = null;
-            UpdateMask();
-            return true;
+            return RemoveAnchorItem(anchorPos);
         }
 
         /// <summary>
@@ -618,15 +666,11 @@ namespace MmInventory
 
             // 遍历数组找到其锚点
             int anchorIndex = Array.FindIndex(
-                runTimeItemDataList,
+                runTimeItemDataArray,
                 anchorItem => anchorItem != null && anchorItem.InstancedItemId == targetItem.InstancedItemId);
 
             if (anchorIndex == -1) return false;
-
-            runTimeItemDataList[anchorIndex] = null;
-            UpdateMask();
-
-            return true;
+            return RemoveAnchorItem(ToPosition(anchorIndex));
         }
         #endregion
 
@@ -636,7 +680,7 @@ namespace MmInventory
         /// </summary>
         public RunTimeItemData GetItemAt(Vector2Int pos)
         {
-            return IsInside(pos) ? runTimeItemDataList[ToIndex(pos)] : null;
+            return IsInside(pos) ? runTimeItemDataArray[ToIndex(pos)] : null;
         }
         /// <summary>
         /// 获取格子上的物品
@@ -645,30 +689,9 @@ namespace MmInventory
         /// <returns></returns>
         public RunTimeItemData GetItemByMask(Vector2Int pos)
         {
-            if (!IsInside(pos) || !mask[ToIndex(pos)])
-                return null;
+            if (!IsInside(pos)) return null;
 
-            // 遍历所有锚点 找到覆盖当前pos的物品
-            for (int i = 0; i < runTimeItemDataList.Length; i++)
-            {
-                var item = runTimeItemDataList[i];
-                if (item is null) continue;
-
-                // 获取物品当前占用宽高
-                Vector2Int anchorPos = ToPosition(i);
-                var occupiedSize = GetOccupiedSize(item);
-                int w = occupiedSize.x;
-                int h = occupiedSize.y;
-
-                // 判断是否覆盖当前pos
-                bool isCover = pos.x >= anchorPos.x
-                            && pos.x < anchorPos.x + w
-                            && pos.y >= anchorPos.y
-                            && pos.y < anchorPos.y + h;
-
-                if (isCover) return item;
-            }
-            return null;
+            return occupancyOwnerArray[ToIndex(pos)];
         }
 
         /// <summary>

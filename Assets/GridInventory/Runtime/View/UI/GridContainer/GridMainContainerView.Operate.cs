@@ -23,8 +23,11 @@ namespace MmInventory
         private RectTransform draggingItemRectTransform;
         private InventoryItemView draggingItem;
 
-        /// Drag - 拖拽锚点相关
+        /// Drag - 拖拽信息相关
         private Vector2Int dragStartAnchorPos;
+        // 拖拽缓存
+        private bool hasFrameBoardStateCache = false;
+        private Vector2Int cachedFrameBoardAnchorPos = new Vector2Int(int.MinValue, int.MinValue);
 
         [SerializeField, ReadOnly, LabelText("预览锚点")]
         private Vector2Int dragPreviewAnchorPos;
@@ -34,6 +37,9 @@ namespace MmInventory
 
         // View - 高亮格子与吸附框
         private int curHighLightCellIndex = -1;
+
+        // 拖动物品缓存
+
 
 
         #region ItemEvent
@@ -80,6 +86,7 @@ namespace MmInventory
 
             // 物品拖拽的预览锚点 = 物品起始锚点
             dragPreviewAnchorPos = dragStartAnchorPos;
+            hasFrameBoardStateCache = false;
 
             // 抓取相对偏移 = 鼠标按下时所在锚点 - 物品起始锚点
             dragStartOffset = mouseOnGridPos - dragStartAnchorPos;
@@ -105,6 +112,7 @@ namespace MmInventory
             {
                 ClearCellHighlight();
                 frameBoardView.SetFrameBoardView(EFrameBoard.Hidden, Vector2.zero, Vector2.zero);
+                hasFrameBoardStateCache = false;
                 return;
             }
 
@@ -122,6 +130,10 @@ namespace MmInventory
             // 由鼠标位置计算预览锚点
             dragPreviewAnchorPos = GetPreviewAnchorPos(mouseOnGridPos, dragStartOffset);
 
+            // 预览锚点未变化时，直接复用上一帧吸附框状态，避免重复判定。
+            if (hasFrameBoardStateCache && cachedFrameBoardAnchorPos == dragPreviewAnchorPos)
+                return;
+
             // 改动
             var newItemData = inventoryViewModel.GetItemAt(dragPreviewAnchorPos);
 
@@ -134,6 +146,8 @@ namespace MmInventory
                                dragPreviewAnchorPos,
                                framePos,
                                frameSize);
+            cachedFrameBoardAnchorPos = dragPreviewAnchorPos;
+            hasFrameBoardStateCache = true;
         }
 
         #endregion
@@ -200,11 +214,15 @@ namespace MmInventory
             var normalSize = GetItemUISize(draggingItem.ItemData.DataSize);
             frameBoardView.SetFrameBoardView(EFrameBoard.Normal, normalPos, normalSize);
 
+            // 顶置显示吸附框
+            frameBoardView.transform.SetAsLastSibling();
+
             activeItem = null;
             draggingItemRectTransform = null;
             scrollRect.enabled = true;
             curHighLightCellIndex = -1;
             draggingItem = null;
+            hasFrameBoardStateCache = false;
         }
         #endregion
 
@@ -266,6 +284,8 @@ namespace MmInventory
                                    dragPreviewAnchorPos,
                                    pos,
                                    size);
+                cachedFrameBoardAnchorPos = dragPreviewAnchorPos;
+                hasFrameBoardStateCache = true;
             }
 
         }
