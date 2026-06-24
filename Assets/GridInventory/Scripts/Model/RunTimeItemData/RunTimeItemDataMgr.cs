@@ -6,17 +6,19 @@ using UnityEngine.ResourceManagement.AsyncOperations;
 
 namespace MmInventory
 {
-    public class RunTimeItemDataMgr : SingletonMono<RunTimeItemDataMgr>
+    public class RunTimeItemDataMgr : MonoBehaviour
     {
+        public static RunTimeItemDataMgr Instance { get; private set; }
         private Dictionary<int, IItemRootData> itemDataDict = new();
         public IReadOnlyDictionary<int, IItemRootData> ItemDataDict => itemDataDict;
 
-        protected override void Awake()
+
+        private void Awake()
         {
-            base.Awake();
+            Instance = this;
             RegisterItemData();
         }
-        
+
         /// <summary>
         /// 注册所有物品数据
         /// </summary>
@@ -47,15 +49,15 @@ namespace MmInventory
                         case ConsumableItemBaseDataList cList:
                             foreach (var item in cList.itemList) itemDataDict[item.ItemId] = item;
                             break;
-                        
+
                         case MaterialItemBaseDataList mList:
                             foreach (var item in mList.itemList) itemDataDict[item.ItemId] = item;
                             break;
-                        
+
                         case EquipmentItemBaseDataList eList:
                             foreach (var item in eList.itemList) itemDataDict[item.ItemId] = item;
                             break;
-                        
+
                         case ContainerItemBaseDataList conList:
                             foreach (var item in conList.itemList) itemDataDict[item.ItemId] = item;
                             break;
@@ -79,12 +81,12 @@ namespace MmInventory
                 Debug.LogError("物品数据未加载完成");
                 return default;
             }
-            
+
             if (itemDataDict.TryGetValue(id, out var data))
             {
                 return (T)data;
             }
-            
+
             Debug.LogWarning($"未找到ID:{id} 的物品");
             return default;
         }

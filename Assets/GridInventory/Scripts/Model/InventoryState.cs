@@ -20,7 +20,7 @@ namespace MmInventory
     }
 
     /// <summary>
-    /// 背包站位数据(修复完整版)
+    /// 背包站位数据
     /// </summary>
     public class InventoryState
     {

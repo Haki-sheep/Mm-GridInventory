@@ -150,13 +150,13 @@ namespace MmInventory
         #endregion
 
 
-        #region 防抖处理
+        #region 锚点计算
         /// <summary>
         /// 获取预览锚点位置
-        /// 如果悬停格在物品占用范围 内 则返回原始锚点
-        /// 如果悬停格在物品占用范围 外 则返回新锚点 并做越界处理
+        /// 塔科夫式连续锚点 鼠标格减去抓取偏移
         /// </summary>
         /// <param name="mouseOnGridPos">鼠标当前悬停的格子位置</param>
+        /// <param name="dragStartOffset">抓取相对偏移</param>
         /// <returns>预览锚点</returns>
         private Vector2Int GetPreviewAnchorPos(Vector2Int mouseOnGridPos, Vector2Int dragStartOffset)
         {
@@ -165,35 +165,8 @@ namespace MmInventory
                 return dragPreviewAnchorPos;
 
             var gridSizeInCells = GetItemSizeInCells(itemData);
-
-            // 如果鼠标位置仍然在原物品的占用范围内 则无需修改预览锚点位置
-            if (MousePosIsInItemArea(dragPreviewAnchorPos, gridSizeInCells.x, gridSizeInCells.y, mouseOnGridPos))
-                return dragPreviewAnchorPos;
-
-            // 如果鼠标移动到原物品占用范围外 则计算新预览锚点位置
-            // 新预览锚点= 鼠标当前锚点 - 抓取相对偏移
-            Vector2Int newAnchorPosition = mouseOnGridPos - dragStartOffset;
-            return ClampAnchorPositionToGrid(newAnchorPosition, gridSizeInCells.x, gridSizeInCells.y);
-        }
-
-        /// <summary>
-        /// 判断鼠标悬停的网格是否落在以 anchor 为左上角、w×h 的矩形框内
-        /// </summary>
-        /// <param name="anchorPosition">锚点位置</param>
-        /// <param name="width">物品宽度</param>
-        /// <param name="height">物品高度</param>
-        /// <param name="mouseGridPos">鼠标悬停的网格位置</param>
-        /// <returns></returns>
-        private bool MousePosIsInItemArea(
-            Vector2Int anchorPosition,
-            int width,
-            int height,
-            Vector2Int mouseGridPos)
-        {
-            return mouseGridPos.x >= anchorPosition.x
-                && mouseGridPos.x < anchorPosition.x + width
-                && mouseGridPos.y >= anchorPosition.y
-                && mouseGridPos.y < anchorPosition.y + height;
+            Vector2Int anchorPosition = mouseOnGridPos - dragStartOffset;
+            return ClampAnchorPositionToGrid(anchorPosition, gridSizeInCells.x, gridSizeInCells.y);
         }
 
         /// <summary>

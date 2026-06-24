@@ -23,16 +23,16 @@ namespace MmInventory
 
 
     /// <summary>
-    /// 这里做统一入口 接收View的请求 调用Service的算法 返回结果
+    /// 这里做统一入口 接收View的请求 调用Model的算法 返回结果
     /// </summary>
 
     public class InventoryViewModel
     {
-        private GridPlacementService gridPlacementService = new();
+        private InventoryState inventoryState;
 
         public void Init(Vector2Int gridSize)
         {
-            gridPlacementService.InitSize(gridSize);
+            inventoryState = new InventoryState(gridSize);
         }
 
         /// <summary>
@@ -51,14 +51,14 @@ namespace MmInventory
             void RestoreOldItem()
             {
                 oldItemData.SetAnchorPos(oldAnchorPos);
-                gridPlacementService.PlaceItem(oldItemData, oldAnchorPos);
+                inventoryState.SetAt(oldAnchorPos, oldItemData);
             }
 
             // 直接放
-            if (gridPlacementService.CanPlace(oldItemData, newAnchorPos))
+            if (inventoryState.CanPlace(oldItemData, newAnchorPos))
             {
                 oldItemData.SetAnchorPos(newAnchorPos);
-                if (!gridPlacementService.PlaceItem(oldItemData, newAnchorPos))
+                if (!inventoryState.SetAt(newAnchorPos, oldItemData))
                 {
                     RestoreOldItem();
                     return new InventoryOpResult(false, oldItemData);
@@ -67,10 +67,10 @@ namespace MmInventory
                 return new InventoryOpResult(true, oldItemData);
             }
 
-            var newItemData = gridPlacementService.GetItemByMask(newAnchorPos);
+            var newItemData = inventoryState.GetItemByMask(newAnchorPos);
 
             // 尝试堆叠
-            if (gridPlacementService.CanStack(oldItemData, newItemData, out int remainingCount))
+            if (inventoryState.CanStack(oldItemData, newItemData, out int remainingCount))
             {
                 // 更新新旧物品的计数
                 newItemData.SetStackCount(oldItemData.CurStackCount + newItemData.CurStackCount);
@@ -79,27 +79,26 @@ namespace MmInventory
                 // 如果剩余数量为0 则销毁旧物品
                 if (remainingCount == 0)
                 {
-                    gridPlacementService.RemoveItemAny(oldAnchorPos);
+                    inventoryState.RemoveAtAny(oldAnchorPos);
                 }
                 // 否则将旧物品放置到原锚点
                 else
                 {
-                    gridPlacementService.PlaceItem(oldItemData, oldAnchorPos);
+                    inventoryState.SetAt(oldAnchorPos, oldItemData);
                 }
 
                 Debug.Log($"尝试堆叠物品成功 堆叠对象为{newItemData} / 堆叠到新锚点 {newItemData.AnchorPos}");
                 return new InventoryOpResult(true, null, newItemData);
             }
 
-            if (gridPlacementService.TryGetSwapTargetItem(oldItemData, newAnchorPos, out var swapTargetItem)
-                && gridPlacementService.CanSwap(oldItemData, swapTargetItem, newAnchorPos))
+            if (inventoryState.TryGetSwapTargetItem(oldItemData, newAnchorPos, out var swapTargetItem)
+                && inventoryState.CanSwap(oldItemData, swapTargetItem, newAnchorPos))
             {
-                if (gridPlacementService.TrySwap(oldItemData,
-                                                 swapTargetItem,
-                                                 out List<RunTimeItemData> oldItemDataList,
-                                                 newAnchorPos))
+                if (inventoryState.TrySwap(oldItemData,
+                                           swapTargetItem,
+                                           out List<RunTimeItemData> oldItemDataList,
+                                           newAnchorPos))
                 {
-                    // Debug.Log($"交换物品成功 交换对象为{newItemData} / 交换到新锚点 {newItemData.AnchorPos}");
                     foreach (var item in oldItemDataList)
                     {
                         Debug.Log($"交换物品成功 交换对象为{item} / 交换到新锚点 {item.AnchorPos}");
@@ -121,18 +120,18 @@ namespace MmInventory
                 return;
 
             itemData.SetAnchorPos(anchorPos);
-            gridPlacementService.PlaceItem(itemData, anchorPos);
+            inventoryState.SetAt(anchorPos, itemData);
         }
 
         public bool CanStack(RunTimeItemData oldItemData, RunTimeItemData newItemData, out int remainingCount)
         {
-            return gridPlacementService.CanStack(oldItemData, newItemData, out remainingCount);
+            return inventoryState.CanStack(oldItemData, newItemData, out remainingCount);
         }
 
         public bool CanSwap(RunTimeItemData oldItemData, RunTimeItemData newItemData)
         {
             Debug.Log($"CanSwap: {oldItemData.AnchorPos} {newItemData.AnchorPos}");
-            return gridPlacementService.CanSwap(oldItemData, newItemData);
+            return inventoryState.CanSwap(oldItemData, newItemData, oldItemData.AnchorPos);
         }
 
         /// <summary>
@@ -142,12 +141,12 @@ namespace MmInventory
         /// <returns></returns>
         public InventoryOpResult TryRemoveItem(Vector2Int anchorPos)
         {
-            var item = gridPlacementService.GetItemByMask(anchorPos);
+            var item = inventoryState.GetItemByMask(anchorPos);
             if (item is null)
             {
                 return new InventoryOpResult(false, null);
             }
-            if (!gridPlacementService.RemoveItemAny(anchorPos))
+            if (!inventoryState.RemoveAtAny(anchorPos))
             {
                 return new InventoryOpResult(false, null);
             }
@@ -162,7 +161,7 @@ namespace MmInventory
         /// <returns></returns>
         public bool FindPlaceAtFirstItem(RunTimeItemData itemData, out Vector2Int anchorPos)
         {
-            return gridPlacementService.FindPlaceAtFirst(itemData, out anchorPos);
+            return inventoryState.FindSetAtFirst(itemData, out anchorPos);
         }
 
         /// <summary>
@@ -173,7 +172,7 @@ namespace MmInventory
         /// <returns></returns>
         public bool PlaceAtFirstItem(RunTimeItemData itemData, out Vector2Int anchorPos)
         {
-            return gridPlacementService.PlaceAtFirst(itemData, out anchorPos);
+            return inventoryState.SetAtFirst(itemData, out anchorPos);
         }
 
         /// <summary>
@@ -183,7 +182,7 @@ namespace MmInventory
         /// <returns></returns>
         public RunTimeItemData GetItemAt(Vector2Int anyPos)
         {
-            return gridPlacementService.GetItemByMask(anyPos);
+            return inventoryState.GetItemByMask(anyPos);
         }
 
         /// <summary>
@@ -194,7 +193,7 @@ namespace MmInventory
         /// <returns></returns>
         public bool CanPlaceItem(RunTimeItemData itemData, Vector2Int anchorPos)
         {
-            return gridPlacementService.CanPlace(itemData, anchorPos);
+            return inventoryState.CanPlace(itemData, anchorPos);
         }
 
 
@@ -227,11 +226,6 @@ namespace MmInventory
                                             RunTimeItemData newItemData,
                                             Vector2Int dragPreviewAnchorPos)
         {
-            // Debug.Log(
-            //           "oldItemData.AnchorPos: " + oldItemData.AnchorPos +
-            //           "/newItemData.AnchorPos: " + (newItemData == null ? "null" : newItemData.AnchorPos) +
-            //           "/dragPreviewPos: " + dragPreviewAnchorPos);
-
             if (CanPlaceItem(oldItemData, dragPreviewAnchorPos))
             {
                 return EFrameBoard.CanPlace;
@@ -240,8 +234,8 @@ namespace MmInventory
             {
                 return EFrameBoard.CanStack;
             }
-            else if (gridPlacementService.TryGetSwapTargetItem(oldItemData, dragPreviewAnchorPos, out var swapTargetItem) &&
-                     gridPlacementService.CanSwap(oldItemData, swapTargetItem, dragPreviewAnchorPos))
+            else if (inventoryState.TryGetSwapTargetItem(oldItemData, dragPreviewAnchorPos, out var swapTargetItem) &&
+                     inventoryState.CanSwap(oldItemData, swapTargetItem, dragPreviewAnchorPos))
             {
                 return EFrameBoard.CanPlaceSwap;
             }

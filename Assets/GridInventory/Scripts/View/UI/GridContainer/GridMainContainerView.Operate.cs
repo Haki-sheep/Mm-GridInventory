@@ -35,7 +35,7 @@ namespace MmInventory
         [SerializeField, ReadOnly, LabelText("预览锚点")]
         private Vector2Int dragPreviewAnchorPos;
 
-        // DragPreview - 处理抖动问题
+        // 抓取相对偏移 鼠标格减去物品锚点
         private Vector2Int dragStartOffset;
 
         // View - 高亮格子与吸附框
@@ -138,8 +138,6 @@ namespace MmInventory
                 curHighLightCellIndex = gridIndex;
             }
 
-            // 吸附抖动
-            // 由鼠标位置计算预览锚点
             dragPreviewAnchorPos = GetPreviewAnchorPos(mouseOnGridPos, dragStartOffset);
 
             // 预览锚点未变化时，直接复用上一帧吸附框状态，避免重复判定。
@@ -176,7 +174,6 @@ namespace MmInventory
                 IGridAudioAndAnimation.OnDeselectItem();
             }
 
-            // 松手时需要再计算一次预判锚点 避免抖动问题
             if (!TryGetMousePosInGrid(eventData.position, out var mouseOnGridPos, out _))
                 dragPreviewAnchorPos = dragStartAnchorPos;
             else
@@ -289,22 +286,9 @@ namespace MmInventory
                 draggingItemRectTransform.localRotation =
                                         Quaternion.Euler(0, 0, itemData.IsRotated ? 90f : 0f);
 
-                // 重新计算预判锚点
                 if (!TryGetMousePosInGrid(Input.mousePosition, out var mouseOnGridPos, out _)) return;
                 dragPreviewAnchorPos = GetPreviewAnchorPos(mouseOnGridPos, dragStartOffset);
-                var pos = Vector2.zero;
-                // 如果预判锚点与鼠标所在锚点不同 则更新预判锚点
-                if (dragPreviewAnchorPos != mouseOnGridPos)
-                {
-                    dragPreviewAnchorPos = mouseOnGridPos;
-                    dragStartOffset = Vector2Int.zero;
-
-                    pos = GetItemUIPos(mouseOnGridPos, itemData.DataSize);
-                }
-                else
-                    pos = GetItemUIPos(dragPreviewAnchorPos, itemData.DataSize);
-
-                // 获取物品尺寸
+                var pos = GetFrameBoardTransform(itemData, dragPreviewAnchorPos);
                 var size = GetItemUISize(itemData.DataSize);
 
                 SetFrameBoardState(itemData,
