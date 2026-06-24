@@ -72,7 +72,6 @@ namespace MmInventory
                 int bIndex = inventoryState.ToIndex(plan.bItemData.AnchorPos);
 
                 var backupItemArray = (RunTimeItemData[])inventoryState.runTimeItemDataArray.Clone();
-                var backupMask = (bool[])inventoryState.mask.Clone();
                 var backupOccupancyOwner = (RunTimeItemData[])inventoryState.occupancyOwnerArray.Clone();
 
                 bool canSwap = false;
@@ -116,7 +115,6 @@ namespace MmInventory
                     {
                         // 预览模式 或 交换失败时回滚快照
                         inventoryState.runTimeItemDataArray = backupItemArray;
-                        inventoryState.mask = backupMask;
                         inventoryState.occupancyOwnerArray = backupOccupancyOwner;
                     }
                 }
@@ -138,7 +136,7 @@ namespace MmInventory
                 swapTargetItem = null;
                 if (dragItemData is null) return false;
 
-                var dragSize = InventoryState.GetOccupiedSize(dragItemData);
+                var dragSize = inventoryState.GetOccupiedSize(dragItemData);
                 if (dragSize.x <= 0 || dragSize.y <= 0) return false;
 
                 var overlapItemHashList = new HashSet<RunTimeItemData>();
@@ -175,7 +173,7 @@ namespace MmInventory
                         continue;
                     }
 
-                    var overlapSize = InventoryState.GetOccupiedSize(overlapItem);
+                    var overlapSize = inventoryState.GetOccupiedSize(overlapItem);
                     var overlapAnchorPos = overlapItem.AnchorPos;
                     bool isFullyCovered = true;
                     for (int x = 0; x < overlapSize.x && isFullyCovered; x++)
@@ -256,7 +254,7 @@ namespace MmInventory
                 tempItemHashList.Clear();
 
                 var largeItemData = plan.aItemData;
-                var largeSize = InventoryState.GetOccupiedSize(largeItemData);
+                var largeSize = inventoryState.GetOccupiedSize(largeItemData);
                 for (int x = 0; x < largeSize.x; x++)
                 {
                     for (int y = 0; y < largeSize.y; y++)

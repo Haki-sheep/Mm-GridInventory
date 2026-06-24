@@ -42,7 +42,7 @@ namespace MmInventory
                         if (!inventoryState.IsInside(targetPos))
                             return false;
 
-                        if (inventoryState.mask[inventoryState.ToIndex(targetPos)])
+                        if (inventoryState.occupancyOwnerArray[inventoryState.ToIndex(targetPos)] != null)
                             return false;
                     }
                 }
@@ -180,9 +180,9 @@ namespace MmInventory
             /// </summary>
             /// <param name="item">物品数据</param>
             /// <returns>占用尺寸</returns>
-            private static Vector2Int GetOccupiedSize(RunTimeItemData item)
+            private Vector2Int GetOccupiedSize(RunTimeItemData item)
             {
-                return InventoryState.GetOccupiedSize(item);
+                return inventoryState.GetOccupiedSize(item);
             }
             #endregion
         }

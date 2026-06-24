@@ -37,10 +37,6 @@ namespace MmInventory
         [SerializeField]
         private int maxStackCount = 1;
 
-        /// <summary> 容器内部高度 非容器填0 </summary>
-        [SerializeField]
-        private int containerHeight;
-
         public int ItemId { get => itemId; internal set => itemId = value; }
         public string Name { get => name; internal set => name = value; }
         public string IconPath { get => iconPath; internal set => iconPath = value; }
@@ -48,6 +44,5 @@ namespace MmInventory
         public EItemType ItemType { get => itemType; internal set => itemType = value; }
         public EItemStackType ItemStackType { get => itemStackType; internal set => itemStackType = value; }
         public int MaxStackCount { get => maxStackCount; internal set => maxStackCount = value; }
-        public int ContainerHeight { get => containerHeight; internal set => containerHeight = value; }
     }
 }

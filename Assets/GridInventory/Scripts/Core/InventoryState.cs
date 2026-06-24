@@ -33,20 +33,17 @@ namespace MmInventory
     }
 
     /// <summary>
-    /// 背包站位数据
+    /// 这里是背包的核心算法与数据结构
     /// </summary>
     public partial class InventoryState
     {
-        // X=宽度(列数) Y=高度(行数)
+        /// <summary>背包尺寸</summary>
         private Vector2Int gridInventorySize;
 
-        // 锚点数组
+        /// <summary>锚点数组 只记录每一个物品的锚点在哪里</summary>
         private RunTimeItemData[] runTimeItemDataArray;
 
-        // 占用掩码
-        private bool[] mask;
-
-        // 占用者数组 用于记录每个格子的占用者
+        /// <summary>物品的全部占用格子信息</summary>
         private RunTimeItemData[] occupancyOwnerArray;
 
         /// <summary> 交换服务 </summary>
@@ -61,7 +58,6 @@ namespace MmInventory
             int totalCount = gridInventorySize.x * gridInventorySize.y;
             runTimeItemDataArray = new RunTimeItemData[totalCount];
             occupancyOwnerArray = new RunTimeItemData[totalCount];
-            mask = new bool[totalCount];
             inventorySwapService = new InventorySwapService(this);
             inventoryPlacementService = new InventoryPlacementService(this);
         }
@@ -75,7 +71,7 @@ namespace MmInventory
         new Vector2Int(index % gridInventorySize.x, index / gridInventorySize.x);
 
         // 当前占用尺寸
-        private static Vector2Int GetOccupiedSize(RunTimeItemData item) => item.DataSize;
+        private Vector2Int GetOccupiedSize(RunTimeItemData item) => item.DataSize;
 
         /// <summary>
         /// 更新占用信息
@@ -96,7 +92,6 @@ namespace MmInventory
                     if (!IsInside(targetPos)) continue;
 
                     int idx = ToIndex(targetPos);
-                    mask[idx] = occupied;
                     occupancyOwnerArray[idx] = occupied ? item : null;
                 }
             }
