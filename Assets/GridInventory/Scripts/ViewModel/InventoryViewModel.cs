@@ -4,14 +4,34 @@ using UnityEngine;
 namespace MmInventory
 {
 
-    public readonly struct InventoryOpResult
+    /// <summary>
+    /// 操作结果结构体
+    /// </summary>
+    public readonly struct InventoryOpReport
     {
+        /// <summary> 是否操作成功 </summary>
         public readonly bool IsSuccess;
+
+        /// <summary> 旧物品数据 </summary>
         public readonly RunTimeItemData OldItemData;
+
+        /// <summary> 新物品数据 </summary>
         public readonly RunTimeItemData NewItemData;
+
+        /// <summary> 旧物品数据列表 </summary>
         public readonly List<RunTimeItemData> OldItemDataList;
 
-        public InventoryOpResult(bool isSuccess, RunTimeItemData oldItemData, RunTimeItemData newItemData = null, List<RunTimeItemData> oldItemDataList = null)
+        /// <summary>
+        /// 构造函数
+        /// </summary>
+        /// <param name="isSuccess"></param>
+        /// <param name="oldItemData"></param>
+        /// <param name="newItemData"></param>
+        /// <param name="oldItemDataList"></param>
+        public InventoryOpReport(bool isSuccess,
+                                 RunTimeItemData oldItemData,
+                                 RunTimeItemData newItemData = null,
+                                 List<RunTimeItemData> oldItemDataList = null)
         {
             IsSuccess = isSuccess;
             OldItemData = oldItemData;
@@ -22,7 +42,9 @@ namespace MmInventory
 
 
     /// <summary>
-    /// 这里做统一入口 接收View的请求 调用Model的算法 返回结果
+    /// 此类的职责是 接收View的请求 调用Model的算法 返回操作结果
+    /// 因为Mdoel只是负责算数据上这块能不能放
+    /// 但是View需要知道操作是否成功 并且做出对应的表现
     /// </summary>
 
     public class InventoryViewModel
@@ -40,12 +62,12 @@ namespace MmInventory
         /// <param name="oldItemData"></param>
         /// <param name="newAnchorPos"></param>
         /// <returns></returns>
-        public InventoryOpResult TryPlaceItem(RunTimeItemData oldItemData,
+        public InventoryOpReport TryPlaceItem(RunTimeItemData oldItemData,
                                               Vector2Int oldAnchorPos,
                                               Vector2Int newAnchorPos)
         {
             if (oldItemData is null)
-                return new InventoryOpResult(false, null);
+                return new InventoryOpReport(false, null);
 
             void RestoreOldItem()
             {
@@ -60,9 +82,9 @@ namespace MmInventory
                 if (!inventoryState.SetAt(newAnchorPos, oldItemData))
                 {
                     RestoreOldItem();
-                    return new InventoryOpResult(false, oldItemData);
+                    return new InventoryOpReport(false, oldItemData);
                 }
-                return new InventoryOpResult(true, oldItemData);
+                return new InventoryOpReport(true, oldItemData);
             }
 
             var newItemData = inventoryState.GetItemByMask(newAnchorPos);
@@ -85,7 +107,7 @@ namespace MmInventory
                     inventoryState.SetAt(oldAnchorPos, oldItemData);
                 }
 
-                return new InventoryOpResult(true, null, newItemData);
+                return new InventoryOpReport(true, null, newItemData);
             }
 
             if (inventoryState.TryGetSwapTargetItem(oldItemData, newAnchorPos, out var swapTargetItem)
@@ -96,15 +118,15 @@ namespace MmInventory
                                            out List<RunTimeItemData> oldItemDataList,
                                            newAnchorPos))
                 {
-                    return new InventoryOpResult(true, oldItemData, swapTargetItem, oldItemDataList);
+                    return new InventoryOpReport(true, oldItemData, swapTargetItem, oldItemDataList);
                 }
 
-                return new InventoryOpResult(false, oldItemData, swapTargetItem);
+                return new InventoryOpReport(false, oldItemData, swapTargetItem);
             }
 
             // 全部尝试失败 回滚状态
             RestoreOldItem();
-            return new InventoryOpResult(false, oldItemData);
+            return new InventoryOpReport(false, oldItemData);
         }
 
         public void PlaceItem(RunTimeItemData itemData, Vector2Int anchorPos)
@@ -126,18 +148,18 @@ namespace MmInventory
         /// </summary>
         /// <param name="anchorPos"></param>
         /// <returns></returns>
-        public InventoryOpResult TryRemoveItem(Vector2Int anchorPos)
+        public InventoryOpReport TryRemoveItem(Vector2Int anchorPos)
         {
             var item = inventoryState.GetItemByMask(anchorPos);
             if (item is null)
             {
-                return new InventoryOpResult(false, null);
+                return new InventoryOpReport(false, null);
             }
             if (!inventoryState.RemoveAtAny(anchorPos))
             {
-                return new InventoryOpResult(false, null);
+                return new InventoryOpReport(false, null);
             }
-            return new InventoryOpResult(true, item);
+            return new InventoryOpReport(true, item);
         }
 
         /// <summary>
@@ -167,19 +189,19 @@ namespace MmInventory
         /// 这里只是转变数据状态 不影响实际物品的旋转
         /// </summary>
         /// <param name="itemData"></param>
-        public InventoryOpResult TryRotateItem(RunTimeItemData itemData)
+        public InventoryOpReport TryRotateItem(RunTimeItemData itemData)
         {
             if (itemData is null)
-                return new InventoryOpResult(false, null);
+                return new InventoryOpReport(false, null);
 
             var originData = RunTimeItemDataMgr.Instance.GetItemData<IItemRootData>(itemData.PersistenceItemId);
 
             // 可叠加物品不允许旋转（默认会配成正方形）
             if (originData is not null && originData.ItemStackType == EItemStackType.Stackable)
-                return new InventoryOpResult(false, itemData);
+                return new InventoryOpReport(false, itemData);
 
             itemData.SetRotated(!itemData.IsRotated);
-            return new InventoryOpResult(true, itemData);
+            return new InventoryOpReport(true, itemData);
         }
 
 

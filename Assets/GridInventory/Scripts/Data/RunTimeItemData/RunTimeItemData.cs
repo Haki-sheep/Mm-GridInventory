@@ -85,7 +85,7 @@ namespace MmInventory
         }
 
         /// <summary>
-        /// 设置是否旋转
+        /// 设置旋转状态
         /// </summary>
         /// <param name="isRotated"></param>
         public void SetRotated(bool isRotated)
@@ -111,15 +111,6 @@ namespace MmInventory
         public void SetContainer(int newContainerId)
         {
             containerId = newContainerId;
-        }
-
-        /// <summary>
-        /// 设置物品理论尺寸
-        /// </summary>
-        /// <param name="dataSize"></param>
-        public void SetDataSize(Vector2Int dataSize)
-        {
-            this.dataSize = dataSize;
         }
         #endregion
     }
