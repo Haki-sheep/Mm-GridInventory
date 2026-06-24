@@ -64,23 +64,23 @@
     <Analyzer Include="C:\Program Files\Unity\Hub\Editor\6000.4.10f1\Editor\Data\Tools\BuildPipeline\Unity.SourceGenerators\Unity.UIToolkit.SourceGenerator.dll" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Assets\GridInventory\Scripts\Model\PersistenceItemData\Base\ItemBaseDataList.cs" />
     <Compile Include="Assets\GridInventory\Scripts\View\UI\GridContainer\GridMainContainerView.Tools.cs" />
     <Compile Include="Assets\GridInventory\Scripts\View\ItemView\InventoryItemView.cs" />
-    <Compile Include="Assets\GridInventory\Scripts\Model\RunTimeItemData\RunTimeItemDataMgr.cs" />
     <Compile Include="Assets\GridInventory\Samples\1.SampleCreat&amp;ReplaceGrid\Test.cs" />
+    <Compile Include="Assets\GridInventory\Scripts\Core\InventoryState.cs" />
+    <Compile Include="Assets\GridInventory\Scripts\Data\RunTimeItemData\RunTimeItemData.cs" />
+    <Compile Include="Assets\GridInventory\Scripts\Data\PersistenceItemData\Base\ItemBaseData.cs" />
     <Compile Include="Assets\GridInventory\Scripts\View\frameBorad\FrameBoardView.cs" />
-    <Compile Include="Assets\GridInventory\Scripts\Model\PersistenceItemData\Base\IItemRootData.cs" />
     <Compile Include="Assets\GridInventory\Scripts\View\UI\GridContainer\GridMainContainerView.Operate.cs" />
-    <Compile Include="Assets\GridInventory\Scripts\Model\RunTimeItemData\RunTimeItemData.cs" />
+    <Compile Include="Assets\GridInventory\Scripts\Data\RunTimeItemData\RunTimeItemDataMgr.cs" />
     <Compile Include="Assets\TutorialInfo\Scripts\Readme.cs" />
     <Compile Include="Assets\GridInventory\Samples\1.SampleCreat&amp;ReplaceGrid\TestAudioAndAnima.cs" />
     <Compile Include="Assets\GridInventory\Scripts\ViewModel\InventoryViewModel.cs" />
     <Compile Include="Assets\GridInventory\Scripts\View\UI\GridContainer\GridMainContainerView.cs" />
+    <Compile Include="Assets\GridInventory\Scripts\Data\PersistenceItemData\Base\IItemRootData.cs" />
     <Compile Include="Assets\GridInventory\Scripts\View\UI\GridContainer\GridCellView.cs" />
-    <Compile Include="Assets\GridInventory\Scripts\Model\PersistenceItemData\Base\ItemBaseData.cs" />
+    <Compile Include="Assets\GridInventory\Scripts\Data\PersistenceItemData\Base\ItemBaseDataList.cs" />
     <Compile Include="Assets\GridInventory\Scripts\View\UI\GridContainer\IGridContainerAudioAndView.cs" />
-    <Compile Include="Assets\GridInventory\Scripts\Model\InventoryState.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="UnityEngine">
