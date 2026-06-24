@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -63,7 +62,6 @@ namespace MmInventory
                     RestoreOldItem();
                     return new InventoryOpResult(false, oldItemData);
                 }
-                Debug.Log($"直接放置物品成功 物品新锚点：{newAnchorPos}");
                 return new InventoryOpResult(true, oldItemData);
             }
 
@@ -87,7 +85,6 @@ namespace MmInventory
                     inventoryState.SetAt(oldAnchorPos, oldItemData);
                 }
 
-                Debug.Log($"尝试堆叠物品成功 堆叠对象为{newItemData} / 堆叠到新锚点 {newItemData.AnchorPos}");
                 return new InventoryOpResult(true, null, newItemData);
             }
 
@@ -99,10 +96,6 @@ namespace MmInventory
                                            out List<RunTimeItemData> oldItemDataList,
                                            newAnchorPos))
                 {
-                    foreach (var item in oldItemDataList)
-                    {
-                        Debug.Log($"交换物品成功 交换对象为{item} / 交换到新锚点 {item.AnchorPos}");
-                    }
                     return new InventoryOpResult(true, oldItemData, swapTargetItem, oldItemDataList);
                 }
 
@@ -128,12 +121,6 @@ namespace MmInventory
             return inventoryState.CanStack(oldItemData, newItemData, out remainingCount);
         }
 
-        public bool CanSwap(RunTimeItemData oldItemData, RunTimeItemData newItemData)
-        {
-            Debug.Log($"CanSwap: {oldItemData.AnchorPos} {newItemData.AnchorPos}");
-            return inventoryState.CanSwap(oldItemData, newItemData, oldItemData.AnchorPos);
-        }
-
         /// <summary>
         /// 尝试移除物品
         /// </summary>
@@ -151,28 +138,6 @@ namespace MmInventory
                 return new InventoryOpResult(false, null);
             }
             return new InventoryOpResult(true, item);
-        }
-
-        /// <summary>
-        /// 遍历所有格子 找到第一个可放置位置
-        /// </summary>
-        /// <param name="itemData"></param>
-        /// <param name="anchorPos"></param>
-        /// <returns></returns>
-        public bool FindPlaceAtFirstItem(RunTimeItemData itemData, out Vector2Int anchorPos)
-        {
-            return inventoryState.FindSetAtFirst(itemData, out anchorPos);
-        }
-
-        /// <summary>
-        /// 遍历所有格子 找到第一个可放置位置 并放置物品
-        /// </summary>
-        /// <param name="itemData"></param>
-        /// <param name="anchorPos"></param>
-        /// <returns></returns>
-        public bool PlaceAtFirstItem(RunTimeItemData itemData, out Vector2Int anchorPos)
-        {
-            return inventoryState.SetAtFirst(itemData, out anchorPos);
         }
 
         /// <summary>

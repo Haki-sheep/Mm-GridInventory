@@ -47,5 +47,8 @@ namespace MmInventory
         public EItemStackType ItemStackType { get;}
         public int MaxStackCount { get;}
 
+        // 容器内部高度 非容器为0
+        public int ContainerHeight { get; }
+
     }
 }

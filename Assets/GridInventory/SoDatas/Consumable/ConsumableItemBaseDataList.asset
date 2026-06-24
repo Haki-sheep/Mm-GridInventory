@@ -9,10 +9,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e60f211e08e61a24da35a6b9d92c0434, type: 3}
+  m_Script: {fileID: 11500000, guid: eb4c239c77f0e634fa6c46af45c4e89b, type: 3}
   m_Name: ConsumableItemBaseDataList
-  m_EditorClassIdentifier: Assembly-CSharp::MmInventory.ConsumableItemBaseDataList
-  itemList:
+  m_EditorClassIdentifier: Assembly-CSharp::MmInventory.ItemBaseDataList
+  itemDataList:
   - itemId: 101
     name: "\u8C46\u5305\u5927\u5934\u7167"
     iconPath: 
@@ -20,3 +20,4 @@ MonoBehaviour:
     itemType: 2
     itemStackType: 0
     maxStackCount: 1
+    containerHeight: 0

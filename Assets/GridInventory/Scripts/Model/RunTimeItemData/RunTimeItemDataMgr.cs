@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -9,9 +8,9 @@ namespace MmInventory
     public class RunTimeItemDataMgr : MonoBehaviour
     {
         public static RunTimeItemDataMgr Instance { get; private set; }
+
         private Dictionary<int, IItemRootData> itemDataDict = new();
         public IReadOnlyDictionary<int, IItemRootData> ItemDataDict => itemDataDict;
-
 
         private void Awake()
         {
@@ -24,48 +23,30 @@ namespace MmInventory
         /// </summary>
         public void RegisterItemData()
         {
-            //  使用资源上真实存在的标签 ConfigSo
             string configLabel = "ConfigSo";
-
-            //  先加载4个列表容器本体
             var handle = Addressables.LoadAssetsAsync<ScriptableObject>(configLabel);
-            handle.Completed += (handle) =>
+            handle.Completed += (completedHandle) =>
             {
-                if (handle.Status != AsyncOperationStatus.Succeeded)
+                if (completedHandle.Status != AsyncOperationStatus.Succeeded)
                 {
-                    Debug.LogError("加载物品配置失败：" + handle.OperationException);
-                    Addressables.Release(handle);
+                    Debug.LogError("加载物品配置失败：" + completedHandle.OperationException);
+                    Addressables.Release(completedHandle);
                     return;
                 }
 
                 itemDataDict.Clear();
-                Debug.Log($"读取到 {handle.Result.Count} 个物品配置表");
+                Debug.Log($"读取到 {completedHandle.Result.Count} 个物品配置表");
 
-                // 遍历容器，拆出内部所有单个物品数据
-                foreach (var listAsset in handle.Result)
+                foreach (var listAsset in completedHandle.Result)
                 {
-                    switch (listAsset)
-                    {
-                        case ConsumableItemBaseDataList cList:
-                            foreach (var item in cList.itemList) itemDataDict[item.ItemId] = item;
-                            break;
+                    if (listAsset is not ItemBaseDataList dataList) continue;
 
-                        case MaterialItemBaseDataList mList:
-                            foreach (var item in mList.itemList) itemDataDict[item.ItemId] = item;
-                            break;
-
-                        case EquipmentItemBaseDataList eList:
-                            foreach (var item in eList.itemList) itemDataDict[item.ItemId] = item;
-                            break;
-
-                        case ContainerItemBaseDataList conList:
-                            foreach (var item in conList.itemList) itemDataDict[item.ItemId] = item;
-                            break;
-                    }
+                    foreach (var item in dataList.ItemDataList)
+                        itemDataDict[item.ItemId] = item;
                 }
 
-                Addressables.Release(handle);
-                Debug.Log($" 物品数据注册完成，总计加载 {itemDataDict.Count} 条物品");
+                Addressables.Release(completedHandle);
+                Debug.Log($"物品数据注册完成 总计加载 {itemDataDict.Count} 条物品");
             };
 
             handle.WaitForCompletion();
@@ -83,9 +64,7 @@ namespace MmInventory
             }
 
             if (itemDataDict.TryGetValue(id, out var data))
-            {
                 return (T)data;
-            }
 
             Debug.LogWarning($"未找到ID:{id} 的物品");
             return default;

@@ -11,8 +11,8 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: eb4c239c77f0e634fa6c46af45c4e89b, type: 3}
   m_Name: EquipmentItemBaseDataList
-  m_EditorClassIdentifier: Assembly-CSharp::MmInventory.EquipmentItemBaseDataList
-  itemList:
+  m_EditorClassIdentifier: Assembly-CSharp::MmInventory.ItemBaseDataList
+  itemDataList:
   - itemId: 1
     name: "\u6C99\u6F20\u4E4B\u9E70"
     iconPath: 
@@ -20,6 +20,7 @@ MonoBehaviour:
     itemType: 0
     itemStackType: 0
     maxStackCount: 1
+    containerHeight: 0
   - itemId: 2
     name: uiz
     iconPath: 
@@ -27,3 +28,4 @@ MonoBehaviour:
     itemType: 0
     itemStackType: 0
     maxStackCount: 1
+    containerHeight: 0

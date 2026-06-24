@@ -112,53 +112,6 @@ namespace MmInventory
             return true;
         }
 
-        /// <summary>
-        /// 更新占用掩码
-        /// </summary>
-        private void UpdateMask()
-        {
-            // 清空旧掩码和占用者数组
-            Array.Fill(mask, false);
-            Array.Fill(occupancyOwnerArray, null);
-
-            for (int i = 0; i < runTimeItemDataArray.Length; i++)
-            {
-                var item = runTimeItemDataArray[i];
-                if (item is null) continue;
-
-                // 1. 获取锚点坐标(物品左上角)
-                Vector2Int anchorPos = ToPosition(i);
-
-                // 2. 获取运行时占用宽高
-                var occupiedSize = GetOccupiedSize(item);
-                int w = occupiedSize.x;
-                int h = occupiedSize.y;
-
-                // 4. 遍历物品占用的所有格子(锚点+偏移)
-                for (int xOffset = 0; xOffset < w; xOffset++)
-                {
-                    for (int yOffset = 0; yOffset < h; yOffset++)
-                    {
-                        // 真实坐标 = 锚点 + 偏移
-                        Vector2Int targetPos = new Vector2Int(
-                            anchorPos.x + xOffset,
-                            anchorPos.y + yOffset
-                        );
-
-                        // 越界检查
-                        if (!IsInside(targetPos))
-                            continue;
-
-                        // 标记掩码
-                        int idx = ToIndex(targetPos);
-                        mask[idx] = true;
-                        // 标记占用者
-                        occupancyOwnerArray[idx] = item;
-                    }
-                }
-            }
-        }
-
         #region 边界判定
         /// <summary>
         /// 范围判定
@@ -332,7 +285,6 @@ namespace MmInventory
                         break;
 
                     case ESwapState.SmallToLarge:
-                        Debug.Log("尝试交换小物品到大物品");
                         canSwap = SwapSmallToLargeItem(plan, placeAnchorPos);
                         break;
                 }
@@ -463,8 +415,6 @@ namespace MmInventory
             if (aItemData.IsRotated != bItemData.IsRotated)
                 return false;
 
-            Debug.Log("尝试交换相同尺寸物品");
-
             runTimeItemDataArray[aIndex] = null;
             runTimeItemDataArray[bIndex] = null;
             WriteOccupancy(aItemData, aItemData.AnchorPos, false);
@@ -495,7 +445,6 @@ namespace MmInventory
                                          Vector2Int placeAnchorPos,
                                          out List<RunTimeItemData> oldItemDataList)
         {
-            Debug.Log("尝试交换大物品到小物品");
             oldItemDataList = new List<RunTimeItemData>();
             tempItemList.Clear();
 
@@ -573,7 +522,6 @@ namespace MmInventory
         {
             var smallItemData = plan.aItemData;
             var largeItemData = plan.bItemData;
-            Debug.Log("尝试交换小物品到大物品");
 
             // 清空大小物品在网格上的锚点
             RemoveAt(smallItemData.AnchorPos);

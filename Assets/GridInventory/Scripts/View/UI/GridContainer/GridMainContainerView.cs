@@ -25,7 +25,7 @@ namespace MmInventory
         [SerializeField] private RectTransform containertRectTransform;
 
         [Header("GridView系组件")]
-        [SerializeField] private InventoryViewModel inventoryViewModel;
+        private InventoryViewModel inventoryViewModel;
         [SerializeField] private FrameBoardView frameBoardView;
         [SerializeField] private InventoryItemView[] itemViews;
 
@@ -76,13 +76,7 @@ namespace MmInventory
             }
             gridCellViews = gridContent.GetComponentsInChildren<GridCellView>();
 
-            // ViewModel组件初始化
-            inventoryViewModel = new();
-            if (inventoryViewModel is null)
-            {
-                Debug.LogError("GridMainContainerView: 未找到 InventoryViewModel，请挂在父节点或当前节点。");
-                return;
-            }
+            inventoryViewModel = new InventoryViewModel();
             inventoryViewModel.Init(gridRowAndCloumns);
 
             // ScrollRect系组件初始化
