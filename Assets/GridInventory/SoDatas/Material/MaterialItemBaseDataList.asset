@@ -20,4 +20,3 @@ MonoBehaviour:
     itemType: 1
     itemStackType: 1
     maxStackCount: 99
-    containerHeight: 0

@@ -355,7 +355,7 @@ namespace MmInventory
                 // 放下大物品
                 inventoryState.SetItemData(largeItemData, placeAnchorPos);
 
-                foreach (var item in tempLittleItemHashList)
+                foreach (var littleItem in tempLittleItemHashList)
                 {
                     bool placed = false;
 
@@ -365,16 +365,16 @@ namespace MmInventory
                         for (int j = largeItemData.AnchorPos.y; j < largeItemData.AnchorPos.y + largeItemData.DataSize.y; j++)
                         {
                             var candidate = new Vector2Int(i, j);
-                            if (!inventoryState.CanPlace(item, candidate)) continue;
+                            if (!inventoryState.CanPlace(littleItem, candidate)) continue;
 
-                            inventoryState.SetItemData(item, candidate);
+                            inventoryState.SetItemData(littleItem, candidate);
                             placed = true;
                             break;
                         }
                     }
 
                     // 放不回原区域时 再尝试全背包首个空位放置
-                    if (!placed && inventoryState.SetAtFirst(item, out _))
+                    if (!placed && inventoryState.SetAtFirst(littleItem, out _))
                         placed = true;
 
                     // 如果既放不回原区域 又放不回全背包首个空位 则交换失败

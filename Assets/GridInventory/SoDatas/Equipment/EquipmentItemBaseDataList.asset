@@ -20,7 +20,6 @@ MonoBehaviour:
     itemType: 0
     itemStackType: 0
     maxStackCount: 1
-    containerHeight: 0
   - itemId: 2
     name: uiz
     iconPath: 
@@ -28,4 +27,3 @@ MonoBehaviour:
     itemType: 0
     itemStackType: 0
     maxStackCount: 1
-    containerHeight: 0
