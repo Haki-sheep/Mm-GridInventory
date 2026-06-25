@@ -5,6 +5,9 @@ namespace MmInventory
 {
     public partial class InventoryState
     {
+        /// <summary>
+        /// 放置服务类
+        /// </summary>
         private sealed class InventoryPlacementService
         {
             /// <summary> 背包状态引用 </summary>
@@ -26,23 +29,27 @@ namespace MmInventory
             /// <param name="item">物品数据</param>
             /// <param name="anchorPos">锚点坐标</param>
             /// <returns>是否可放置</returns>
-            public bool CanPlace(RunTimeItemData item, Vector2Int anchorPos)
+            public bool CanPlace(ItemRtData item, Vector2Int anchorPos)
             {
+                // 检查锚点是否在背包范围内
                 if (!inventoryState.IsInside(anchorPos))
                     return false;
 
-                var occupiedSize = GetOccupiedSize(item);
-                int w = occupiedSize.x;
-                int h = occupiedSize.y;
-                for (int x = 0; x < w; x++)
+                // 获取物品的占用尺寸
+                var occupiedSize = item.DataSize;
+
+                // 遍历占用尺寸
+                for (int x = 0; x < occupiedSize.x; x++)
                 {
-                    for (int y = 0; y < h; y++)
+                    for (int y = 0; y < occupiedSize.y; y++)
                     {
+                        // 计算目标位置
                         Vector2Int targetPos = new Vector2Int(anchorPos.x + x, anchorPos.y + y);
+                        // 检查目标位置是否在背包范围内
                         if (!inventoryState.IsInside(targetPos))
                             return false;
 
-                        if (inventoryState.occupancyOwnerArray[inventoryState.ToIndex(targetPos)] != null)
+                        if (inventoryState.IsOccupied(targetPos))
                             return false;
                     }
                 }
@@ -56,12 +63,12 @@ namespace MmInventory
             /// <param name="anchorPos">锚点坐标</param>
             /// <param name="itemData">物品数据</param>
             /// <returns>是否成功</returns>
-            public bool SetAt(Vector2Int anchorPos, RunTimeItemData itemData)
+            public bool SetAt(Vector2Int anchorPos, ItemRtData itemData)
             {
                 if (itemData is null || !CanPlace(itemData, anchorPos))
                     return false;
 
-                inventoryState.SetAnchorItem(anchorPos, itemData);
+                inventoryState.SetItemData(itemData, anchorPos);
                 return true;
             }
 
@@ -71,16 +78,21 @@ namespace MmInventory
             /// <param name="itemData">物品数据</param>
             /// <param name="anchorPos">可放置锚点</param>
             /// <returns>是否找到</returns>
-            public bool FindSetAtFirst(RunTimeItemData itemData, out Vector2Int anchorPos)
+            public bool FindSetAtFirst(ItemRtData itemData, out Vector2Int anchorPos)
             {
                 anchorPos = Vector2Int.zero;
+
+                // 遍历所有背包格子 
                 for (int y = 0; y < inventoryState.gridInventorySize.y; y++)
                 {
                     for (int x = 0; x < inventoryState.gridInventorySize.x; x++)
                     {
+                        // 计算候选锚点
                         var candidate = new Vector2Int(x, y);
+                        // 检查是否可放置
                         if (CanPlace(itemData, candidate))
                         {
+                            // 找到第一个可放置锚点 直接返回
                             anchorPos = candidate;
                             return true;
                         }
@@ -96,7 +108,7 @@ namespace MmInventory
             /// <param name="itemData">物品数据</param>
             /// <param name="anchorPos">最终锚点</param>
             /// <returns>是否成功</returns>
-            public bool SetAtFirst(RunTimeItemData itemData, out Vector2Int anchorPos)
+            public bool SetAtFirst(ItemRtData itemData, out Vector2Int anchorPos)
             {
                 if (!FindSetAtFirst(itemData, out anchorPos)) return false;
                 return SetAt(anchorPos, itemData);
@@ -111,7 +123,7 @@ namespace MmInventory
             /// <returns>是否成功</returns>
             public bool RemoveAt(Vector2Int anchorPos)
             {
-                return inventoryState.RemoveAnchorItem(anchorPos);
+                return inventoryState.RemoveItemData(anchorPos);
             }
 
             /// <summary>
@@ -125,11 +137,11 @@ namespace MmInventory
                 if (targetItem is null) return false;
 
                 int anchorIndex = Array.FindIndex(
-                    inventoryState.runTimeItemDataArray,
+                    inventoryState.itemAnchorArray,
                     anchorItem => anchorItem != null && anchorItem.InstancedItemId == targetItem.InstancedItemId);
 
                 if (anchorIndex == -1) return false;
-                return inventoryState.RemoveAnchorItem(inventoryState.ToPosition(anchorIndex));
+                return inventoryState.RemoveItemData(inventoryState.ToVector2Int(anchorIndex));
             }
             #endregion
 
@@ -139,9 +151,11 @@ namespace MmInventory
             /// </summary>
             /// <param name="pos">格子坐标</param>
             /// <returns>物品数据</returns>
-            public RunTimeItemData GetItemAt(Vector2Int pos)
+            public ItemRtData GetItemAt(Vector2Int pos)
             {
-                return inventoryState.IsInside(pos) ? inventoryState.runTimeItemDataArray[inventoryState.ToIndex(pos)] : null;
+                // 检查位置是否在背包范围内
+                return inventoryState.IsInside(pos) ? 
+                       inventoryState.itemAnchorArray[inventoryState.ToIndex(pos)] : null;
             }
 
             /// <summary>
@@ -149,7 +163,7 @@ namespace MmInventory
             /// </summary>
             /// <param name="pos">格子坐标</param>
             /// <returns>物品数据</returns>
-            public RunTimeItemData GetItemByMask(Vector2Int pos)
+            public ItemRtData GetItemByMask(Vector2Int pos)
             {
                 if (!inventoryState.IsInside(pos)) return null;
                 return inventoryState.occupancyOwnerArray[inventoryState.ToIndex(pos)];
@@ -163,7 +177,10 @@ namespace MmInventory
             /// <param name="aSize">区域A尺寸</param>
             /// <param name="bSize">区域B尺寸</param>
             /// <returns>是否相交</returns>
-            public bool IsCover(Vector2Int aAnchorPos, Vector2Int bAnchorPos, Vector2Int aSize, Vector2Int bSize)
+            public bool IsCover(Vector2Int aAnchorPos,
+                                Vector2Int bAnchorPos,
+                                Vector2Int aSize,
+                                Vector2Int bSize)
             {
                 bool noOverlap =
                     aAnchorPos.x + aSize.x <= bAnchorPos.x ||
@@ -171,18 +188,6 @@ namespace MmInventory
                     aAnchorPos.y + aSize.y <= bAnchorPos.y ||
                     bAnchorPos.y + bSize.y <= aAnchorPos.y;
                 return !noOverlap;
-            }
-            #endregion
-
-            #region 私有工具
-            /// <summary>
-            /// 获取当前占用尺寸
-            /// </summary>
-            /// <param name="item">物品数据</param>
-            /// <returns>占用尺寸</returns>
-            private Vector2Int GetOccupiedSize(RunTimeItemData item)
-            {
-                return inventoryState.GetOccupiedSize(item);
             }
             #endregion
         }

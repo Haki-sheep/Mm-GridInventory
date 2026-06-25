@@ -5,7 +5,7 @@ namespace MmInventory
     /// <summary>
     /// 运行时物品数据
     /// </summary>
-    public class RunTimeItemData
+    public class ItemRtData
     {
         /// <summary>
         /// 持久化物品ID
@@ -58,7 +58,7 @@ namespace MmInventory
         /// <summary>
         /// 构造函数
         /// </summary>
-        public RunTimeItemData(int persistenceItemId,
+        public ItemRtData(int persistenceItemId,
                                Vector2Int dataSize,
                                int curStackCount,
                                bool isRotated,

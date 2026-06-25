@@ -5,9 +5,9 @@ using UnityEngine.ResourceManagement.AsyncOperations;
 
 namespace MmInventory
 {
-    public class RunTimeItemDataMgr : MonoBehaviour
+    public class ItemRtDataMgr : MonoBehaviour
     {
-        public static RunTimeItemDataMgr Instance { get; private set; }
+        public static ItemRtDataMgr Instance { get; private set; }
 
         private Dictionary<int, IItemRootData> itemDataDict = new();
         public IReadOnlyDictionary<int, IItemRootData> ItemDataDict => itemDataDict;

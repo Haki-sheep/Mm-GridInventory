@@ -96,7 +96,7 @@ namespace MmInventory
         /// <param name="anchorPos">锚点位置</param>
         /// <param name="position">吸附框位置</param>
         /// <param name="size">吸附框尺寸</param>
-        private Vector2 GetFrameBoardTransform(RunTimeItemData itemData,
+        private Vector2 GetFrameBoardTransform(ItemRtData itemData,
                                                Vector2Int anchorPos)
         {
             var occupiedSize = GetItemSizeInCells(itemData);
@@ -108,7 +108,7 @@ namespace MmInventory
         /// 获取物品当前占用宽高
         /// </summary>
         /// <param name="itemData">物品数据</param>
-        private Vector2Int GetItemSizeInCells(RunTimeItemData itemData)
+        private Vector2Int GetItemSizeInCells(ItemRtData itemData)
         {
             return itemData.DataSize;
         }
@@ -131,8 +131,8 @@ namespace MmInventory
         }
 
 
-        public void SetFrameBoardState(RunTimeItemData oldItemData,
-                                            RunTimeItemData newItemData,
+        public void SetFrameBoardState(ItemRtData oldItemData,
+                                            ItemRtData newItemData,
                                             Vector2Int dragPreviewAnchorPos,
                                             Vector2 pos,
                                             Vector2 size)

@@ -19,7 +19,7 @@ namespace MmInventory
 
         [Header("数据")]
         [SerializeField] private int itemId;
-        public RunTimeItemData ItemData;
+        public ItemRtData ItemData;
 
         public event Action<InventoryItemView> OnPointerDownEvent;
         public event Action<InventoryItemView> OnPointerEnterEvent;
@@ -30,8 +30,8 @@ namespace MmInventory
             if (ItemData is not null) return;
 
             // 数据
-            var persistenceItemData = RunTimeItemDataMgr.Instance?.GetItemData<IItemRootData>(itemId);
-            ItemData = new RunTimeItemData(persistenceItemData.ItemId, persistenceItemData.DataSize, 1, false, 0);
+            var persistenceItemData = ItemRtDataMgr.Instance?.GetItemData<IItemRootData>(itemId);
+            ItemData = new ItemRtData(persistenceItemData.ItemId, persistenceItemData.DataSize, 1, false, 0);
 
             // 组件
             ItemRectTransform = this.transform as RectTransform;

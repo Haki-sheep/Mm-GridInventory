@@ -13,13 +13,13 @@ namespace MmInventory
         public readonly bool IsSuccess;
 
         /// <summary> 旧物品数据 </summary>
-        public readonly RunTimeItemData OldItemData;
+        public readonly ItemRtData OldItemData;
 
         /// <summary> 新物品数据 </summary>
-        public readonly RunTimeItemData NewItemData;
+        public readonly ItemRtData NewItemData;
 
         /// <summary> 旧物品数据列表 </summary>
-        public readonly List<RunTimeItemData> OldItemDataList;
+        public readonly List<ItemRtData> OldItemDataList;
 
         /// <summary>
         /// 构造函数
@@ -29,9 +29,9 @@ namespace MmInventory
         /// <param name="newItemData"></param>
         /// <param name="oldItemDataList"></param>
         public InventoryOpReport(bool isSuccess,
-                                 RunTimeItemData oldItemData,
-                                 RunTimeItemData newItemData = null,
-                                 List<RunTimeItemData> oldItemDataList = null)
+                                 ItemRtData oldItemData,
+                                 ItemRtData newItemData = null,
+                                 List<ItemRtData> oldItemDataList = null)
         {
             IsSuccess = isSuccess;
             OldItemData = oldItemData;
@@ -62,7 +62,7 @@ namespace MmInventory
         /// <param name="oldItemData"></param>
         /// <param name="newAnchorPos"></param>
         /// <returns></returns>
-        public InventoryOpReport TryPlaceItem(RunTimeItemData oldItemData,
+        public InventoryOpReport TryPlaceItem(ItemRtData oldItemData,
                                               Vector2Int oldAnchorPos,
                                               Vector2Int newAnchorPos)
         {
@@ -113,9 +113,10 @@ namespace MmInventory
             if (inventoryState.TryGetSwapTargetItem(oldItemData, newAnchorPos, out var swapTargetItem)
                 && inventoryState.CanSwap(oldItemData, swapTargetItem, newAnchorPos))
             {
+                var oldItemDataList = new List<ItemRtData>();
                 if (inventoryState.TrySwap(oldItemData,
                                            swapTargetItem,
-                                           out List<RunTimeItemData> oldItemDataList,
+                                           oldItemDataList,
                                            newAnchorPos))
                 {
                     return new InventoryOpReport(true, oldItemData, swapTargetItem, oldItemDataList);
@@ -129,7 +130,7 @@ namespace MmInventory
             return new InventoryOpReport(false, oldItemData);
         }
 
-        public void PlaceItem(RunTimeItemData itemData, Vector2Int anchorPos)
+        public void PlaceItem(ItemRtData itemData, Vector2Int anchorPos)
         {
             if (itemData is null)
                 return;
@@ -138,7 +139,7 @@ namespace MmInventory
             inventoryState.SetAt(anchorPos, itemData);
         }
 
-        public bool CanStack(RunTimeItemData oldItemData, RunTimeItemData newItemData, out int remainingCount)
+        public bool CanStack(ItemRtData oldItemData, ItemRtData newItemData, out int remainingCount)
         {
             return inventoryState.CanStack(oldItemData, newItemData, out remainingCount);
         }
@@ -167,7 +168,7 @@ namespace MmInventory
         /// </summary>
         /// <param name="anyPos"></param>
         /// <returns></returns>
-        public RunTimeItemData GetItemAt(Vector2Int anyPos)
+        public ItemRtData GetItemAt(Vector2Int anyPos)
         {
             return inventoryState.GetItemByMask(anyPos);
         }
@@ -178,7 +179,7 @@ namespace MmInventory
         /// <param name="itemData"></param>
         /// <param name="anchorPos"></param>
         /// <returns></returns>
-        public bool CanPlaceItem(RunTimeItemData itemData, Vector2Int anchorPos)
+        public bool CanPlaceItem(ItemRtData itemData, Vector2Int anchorPos)
         {
             return inventoryState.CanPlace(itemData, anchorPos);
         }
@@ -189,12 +190,12 @@ namespace MmInventory
         /// 这里只是转变数据状态 不影响实际物品的旋转
         /// </summary>
         /// <param name="itemData"></param>
-        public InventoryOpReport TryRotateItem(RunTimeItemData itemData)
+        public InventoryOpReport TryRotateItem(ItemRtData itemData)
         {
             if (itemData is null)
                 return new InventoryOpReport(false, null);
 
-            var originData = RunTimeItemDataMgr.Instance.GetItemData<IItemRootData>(itemData.PersistenceItemId);
+            var originData = ItemRtDataMgr.Instance.GetItemData<IItemRootData>(itemData.PersistenceItemId);
 
             // 可叠加物品不允许旋转（默认会配成正方形）
             if (originData is not null && originData.ItemStackType == EItemStackType.Stackable)
@@ -209,8 +210,8 @@ namespace MmInventory
         /// 获取操作类型    
         /// </summary>
         /// <returns></returns>
-        public EFrameBoard JudgeFrameBoardState(RunTimeItemData oldItemData,
-                                            RunTimeItemData newItemData,
+        public EFrameBoard JudgeFrameBoardState(ItemRtData oldItemData,
+                                            ItemRtData newItemData,
                                             Vector2Int dragPreviewAnchorPos)
         {
             if (CanPlaceItem(oldItemData, dragPreviewAnchorPos))
