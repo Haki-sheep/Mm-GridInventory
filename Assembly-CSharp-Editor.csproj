@@ -64,10 +64,16 @@
     <Analyzer Include="C:\Program Files\Unity\Hub\Editor\6000.4.10f1\Editor\Data\Tools\BuildPipeline\Unity.SourceGenerators\Unity.UIToolkit.SourceGenerator.dll" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Assets\GridInventory\Scripts\Data\Editor\ItemBaseDataListSoEditorUtil.cs" />
+    <Compile Include="Assets\GridInventory\Scripts\Data\Editor\ItemDataEditorSession.cs" />
     <Compile Include="Assets\TutorialInfo\Scripts\Editor\ReadmeEditor.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Core\Editor\EditorGridMockItem.cs" />
+    <Compile Include="Assets\GridInventory\Scripts\Data\Editor\ItemDataJsonModel.cs" />
+    <Compile Include="Assets\GridInventory\Scripts\Data\Editor\EItemTypeCodeGenerator.cs" />
+    <Compile Include="Assets\GridInventory\Scripts\Data\Editor\ItemDataEditorWindow.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Core\Editor\GridInventoryDebugWindow.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Core\Editor\GridInventoryDebugSession.cs" />
+    <Compile Include="Assets\GridInventory\Scripts\Data\Editor\ItemDataJsonIO.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="UnityEngine">
@@ -724,6 +730,10 @@
     </Reference>
     <Reference Include="System.Runtime.CompilerServices.Unsafe">
       <HintPath>Library\PackageCache\com.unity.collections@5b6ebd78ccc0\Unity.Collections.Tests\System.Runtime.CompilerServices.Unsafe\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>Library\PackageCache\com.unity.nuget.newtonsoft-json@4dfd81071c64\Runtime\Newtonsoft.Json.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="mscorlib">

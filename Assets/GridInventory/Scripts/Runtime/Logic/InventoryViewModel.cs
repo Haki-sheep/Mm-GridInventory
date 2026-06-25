@@ -87,33 +87,26 @@ namespace MmInventory
                 return new InventoryOpReport(true, oldItemData);
             }
 
-            var newItemData = inventoryState.GetItemByMask(newAnchorPos) as ItemRtData;
+            var targetItemData = inventoryState.GetItemByMask(newAnchorPos);
 
             // 尝试堆叠
-            if (InventoryStackService.CanStack(oldItemData, newItemData, out int remainingCount))
+            if (targetItemData != null
+                && inventoryState.CanStack(oldItemData, targetItemData)
+                && inventoryState.TryStack(oldItemData, targetItemData))
             {
-                // 更新新旧物品的计数
-                newItemData.SetStackCount(oldItemData.CurStackCount + newItemData.CurStackCount);
-                oldItemData.SetStackCount(remainingCount);
-
-                // 如果剩余数量为0 则销毁旧物品
-                if (remainingCount == 0)
+                if (oldItemData.CurrStackCount > 0)
                 {
-                    inventoryState.RemoveAtAny(oldAnchorPos);
-                }
-                // 否则将旧物品放置到原锚点
-                else
-                {
+                    oldItemData.SetAnchorPos(oldAnchorPos);
                     inventoryState.SetAt(oldAnchorPos, oldItemData);
                 }
 
-                return new InventoryOpReport(true, null, newItemData);
+                return new InventoryOpReport(true, null, targetItemData as ItemRtData);
             }
 
             if (inventoryState.TryGetSwapTargetItem(oldItemData, newAnchorPos, out var swapTargetItem)
                 && inventoryState.CanSwap(oldItemData, swapTargetItem, newAnchorPos))
             {
-                var swapDisplacedList = new List<IGridItem>();
+                var swapDisplacedList = new List<IItemRuntime>();
                 if (inventoryState.TrySwap(oldItemData,
                                            swapTargetItem,
                                            swapDisplacedList,
@@ -140,15 +133,13 @@ namespace MmInventory
             inventoryState.SetAt(anchorPos, itemData);
         }
 
-        public bool CanStack(ItemRtData oldItemData, ItemRtData newItemData, out int remainingCount)
-        {
-            return InventoryStackService.CanStack(oldItemData, newItemData, out remainingCount);
-        }
+        public bool CanStack(ItemRtData dragItem, ItemRtData targetItem) =>
+            inventoryState.CanStack(dragItem, targetItem);
 
         /// <summary>
         /// IGridItem列表转ItemRtData列表
         /// </summary>
-        private static List<ItemRtData> ToItemRtDataList(List<IGridItem> gridItemList)
+        private static List<ItemRtData> ToItemRtDataList(List<IItemRuntime> gridItemList)
         {
             var itemRtDataList = new List<ItemRtData>(gridItemList.Count);
             for (int i = 0; i < gridItemList.Count; i++)
@@ -207,7 +198,7 @@ namespace MmInventory
             if (itemData is null)
                 return new InventoryOpReport(false, null);
 
-            var originData = ItemRtDataMgr.Instance.GetItemData<IItemRootData>(itemData.PersistenceItemId);
+            var originData = ItemRtDataMgr.Instance.GetItemData<IItemBaseData>(itemData.ExcelItemId);
 
             // 可叠加物品不允许旋转（默认会配成正方形）
             if (originData is not null && originData.ItemStackType == EItemStackType.Stackable)
@@ -230,7 +221,7 @@ namespace MmInventory
             {
                 return EFrameBoard.CanPlace;
             }
-            else if (CanStack(oldItemData, newItemData, out int _))
+            else if (newItemData is not null && CanStack(oldItemData, newItemData))
             {
                 return EFrameBoard.CanStack;
             }

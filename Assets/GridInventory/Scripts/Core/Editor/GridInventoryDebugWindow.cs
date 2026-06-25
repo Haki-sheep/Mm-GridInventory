@@ -36,7 +36,7 @@ namespace MmInventory.Editor
     private readonly List<EditorGridMockItem> mockItemList = new();
     private EditorGridMockItem activeMockItem;
     private int activeMockIndex;
-    private IGridItem swapSourceItem;
+    private IItemRuntime swapSourceItem;
 
     /// <summary>
     /// 打开窗口
@@ -433,7 +433,7 @@ namespace MmInventory.Editor
         TryPlaceAt(gridPos);
       else if (evt.button == 1)
         TryRemoveAt(gridPos);
-      else if (evt.button == 2 && inventoryState.GetItemByMask(gridPos) is IGridItem item)
+      else if (evt.button == 2 && inventoryState.GetItemByMask(gridPos) is IItemRuntime item)
       {
         swapSourceItem = item;
         statusMessage = $"中键设为交换源 @({gridPos.x},{gridPos.y})";
@@ -610,7 +610,7 @@ namespace MmInventory.Editor
         return;
       }
 
-      var displacedList = new List<IGridItem>();
+      var displacedList = new List<IItemRuntime>();
       if (!inventoryState.TrySwap(source, target, displacedList, placeAnchor))
       {
         statusMessage = $"交换失败 @({placeAnchor.x},{placeAnchor.y})";
@@ -755,7 +755,7 @@ namespace MmInventory.Editor
       statusMessage = "已清除存档";
     }
 
-    private bool TryGetSwapContext(out IGridItem source, out Vector2Int placeAnchor, out IGridItem target)
+    private bool TryGetSwapContext(out IItemRuntime source, out Vector2Int placeAnchor, out IItemRuntime target)
     {
       source = swapSourceItem;
       target = null;
@@ -789,7 +789,7 @@ namespace MmInventory.Editor
       return true;
     }
 
-    private static Color GetItemColor(IGridItem item)
+    private static Color GetItemColor(IItemRuntime item)
     {
       if (item is EditorGridMockItem mock)
         return GetPaletteColor(mock.ColorIndex);

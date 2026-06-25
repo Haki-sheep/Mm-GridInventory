@@ -10,18 +10,19 @@ namespace MmInventory
     /// 此脚本用于背包容器挂载 用于处理各种拖拽事件
     /// </summary>
 
-    public partial class GridMainContainerView : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
+    public partial class GridMainContainerView : MonoBehaviour, 
+                                    IBeginDragHandler, IDragHandler, IEndDragHandler
     {
         [Header("运行时信息")]
         // 鼠标按下的物品
-        [SerializeField] private InventoryItemView activeItem;
+        [SerializeField] private ItemView activeItem;
 
         // 拖动运行时状态
         private bool isDragging = false;
 
         // Item - 物品信息相关
         private RectTransform draggingItemRectTransform;
-        private InventoryItemView draggingItem;
+        private ItemView draggingItem;
 
         /// Drag - 拖拽信息相关
         private Vector2Int dragStartAnchorPos;
@@ -44,22 +45,22 @@ namespace MmInventory
 
         #region ItemEvent
 
-        public void AddItemEventListener(InventoryItemView itemView)
+        public void AddItemEventListener(ItemView itemView)
         {
             itemView.OnPointerEnterEvent += OnItemEnter;
             itemView.OnPointerExitEvent += OnItemExit;
             itemView.OnPointerDownEvent += OnItemSelect;
         }
 
-        public void RemoveItemEventListener(InventoryItemView itemView)
+        public void RemoveItemEventListener(ItemView itemView)
         {
             itemView.OnPointerEnterEvent -= OnItemEnter;
             itemView.OnPointerExitEvent -= OnItemExit;
             itemView.OnPointerDownEvent -= OnItemSelect;
         }
-        private void OnItemEnter(InventoryItemView itemView) => activeItem = itemView;
-        private void OnItemSelect(InventoryItemView itemView) => activeItem = itemView;
-        private void OnItemExit(InventoryItemView itemView)
+        private void OnItemEnter(ItemView itemView) => activeItem = itemView;
+        private void OnItemSelect(ItemView itemView) => activeItem = itemView;
+        private void OnItemExit(ItemView itemView)
         {
             if (isDragging) return;
             activeItem = null;

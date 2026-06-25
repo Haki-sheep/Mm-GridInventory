@@ -7,7 +7,7 @@ namespace MmInventory.Editor
   /// <summary>
   /// Editor 用占格物品
   /// </summary>
-  public sealed class EditorGridMockItem : IGridItem
+  public sealed class EditorGridMockItem : IItemRuntime
   {
     private static int s_NextColorIndex;
 
@@ -17,10 +17,17 @@ namespace MmInventory.Editor
     /// <summary> 调试色索引 </summary>
     public int ColorIndex { get; }
 
+    /// <summary> 模拟配表ID </summary>
+    public int ExcelItemId { get; }
+
     public string InstancedItemId { get; }
     public Vector2Int AnchorPos { get; private set; }
     public Vector2Int DataSize { get; private set; }
     public bool IsRotated { get; private set; }
+
+    public EItemStackType ItemStackType { get; set; }
+    public int MaxStackCount { get; set; } = 1;
+    public int CurrStackCount { get; set; } = 1;
 
     /// <summary>
     /// 创建模拟物品
@@ -29,6 +36,7 @@ namespace MmInventory.Editor
     {
       Label = string.IsNullOrEmpty(label) ? "Item" : label;
       DataSize = dataSize;
+      ExcelItemId = Label.GetHashCode();
       InstancedItemId = Guid.NewGuid().ToString("N");
       ColorIndex = s_NextColorIndex++;
     }
@@ -60,6 +68,7 @@ namespace MmInventory.Editor
       Label = string.IsNullOrEmpty(label) ? "Item" : label;
       DataSize = dataSize;
       IsRotated = isRotated;
+      ExcelItemId = Label.GetHashCode();
       InstancedItemId = string.IsNullOrEmpty(instanceId) ? Guid.NewGuid().ToString("N") : instanceId;
       ColorIndex = colorIndex;
       s_NextColorIndex = Mathf.Max(s_NextColorIndex, colorIndex + 1);
@@ -89,6 +98,18 @@ namespace MmInventory.Editor
       return new EditorGridMockItem(Label, DataSize)
       {
         IsRotated = IsRotated
+      };
+    }
+
+    /// <summary>
+    /// 拆出新堆
+    /// </summary>
+    IItemRuntime IItemRuntime.Clone(int stackCount)
+    {
+      return new EditorGridMockItem(Label, DataSize)
+      {
+        IsRotated = IsRotated,
+        CurrStackCount = stackCount
       };
     }
   }

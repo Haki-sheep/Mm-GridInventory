@@ -29,7 +29,7 @@ namespace MmInventory
             /// <param name="item">物品数据</param>
             /// <param name="anchorPos">锚点坐标</param>
             /// <returns>是否可放置</returns>
-            public bool CanPlace(IGridItem item, Vector2Int anchorPos)
+            public bool CanPlace(IItemRuntime item, Vector2Int anchorPos)
             {
                 // 检查锚点是否在背包范围内
                 if (!inventoryState.IsInside(anchorPos))
@@ -63,7 +63,7 @@ namespace MmInventory
             /// <param name="anchorPos">锚点坐标</param>
             /// <param name="itemData">物品数据</param>
             /// <returns>是否成功</returns>
-            public bool SetAt(Vector2Int anchorPos, IGridItem itemData)
+            public bool SetAt(Vector2Int anchorPos, IItemRuntime itemData)
             {
                 if (itemData is null || !CanPlace(itemData, anchorPos))
                     return false;
@@ -78,7 +78,7 @@ namespace MmInventory
             /// <param name="itemData">物品数据</param>
             /// <param name="anchorPos">可放置锚点</param>
             /// <returns>是否找到</returns>
-            public bool FindSetAtFirst(IGridItem itemData, out Vector2Int anchorPos)
+            public bool FindSetAtFirst(IItemRuntime itemData, out Vector2Int anchorPos)
             {
                 anchorPos = Vector2Int.zero;
 
@@ -108,7 +108,7 @@ namespace MmInventory
             /// <param name="itemData">物品数据</param>
             /// <param name="anchorPos">最终锚点</param>
             /// <returns>是否成功</returns>
-            public bool SetAtFirst(IGridItem itemData, out Vector2Int anchorPos)
+            public bool SetAtFirst(IItemRuntime itemData, out Vector2Int anchorPos)
             {
                 if (!FindSetAtFirst(itemData, out anchorPos)) return false;
                 return SetAt(anchorPos, itemData);
@@ -151,7 +151,7 @@ namespace MmInventory
             /// </summary>
             /// <param name="pos">格子坐标</param>
             /// <returns>物品数据</returns>
-            public IGridItem GetItemAt(Vector2Int pos)
+            public IItemRuntime GetItemAt(Vector2Int pos)
             {
                 // 检查位置是否在背包范围内
                 return inventoryState.IsInside(pos) ? 
@@ -163,7 +163,7 @@ namespace MmInventory
             /// </summary>
             /// <param name="pos">格子坐标</param>
             /// <returns>物品数据</returns>
-            public IGridItem GetItemByMask(Vector2Int pos)
+            public IItemRuntime GetItemByMask(Vector2Int pos)
             {
                 if (!inventoryState.IsInside(pos)) return null;
                 return inventoryState.occupancyOwnerArray[inventoryState.ToIndex(pos)];

@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: ConsumableItemBaseDataList
   m_EditorClassIdentifier: Assembly-CSharp::MmInventory.ItemBaseDataList
   itemDataList:
-  - itemId: 101
+  - excelItemId: 0
     name: "\u8C46\u5305\u5927\u5934\u7167"
     iconPath: 
     dataSize: {x: 1, y: 1}

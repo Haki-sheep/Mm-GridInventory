@@ -5,13 +5,13 @@ using UnityEngine;
 
 public class Test : MonoBehaviour
 {
-    public InventoryItemView item1X2A;
-    public InventoryItemView item1X2B;
-    public InventoryItemView item1x1A;
-    public InventoryItemView item1x1B;
-    public InventoryItemView item1x1C;
-    public InventoryItemView item2x2A;
-    internal void Init(GridMainContainerView gridMainContainerView,InventoryViewModel inventoryViewModel, Dictionary<string, InventoryItemView> itemViewDict)
+    public ItemView item1X2A;
+    public ItemView item1X2B;
+    public ItemView item1x1A;
+    public ItemView item1x1B;
+    public ItemView item1x1C;
+    public ItemView item2x2A;
+    internal void Init(GridMainContainerView gridMainContainerView,InventoryViewModel inventoryViewModel, Dictionary<string, ItemView> itemViewDict)
     {
         item1X2A.Init(gridMainContainerView.IGridAudioAndAnimation);
         item1X2B.Init(gridMainContainerView.IGridAudioAndAnimation);

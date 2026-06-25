@@ -1,18 +1,30 @@
 using UnityEngine;
 using UnityEngine.UI;
+
+/// <summary>
+/// 吸附框枚举
+/// </summary>
 public enum EFrameBoard
 {
+    // 正常
     Normal,
+    // 可以放置
     CanPlace,
+    // 可以交换
     CanPlaceSwap,
+    // 可以堆叠
     CanStack,
+    // 不可以放置
     CannotPlace,
+    // 隐藏
     Hidden,
 }
 
+/// <summary>
+/// 吸附框视图
+/// </summary>
 public class FrameBoardView : MonoBehaviour
 {  
-
     private Image frameBoard;
     private RectTransform frameBoardBackground;
     public Color NormalColor = new Color(1, 1, 1, 0.3f);
@@ -20,6 +32,7 @@ public class FrameBoardView : MonoBehaviour
     public Color CannotPlaceColor = Color.red;
     public Color CanPlaceSwapColor = Color.blue;
     public Color CanStackColor = Color.yellow;
+    
     void Start()
     {
         frameBoard = this.GetComponent<Image>();

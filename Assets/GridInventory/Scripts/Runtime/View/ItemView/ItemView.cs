@@ -7,9 +7,8 @@ namespace MmInventory
     /// <summary>
     /// 此脚本挂载于具体物品上 传递鼠标操作事件 
     /// </summary>
-    public class InventoryItemView : MonoBehaviour,
-                        IPointerEnterHandler, IPointerExitHandler, 
-                        IPointerDownHandler
+    public class ItemView : MonoBehaviour,
+                            IPointerEnterHandler, IPointerExitHandler, IPointerDownHandler
                         
     {
         [Header("组件")]
@@ -21,17 +20,21 @@ namespace MmInventory
         [SerializeField] private int itemId;
         public ItemRtData ItemData;
 
-        public event Action<InventoryItemView> OnPointerDownEvent;
-        public event Action<InventoryItemView> OnPointerEnterEvent;
-        public event Action<InventoryItemView> OnPointerExitEvent;
+        public event Action<ItemView> OnPointerDownEvent;
+        public event Action<ItemView> OnPointerEnterEvent;
+        public event Action<ItemView> OnPointerExitEvent;
 
+        /// <summary>
+        /// 初始化
+        /// </summary>
+        /// <param name="iGridAudioAndAnimation"></param>
         public void Init(IGridAudioAndAnimation iGridAudioAndAnimation)
         {
             if (ItemData is not null) return;
 
             // 数据
-            var persistenceItemData = ItemRtDataMgr.Instance?.GetItemData<IItemRootData>(itemId);
-            ItemData = new ItemRtData(persistenceItemData.ItemId, persistenceItemData.DataSize, 1, false, 0);
+            var excelItemData = ItemRtDataMgr.Instance?.GetItemData<IItemBaseData>(itemId);
+            ItemData = ItemRtData.FromConfig(excelItemData);
 
             // 组件
             ItemRectTransform = this.transform as RectTransform;

@@ -27,7 +27,7 @@ namespace MmInventory
         [Header("GridView系组件")]
         private InventoryViewModel inventoryViewModel;
         [SerializeField] private FrameBoardView frameBoardView;
-        [SerializeField] private InventoryItemView[] itemViews;
+        [SerializeField] private ItemView[] itemViews;
 
         [Header("Canvas")]
         [SerializeField] private Canvas canvas;
@@ -41,7 +41,7 @@ namespace MmInventory
         public TestAudioAndAnima IGridAudioAndAnimation;
 
         [Header("表现层物品管理容器")]
-        private Dictionary<string, InventoryItemView> itemViewDict = new();
+        private Dictionary<string, ItemView> itemViewDict = new();
 
         [Header("测试信息")]
          public Test test;
@@ -83,7 +83,7 @@ namespace MmInventory
             scrollRect = GetComponentInParent<ScrollRect>();
 
 
-            itemViews = itemContent.GetComponentsInChildren<InventoryItemView>();
+            itemViews = itemContent.GetComponentsInChildren<ItemView>();
             foreach (var itemView in itemViews)
             {
                 AddItemEventListener(itemView);

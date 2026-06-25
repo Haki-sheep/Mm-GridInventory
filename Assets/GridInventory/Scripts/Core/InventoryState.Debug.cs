@@ -21,10 +21,10 @@ namespace MmInventory
       public Vector2Int Pos;
 
       /// <summary> 占用者 </summary>
-      public IGridItem OccupancyOwner;
+      public IItemRuntime OccupancyOwner;
 
       /// <summary> 锚点物品 </summary>
-      public IGridItem AnchorItem;
+      public IItemRuntime AnchorItem;
 
       /// <summary> 是否被占用 </summary>
       public bool IsOccupied => OccupancyOwner != null;
@@ -53,9 +53,9 @@ namespace MmInventory
     /// <summary>
     /// 获取所有锚点物品
     /// </summary>
-    public List<IGridItem> GetAllAnchorItems()
+    public List<IItemRuntime> GetAllAnchorItems()
     {
-      var itemList = new List<IGridItem>();
+      var itemList = new List<IItemRuntime>();
       var idHashList = new HashSet<string>();
       for (int i = 0; i < itemAnchorArray.Length; i++)
       {
@@ -66,5 +66,5 @@ namespace MmInventory
       return itemList;
     }
   }
+  #endif
 }
-#endif

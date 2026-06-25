@@ -10,9 +10,9 @@ namespace MmInventory
             /// <summary> 背包状态引用 </summary>
             private readonly InventoryState inventoryState;
             /// <summary> 临时覆盖物品集合 </summary>
-            private readonly HashSet<IGridItem> tempLittleItemHashList = new();
+            private readonly HashSet<IItemRuntime> tempLittleItemHashList = new();
             /// <summary> 试算用临时列表 </summary>
-            private readonly List<IGridItem> simulateOldItemList = new();
+            private readonly List<IItemRuntime> simulateOldItemList = new();
 
             /// <summary>
             /// 初始化交换服务
@@ -31,8 +31,8 @@ namespace MmInventory
             /// <param name="bItemData">目标物品</param>
             /// <param name="placeAnchorPos">放置锚点</param>
             /// <returns>是否可交换</returns>
-            public bool CanSwap(IGridItem aItemData,
-                                IGridItem bItemData,
+            public bool CanSwap(IItemRuntime aItemData,
+                                IItemRuntime bItemData,
                                 Vector2Int placeAnchorPos) =>
             SimulateSwap(aItemData, bItemData, placeAnchorPos);
 
@@ -44,9 +44,9 @@ namespace MmInventory
             /// <param name="oldItemDataList">被覆盖旧物品列表</param>
             /// <param name="placeAnchorPos">放置锚点</param>
             /// <returns>是否成功</returns>
-            public bool TrySwap(IGridItem aItemData,
-                                IGridItem bItemData,
-                                List<IGridItem> oldItemDataList,
+            public bool TrySwap(IItemRuntime aItemData,
+                                IItemRuntime bItemData,
+                                List<IItemRuntime> oldItemDataList,
                                 Vector2Int placeAnchorPos) =>
             CommitSwap(aItemData, bItemData, placeAnchorPos, oldItemDataList);
             #endregion
@@ -61,8 +61,8 @@ namespace MmInventory
             /// <param name="bItemData">目标物品</param>
             /// <param name="placeAnchorPos">放置锚点</param>
             /// <returns>是否可以交换</returns>
-            private bool SimulateSwap(IGridItem aItemData,
-                                      IGridItem bItemData,
+            private bool SimulateSwap(IItemRuntime aItemData,
+                                      IItemRuntime bItemData,
                                       Vector2Int placeAnchorPos)
             {
                 // 获取交换计划
@@ -74,8 +74,8 @@ namespace MmInventory
                 int bIndex = inventoryState.ToIndex(plan.bItemData.AnchorPos);
 
                 // 克隆物品数组和占用信息
-                var simAnchorArray = (IGridItem[])inventoryState.itemAnchorArray.Clone();
-                var simOccupancyArray = (IGridItem[])inventoryState.occupancyOwnerArray.Clone();
+                var simAnchorArray = (IItemRuntime[])inventoryState.itemAnchorArray.Clone();
+                var simOccupancyArray = (IItemRuntime[])inventoryState.occupancyOwnerArray.Clone();
                 // 真实物品数组和占用信息
                 var realAnchorArray = inventoryState.itemAnchorArray;
                 // 真实占用信息
@@ -106,10 +106,10 @@ namespace MmInventory
             /// <param name="placeAnchorPos">放置锚点</param>
             /// <param name="oldItemDataList">被覆盖旧物品列表</param>
             /// <returns>是否成功</returns>
-            private bool CommitSwap(IGridItem aItemData,
-                                    IGridItem bItemData,
+            private bool CommitSwap(IItemRuntime aItemData,
+                                    IItemRuntime bItemData,
                                     Vector2Int placeAnchorPos,
-                                    List<IGridItem> oldItemDataList)
+                                    List<IItemRuntime> oldItemDataList)
             {
                 // 获取交换计划
                 var plan = GetSwapPlan(aItemData, bItemData);
@@ -121,8 +121,8 @@ namespace MmInventory
                 int bIndex = inventoryState.ToIndex(plan.bItemData.AnchorPos);
 
                 // 备份物品数组和占用信息
-                var backupItemArray = (IGridItem[])inventoryState.itemAnchorArray.Clone();
-                var backupOccupancyOwner = (IGridItem[])inventoryState.occupancyOwnerArray.Clone();
+                var backupItemArray = (IItemRuntime[])inventoryState.itemAnchorArray.Clone();
+                var backupOccupancyOwner = (IItemRuntime[])inventoryState.occupancyOwnerArray.Clone();
 
                 // 是否需要回滚标记
                 bool shouldRollback = true;
@@ -164,7 +164,7 @@ namespace MmInventory
                                         int aIndex,
                                         int bIndex,
                                         Vector2Int placeAnchorPos,
-                                        List<IGridItem> oldItemDataList)
+                                        List<IItemRuntime> oldItemDataList)
             {
                 oldItemDataList.Clear();
                 switch (plan.SwapState)
@@ -193,9 +193,9 @@ namespace MmInventory
             /// <param name="placeAnchorPos">放置锚点</param>
             /// <param name="swapTargetItem">交换目标</param>
             /// <returns>是否找到目标</returns>
-            public bool TryGetSwapTargetItem(IGridItem dragItemData,
+            public bool TryGetSwapTargetItem(IItemRuntime dragItemData,
                                              Vector2Int placeAnchorPos,
-                                             out IGridItem swapTargetItem)
+                                             out IItemRuntime swapTargetItem)
             {
                 swapTargetItem = null;
                 if (dragItemData is null) return false;
@@ -203,7 +203,7 @@ namespace MmInventory
                 var dragSize = dragItemData.DataSize;
                 if (dragSize.x <= 0 || dragSize.y <= 0) return false;
 
-                var overlapItemHashList = new HashSet<IGridItem>();
+                var overlapItemHashList = new HashSet<IItemRuntime>();
                 for (int x = 0; x < dragSize.x; x++)
                 {
                     for (int y = 0; y < dragSize.y; y++)
@@ -220,7 +220,7 @@ namespace MmInventory
 
                 if (overlapItemHashList.Count == 0) return false;
 
-                IGridItem fullCoveredItem = null;
+                IItemRuntime fullCoveredItem = null;
                 foreach (var overlapItem in overlapItemHashList)
                 {
                     var swapPlan = GetSwapPlan(dragItemData, overlapItem);
@@ -316,7 +316,7 @@ namespace MmInventory
             /// <returns>是否成功</returns>
             public bool SwapLargeToSmallItem(SwapPlan plan,
                                              Vector2Int placeAnchorPos,
-                                             List<IGridItem> oldItemDataList)
+                                             List<IItemRuntime> oldItemDataList)
             {
                 tempLittleItemHashList.Clear();
                 
@@ -421,7 +421,7 @@ namespace MmInventory
             /// <param name="aItemData">拖动物品</param>
             /// <param name="bItemData">目标物品</param>
             /// <returns>交换计划</returns>
-            private SwapPlan GetSwapPlan(IGridItem aItemData, IGridItem bItemData)
+            private SwapPlan GetSwapPlan(IItemRuntime aItemData, IItemRuntime bItemData)
             {
                 if (aItemData is null || bItemData is null)
                     return new SwapPlan { SwapState = ESwapState.CanNotSwap };
