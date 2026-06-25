@@ -42,12 +42,12 @@ namespace MmInventory
 
 
     /// <summary>
-    /// 此类的职责是 接收View的请求 调用Model的算法 返回操作结果
-    /// 因为Mdoel只是负责算数据上这块能不能放
-    /// 但是View需要知道操作是否成功 并且做出对应的表现
+    /// 此类的职责是 充当算法层与View层之间的桥梁
+    /// 算法层只是负责算数据 返回bool 和 位置
+    /// 但View层需要知道操作是否成功 并且做出对应的表现
+    /// 所以二者之间需要一个桥梁来传递信息,不然直接让View层调用算法层会显得很乱(真的很乱别问我怎么知道的)
     /// </summary>
-
-    public class InventoryViewModel
+    public class GridInventoryService
     {
         private InventoryState inventoryState;
 

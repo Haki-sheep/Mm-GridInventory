@@ -5163,8 +5163,6 @@ MonoBehaviour:
   canvas: {fileID: 1091831167}
   CellPrefab: {fileID: 3177196617155781839, guid: 1e82f8c07f88ff44195453d71348a4ac, type: 3}
   gridRowAndCloumns: {x: 6, y: 8}
-  IGridAudioAndAnimation: {fileID: 1310149204}
-  test: {fileID: 1310149202}
 --- !u!1 &819414269
 GameObject:
   m_ObjectHideFlags: 0
@@ -8708,6 +8706,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7c81055a45453ed469f2f4402ab55034, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MmInventory.ItemDataMgr
+  listSo: {fileID: 11400000, guid: 9812c3730764ede4196f2c174988dc3b, type: 2}
 --- !u!4 &1362466784
 Transform:
   m_ObjectHideFlags: 0

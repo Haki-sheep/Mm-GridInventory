@@ -11,6 +11,25 @@ namespace MmInventory.Editor
     public static class ItemBaseDataListSoEditorUtil
     {
         /// <summary>
+        /// 确保总库资产存在
+        /// </summary>
+        public static ItemBaseDataListSo EnsureListAsset()
+        {
+            var listSo = AssetDatabase.LoadAssetAtPath<ItemBaseDataListSo>(ItemBaseDataListSo.DefaultAssetPath);
+            if (listSo != null)
+                return listSo;
+
+            string folder = Path.GetDirectoryName(ItemBaseDataListSo.DefaultAssetPath);
+            if (!string.IsNullOrEmpty(folder) && !AssetDatabase.IsValidFolder(folder))
+                CreateFolderRecursive(folder);
+
+            listSo = ScriptableObject.CreateInstance<ItemBaseDataListSo>();
+            AssetDatabase.CreateAsset(listSo, ItemBaseDataListSo.DefaultAssetPath);
+            AssetDatabase.SaveAssets();
+            return listSo;
+        }
+
+        /// <summary>
         /// 在指定目录创建 SO
         /// </summary>
         public static ItemBaseDataListSo CreateAsset(string folderPath, string assetName)
@@ -21,9 +40,7 @@ namespace MmInventory.Editor
                 safeName = "ItemBaseDataList";
 
             if (!AssetDatabase.IsValidFolder(safeFolder))
-            {
                 CreateFolderRecursive(safeFolder);
-            }
 
             string assetPath = $"{safeFolder}/{safeName}.asset";
             assetPath = AssetDatabase.GenerateUniqueAssetPath(assetPath);
@@ -82,7 +99,10 @@ namespace MmInventory.Editor
             return new string(chars);
         }
 
-        private static void CreateFolderRecursive(string assetFolder)
+        /// <summary>
+        /// 递归创建资源目录
+        /// </summary>
+        public static void CreateFolderRecursive(string assetFolder)
         {
             string[] partList = assetFolder.Split('/');
             if (partList.Length < 2 || partList[0] != "Assets") return;

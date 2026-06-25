@@ -1,7 +1,5 @@
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.AddressableAssets;
-using UnityEngine.ResourceManagement.AsyncOperations;
 
 namespace MmInventory
 {
@@ -9,6 +7,10 @@ namespace MmInventory
     {
         public static ItemRtDataMgr Instance { get; private set; }
 
+        [SerializeField]
+        private ItemBaseDataListSo listSo;
+
+        /// <summary> 物品数据字典 key物品ExcelID value物品配置表数据 </summary>
         private Dictionary<int, IItemBaseData> itemDataDict = new();
         public IReadOnlyDictionary<int, IItemBaseData> ItemDataDict => itemDataDict;
 
@@ -23,29 +25,23 @@ namespace MmInventory
         /// </summary>
         public void RegisterItemData()
         {
-            const string configLabel = "ConfigSo";
-            var handle = Addressables.LoadAssetsAsync<ItemBaseDataListSo>(configLabel, null);
-            handle.WaitForCompletion();
+            if (listSo == null)
+                listSo = ItemBaseDataListSo.Instance;
 
-            if (handle.Status != AsyncOperationStatus.Succeeded)
+            itemDataDict.Clear();
+            if (listSo == null)
             {
-                Debug.LogError("加载物品配置失败：" + handle.OperationException);
-                Addressables.Release(handle);
+                Debug.LogError("ItemBaseDataListSo 未配置");
                 return;
             }
 
-            itemDataDict.Clear();
-            IList<ItemBaseDataListSo> dataListList = handle.Result;
-            Debug.Log($"读取到 {dataListList.Count} 个物品配置表");
-
-            for (int i = 0; i < dataListList.Count; i++)
+            var itemList = listSo.ItemDataList;
+            for (int i = 0; i < itemList.Count; i++)
             {
-                var dataList = dataListList[i];
-                foreach (var item in dataList.ItemDataList)
-                    itemDataDict[item.ExcelItemId] = item;
+                var item = itemList[i];
+                itemDataDict[item.ExcelItemId] = item;
             }
 
-            Addressables.Release(handle);
             Debug.Log($"物品数据注册完成 总计加载 {itemDataDict.Count} 条物品");
         }
 

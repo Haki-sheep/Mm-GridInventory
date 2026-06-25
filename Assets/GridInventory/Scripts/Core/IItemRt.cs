@@ -8,6 +8,9 @@ namespace MmInventory
     /// </summary>
     public interface IItemRuntime
     {
+        /// <summary> 背包ID </summary>
+        int ContainerId { get; }
+
         /// <summary> 配表物品ID </summary>
         int ExcelItemId { get; }
 

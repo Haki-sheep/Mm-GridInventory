@@ -7,6 +7,7 @@ namespace MmInventory
 {
     /// <summary>
     /// 单件物品存档
+    /// 这个类和ItemRtData是一一对应的
     /// </summary>
     public class ItemSaveData
     {
@@ -51,11 +52,9 @@ namespace MmInventory
                 hasStackCount = item.CurrStackCount,
                 maxStackCount = item.MaxStackCount,
                 itemStackType = item.ItemStackType,
-                rotated = item.IsRotated
+                rotated = item.IsRotated,
+                containerId = item.ContainerId
             };
-
-            if (item is ItemRtData rtData)
-                save.containerId = rtData.ContainerId;
 
             return save;
         }

@@ -139,7 +139,7 @@ namespace MmInventory
         {
             if (frameBoardView is null) return;
 
-            var state = inventoryViewModel.JudgeFrameBoardState(oldItemData,
+            var state = gridInventoryService.JudgeFrameBoardState(oldItemData,
                                                                 newItemData,
                                                                 dragPreviewAnchorPos);
 

@@ -12,7 +12,7 @@ namespace MmInventory.Editor
     /// </summary>
     public static class EItemTypeCodeGenerator
     {
-        public const string DefaultFilePath = "Assets/GridInventory/Scripts/Data/EItemType.cs";
+        public const string DefaultFilePath = "Assets/GridInventory/Scripts/Data/TableData/EItemType.cs";
 
         private static readonly Regex EnumTypeRegex = new(@"enum\s+([A-Za-z_][A-Za-z0-9_]*)");
         private static readonly Regex EnumMemberRegex = new(@"^\s*([A-Za-z_][A-Za-z0-9_]*)\s*,?\s*$");

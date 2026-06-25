@@ -14,31 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.Addressables.Editor::UnityEditor.AddressableAssets.Settings.AddressableAssetGroup
   m_GroupName: Items
   m_GUID: 76de7a9214ac61043b3c8a7af4604195
-  m_SerializeEntries:
-  - m_GUID: 220883e44abd5e243a3ad98d305a8497
-    m_Address: ConsumableItemBaseDataList
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - ConfigSo
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 51be38218b811604bad6da23c9420599
-    m_Address: MaterialItemBaseDataList
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - ConfigSo
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: ae29ea85e2fca6143928e006a0455caa
-    m_Address: EquipmentItemBaseDataList
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - ConfigSo
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: e3f7723df19e05a479e1e9a89430432c
-    m_Address: ContainerItemBaseDataList
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - ConfigSo
-    FlaggedDuringContentUpdateRestriction: 0
+  m_SerializeEntries: []
   m_ReadOnly: 0
   m_Settings: {fileID: 11400000, guid: 897d9d622d8a54743b4f0e76e5d705e6, type: 2}
   m_SchemaSet:

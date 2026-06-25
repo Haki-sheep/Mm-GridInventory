@@ -66,7 +66,7 @@
   <ItemGroup>
     <Compile Include="Assets\GridInventory\Scripts\Runtime\View\GridContainer\GridCellView.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Runtime\View\FrameBorad\FrameBoardView.cs" />
-    <Compile Include="Assets\GridInventory\Samples\1.SampleCreat&amp;ReplaceGrid\Test.cs" />
+    <Compile Include="Assets\GridInventory\Scripts\Data\TableData\ItemViewPrefabListSo.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Core\InventoryState.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Runtime\View\ItemView\ItemView.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Data\TableData\IItemBaseData.cs" />
@@ -76,15 +76,14 @@
     <Compile Include="Assets\GridInventory\Scripts\Data\TableData\ItemBaseDataListSo.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Data\TableData\EItemType.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Runtime\View\GridContainer\GridMainContainerView.cs" />
-    <Compile Include="Assets\GridInventory\Scripts\Runtime\Logic\InventoryViewModel.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Data\TableData\ItemBaseData.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Core\InventoryState.SwapService.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Core\InventoryState.PlacementService.cs" />
     <Compile Include="Assets\TutorialInfo\Scripts\Readme.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Core\InventoryState.PersisService.cs" />
-    <Compile Include="Assets\GridInventory\Samples\1.SampleCreat&amp;ReplaceGrid\TestAudioAndAnima.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Core\IItemRt.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Runtime\View\GridContainer\GridMainContainerView.Operate.cs" />
+    <Compile Include="Assets\GridInventory\Scripts\Runtime\Logic\GridInventoryService.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Core\InventoryState.StackableService.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Runtime\View\GridContainer\GridMainContainerView.Tools.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Runtime\Logic\RuntimeData\ItemRtDataMgr.cs" />

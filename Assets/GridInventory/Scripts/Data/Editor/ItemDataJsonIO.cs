@@ -52,22 +52,24 @@ namespace MmInventory.Editor
 
             var itemList = listSo.ItemDataList;
             for (int i = 0; i < itemList.Count; i++)
-            {
-                var item = itemList[i];
-                exportFile.items.Add(new ItemDataJsonEntry
-                {
-                    excelItemId = item.ExcelItemId,
-                    name = item.Name,
-                    iconPath = item.IconPath,
-                    dataSizeX = item.DataSize.x,
-                    dataSizeY = item.DataSize.y,
-                    itemType = item.ItemType.ToString(),
-                    itemStackType = item.ItemStackType.ToString(),
-                    maxStackCount = item.MaxStackCount
-                });
-            }
+                AppendItemEntry(exportFile, itemList[i]);
 
             return exportFile;
+        }
+
+        private static void AppendItemEntry(ItemDataExportFile exportFile, IItemBaseData item)
+        {
+            exportFile.items.Add(new ItemDataJsonEntry
+            {
+                excelItemId = item.ExcelItemId,
+                name = item.Name,
+                iconPath = item.IconPath,
+                dataSizeX = item.DataSize.x,
+                dataSizeY = item.DataSize.y,
+                itemType = item.ItemType.ToString(),
+                itemStackType = item.ItemStackType.ToString(),
+                maxStackCount = item.MaxStackCount
+            });
         }
 
         /// <summary>

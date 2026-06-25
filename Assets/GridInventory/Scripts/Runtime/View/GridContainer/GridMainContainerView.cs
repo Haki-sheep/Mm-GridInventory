@@ -25,7 +25,7 @@ namespace MmInventory
         [SerializeField] private RectTransform containertRectTransform;
 
         [Header("GridView系组件")]
-        private InventoryViewModel inventoryViewModel;
+        private GridInventoryService gridInventoryService;
         [SerializeField] private FrameBoardView frameBoardView;
         [SerializeField] private ItemView[] itemViews;
 
@@ -38,14 +38,10 @@ namespace MmInventory
         public const int gridSize = 100;
         public const int spacing = 0;
         public Vector2Int gridRowAndCloumns = Vector2Int.zero;
-        public TestAudioAndAnima IGridAudioAndAnimation;
+        public IGridAudioAndAnimation IGridAudioAndAnimation;
 
         [Header("表现层物品管理容器")]
         private Dictionary<string, ItemView> itemViewDict = new();
-
-        [Header("测试信息")]
-         public Test test;
-
 
 
 
@@ -76,8 +72,8 @@ namespace MmInventory
             }
             gridCellViews = gridContent.GetComponentsInChildren<GridCellView>();
 
-            inventoryViewModel = new InventoryViewModel();
-            inventoryViewModel.Init(gridRowAndCloumns);
+            gridInventoryService = new GridInventoryService();
+            gridInventoryService.Init(gridRowAndCloumns);
 
             // ScrollRect系组件初始化
             scrollRect = GetComponentInParent<ScrollRect>();
@@ -91,7 +87,7 @@ namespace MmInventory
 
 
             // ----------------------测试---------------------------
-            test.Init(this,inventoryViewModel,itemViewDict);
+            // test.Init(this,gridInventoryService,itemViewDict);
        
         }
 

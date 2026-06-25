@@ -19,6 +19,7 @@ namespace MmInventory.Editor
 
     /// <summary> 模拟配表ID </summary>
     public int ExcelItemId { get; }
+    public int ContainerId { get; set; }
 
     public string InstancedItemId { get; }
     public Vector2Int AnchorPos { get; private set; }

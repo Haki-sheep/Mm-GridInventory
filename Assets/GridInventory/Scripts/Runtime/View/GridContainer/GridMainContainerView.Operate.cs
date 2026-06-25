@@ -99,7 +99,7 @@ namespace MmInventory
             // 抓取相对偏移 = 鼠标按下时所在锚点 - 物品起始锚点
             dragStartOffset = mouseOnGridPos - dragStartAnchorPos;
 
-            if (!inventoryViewModel.TryRemoveItem(dragStartAnchorPos).IsSuccess) return;
+            if (!gridInventoryService.TryRemoveItem(dragStartAnchorPos).IsSuccess) return;
 
             // frameBoard 永远最高，拖拽物次高
             draggingItemRectTransform.SetAsLastSibling();
@@ -146,7 +146,7 @@ namespace MmInventory
                 return;
 
             // 改动
-            var newItemData = inventoryViewModel.GetItemAt(dragPreviewAnchorPos);
+            var newItemData = gridInventoryService.GetItemAt(dragPreviewAnchorPos);
 
             // 吸附框
             var framePos = GetFrameBoardTransform(draggingItem.ItemData, dragPreviewAnchorPos);
@@ -180,7 +180,7 @@ namespace MmInventory
             else
                 dragPreviewAnchorPos = GetPreviewAnchorPos(mouseOnGridPos, dragStartOffset);
 
-            var result = inventoryViewModel.TryPlaceItem(draggingItem.ItemData,
+            var result = gridInventoryService.TryPlaceItem(draggingItem.ItemData,
                                                          dragStartAnchorPos,
                                                          dragPreviewAnchorPos);
 
@@ -278,7 +278,7 @@ namespace MmInventory
             {
                 if (draggingItem is null || draggingItemRectTransform is null) return;
 
-                var result = inventoryViewModel.TryRotateItem(draggingItem.ItemData);
+                var result = gridInventoryService.TryRotateItem(draggingItem.ItemData);
                 if (!result.IsSuccess) return;
 
                 var itemData = result.OldItemData;
@@ -293,7 +293,7 @@ namespace MmInventory
                 var size = GetItemUISize(itemData.DataSize);
 
                 SetFrameBoardState(itemData,
-                                   inventoryViewModel.GetItemAt(dragPreviewAnchorPos),
+                                   gridInventoryService.GetItemAt(dragPreviewAnchorPos),
                                    dragPreviewAnchorPos,
                                    pos,
                                    size);

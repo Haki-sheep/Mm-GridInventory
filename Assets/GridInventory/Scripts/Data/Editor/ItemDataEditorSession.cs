@@ -1,6 +1,4 @@
 #if UNITY_EDITOR
-using System;
-using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
@@ -13,11 +11,107 @@ namespace MmInventory.Editor
     {
         private const string EnumFilePathKey = "MmInventory.ItemDataEditor.EnumFilePath";
         private const string CreateSoFolderKey = "MmInventory.ItemDataEditor.CreateSoFolder";
-        private const string ManagedSoGuidsKey = "MmInventory.ItemDataEditor.ManagedSoGuids";
-        private const string ActiveSoGuidKey = "MmInventory.ItemDataEditor.ActiveSoGuid";
+        private const string ListSoGuidKey = "MmInventory.ItemDataEditor.ListSoGuid";
+        private const string LegacyRegistrySoGuidKey = "MmInventory.ItemDataEditor.RegistrySoGuid";
+        private const string ViewPrefabListSoGuidKey = "MmInventory.ItemDataEditor.ViewPrefabListSoGuid";
+        private const string LegacyViewPrefabRegistrySoGuidKey = "MmInventory.ItemDataEditor.ViewPrefabRegistrySoGuid";
 
-        public const string DefaultEnumFilePath = "Assets/GridInventory/Scripts/Data/EItemType.cs";
+        public const string DefaultEnumFilePath = "Assets/GridInventory/Scripts/Data/TableData/EItemType.cs";
         public const string DefaultCreateSoFolder = "Assets/GridInventory/SoDatas";
+
+        /// <summary>
+        /// 总库 SO 的 GUID
+        /// </summary>
+        public static string ListSoGuid
+        {
+            get => EditorPrefs.GetString(ListSoGuidKey, string.Empty);
+            set => EditorPrefs.SetString(ListSoGuidKey, value);
+        }
+
+        /// <summary>
+        /// 加载总库 SO
+        /// </summary>
+        public static ItemBaseDataListSo LoadListSo()
+        {
+            string guid = ListSoGuid;
+            if (string.IsNullOrEmpty(guid))
+                guid = EditorPrefs.GetString(LegacyRegistrySoGuidKey, string.Empty);
+
+            if (!string.IsNullOrEmpty(guid))
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                var so = AssetDatabase.LoadAssetAtPath<ItemBaseDataListSo>(path);
+                if (so != null)
+                {
+                    SaveListSo(so);
+                    return so;
+                }
+            }
+
+            return ItemBaseDataListSoEditorUtil.EnsureListAsset();
+        }
+
+        /// <summary>
+        /// 保存总库 SO 引用
+        /// </summary>
+        public static void SaveListSo(ItemBaseDataListSo listSo)
+        {
+            if (listSo == null)
+            {
+                ListSoGuid = string.Empty;
+                return;
+            }
+
+            string path = AssetDatabase.GetAssetPath(listSo);
+            ListSoGuid = AssetDatabase.AssetPathToGUID(path);
+        }
+
+        /// <summary>
+        /// 视图预制体列表 SO 的 GUID
+        /// </summary>
+        public static string ViewPrefabListSoGuid
+        {
+            get => EditorPrefs.GetString(ViewPrefabListSoGuidKey, string.Empty);
+            set => EditorPrefs.SetString(ViewPrefabListSoGuidKey, value);
+        }
+
+        /// <summary>
+        /// 加载视图预制体列表 SO
+        /// </summary>
+        public static ItemViewPrefabListSo LoadViewPrefabListSo()
+        {
+            string guid = ViewPrefabListSoGuid;
+            if (string.IsNullOrEmpty(guid))
+                guid = EditorPrefs.GetString(LegacyViewPrefabRegistrySoGuidKey, string.Empty);
+
+            if (!string.IsNullOrEmpty(guid))
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                var so = AssetDatabase.LoadAssetAtPath<ItemViewPrefabListSo>(path);
+                if (so != null)
+                {
+                    SaveViewPrefabListSo(so);
+                    return so;
+                }
+            }
+
+            return ItemViewPrefabListSoEditorUtil.EnsureListAsset();
+        }
+
+        /// <summary>
+        /// 保存视图预制体列表 SO 引用
+        /// </summary>
+        public static void SaveViewPrefabListSo(ItemViewPrefabListSo listSo)
+        {
+            if (listSo == null)
+            {
+                ViewPrefabListSoGuid = string.Empty;
+                return;
+            }
+
+            string path = AssetDatabase.GetAssetPath(listSo);
+            ViewPrefabListSoGuid = AssetDatabase.AssetPathToGUID(path);
+        }
 
         /// <summary>
         /// 枚举脚本路径
@@ -35,83 +129,6 @@ namespace MmInventory.Editor
         {
             get => EditorPrefs.GetString(CreateSoFolderKey, DefaultCreateSoFolder);
             set => EditorPrefs.SetString(CreateSoFolderKey, value);
-        }
-
-        /// <summary>
-        /// 当前选中 SO 的 GUID
-        /// </summary>
-        public static string ActiveSoGuid
-        {
-            get => EditorPrefs.GetString(ActiveSoGuidKey, string.Empty);
-            set => EditorPrefs.SetString(ActiveSoGuidKey, value);
-        }
-
-        /// <summary>
-        /// 读取已管理的 SO 列表
-        /// </summary>
-        public static List<ItemBaseDataListSo> LoadManagedSoList()
-        {
-            var soList = new List<ItemBaseDataListSo>();
-            string raw = EditorPrefs.GetString(ManagedSoGuidsKey, string.Empty);
-            if (string.IsNullOrEmpty(raw)) return soList;
-
-            string[] guidList = raw.Split('|');
-            for (int i = 0; i < guidList.Length; i++)
-            {
-                string guid = guidList[i];
-                if (string.IsNullOrEmpty(guid)) continue;
-
-                string assetPath = AssetDatabase.GUIDToAssetPath(guid);
-                if (string.IsNullOrEmpty(assetPath)) continue;
-
-                var so = AssetDatabase.LoadAssetAtPath<ItemBaseDataListSo>(assetPath);
-                if (so != null)
-                    soList.Add(so);
-            }
-
-            return soList;
-        }
-
-        /// <summary>
-        /// 保存已管理的 SO 列表
-        /// </summary>
-        public static void SaveManagedSoList(IReadOnlyList<ItemBaseDataListSo> soList)
-        {
-            if (soList == null || soList.Count == 0)
-            {
-                EditorPrefs.SetString(ManagedSoGuidsKey, string.Empty);
-                return;
-            }
-
-            var guidList = new List<string>();
-            for (int i = 0; i < soList.Count; i++)
-            {
-                var so = soList[i];
-                if (so == null) continue;
-
-                string path = AssetDatabase.GetAssetPath(so);
-                if (string.IsNullOrEmpty(path)) continue;
-
-                string guid = AssetDatabase.AssetPathToGUID(path);
-                if (!string.IsNullOrEmpty(guid))
-                    guidList.Add(guid);
-            }
-
-            EditorPrefs.SetString(ManagedSoGuidsKey, string.Join("|", guidList));
-        }
-
-        /// <summary>
-        /// 根据 GUID 加载 SO
-        /// </summary>
-        public static ItemBaseDataListSo LoadActiveSo()
-        {
-            string guid = ActiveSoGuid;
-            if (string.IsNullOrEmpty(guid)) return null;
-
-            string path = AssetDatabase.GUIDToAssetPath(guid);
-            if (string.IsNullOrEmpty(path)) return null;
-
-            return AssetDatabase.LoadAssetAtPath<ItemBaseDataListSo>(path);
         }
     }
 }
