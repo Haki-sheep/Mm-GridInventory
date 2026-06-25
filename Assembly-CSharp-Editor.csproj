@@ -65,6 +65,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets\TutorialInfo\Scripts\Editor\ReadmeEditor.cs" />
+    <Compile Include="Assets\GridInventory\Scripts\Core\Editor\EditorGridMockItem.cs" />
+    <Compile Include="Assets\GridInventory\Scripts\Core\Editor\GridInventoryDebugWindow.cs" />
+    <Compile Include="Assets\GridInventory\Scripts\Core\Editor\GridInventoryDebugSession.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="UnityEngine">
