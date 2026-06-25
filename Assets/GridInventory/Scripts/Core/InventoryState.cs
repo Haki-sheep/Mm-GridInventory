@@ -27,8 +27,8 @@ namespace MmInventory
     /// </summary>
     public struct SwapPlan
     {
-        public ItemRtData aItemData;
-        public ItemRtData bItemData;
+        public IGridItem aItemData;
+        public IGridItem bItemData;
         public ESwapState SwapState;
     }
 
@@ -41,10 +41,10 @@ namespace MmInventory
         private readonly Vector2Int gridInventorySize;
 
         /// <summary>锚点数组 运行时记录每一个物品的锚点在哪里</summary>
-        private ItemRtData[] itemAnchorArray;
+        private IGridItem[] itemAnchorArray;
 
         /// <summary>物品的全部占用格子信息</summary>
-        private ItemRtData[] occupancyOwnerArray;
+        private IGridItem[] occupancyOwnerArray;
 
         /// <summary> 交换服务 </summary>
         private readonly InventorySwapService inventorySwapService;
@@ -60,8 +60,8 @@ namespace MmInventory
         {
             this.gridInventorySize = gridInventorySize;
             int totalCount = gridInventorySize.x * gridInventorySize.y;
-            itemAnchorArray = new ItemRtData[totalCount];
-            occupancyOwnerArray = new ItemRtData[totalCount];
+            itemAnchorArray = new IGridItem[totalCount];
+            occupancyOwnerArray = new IGridItem[totalCount];
             inventorySwapService = new InventorySwapService(this);
             inventoryPlacementService = new InventoryPlacementService(this);
         }
@@ -88,7 +88,7 @@ namespace MmInventory
         /// <param name="item">物品</param>
         /// <param name="anchorPos">锚点</param>
         /// <param name="occupied">是否占用</param>
-        private void WriteOccupancy(ItemRtData item,
+        private void WriteOccupancy(IGridItem item,
                                     Vector2Int anchorPos,
                                     bool occupied)
         {
@@ -123,7 +123,7 @@ namespace MmInventory
         /// </summary>
         /// <param name="item">物品</param>
         /// <param name="anchorPos">锚点</param>
-        private void SetItemData(ItemRtData item, Vector2Int anchorPos)
+        private void SetItemData(IGridItem item, Vector2Int anchorPos)
         {
             itemAnchorArray[ToIndex(anchorPos)] = item;
             WriteOccupancy(item, anchorPos, true);
@@ -175,7 +175,7 @@ namespace MmInventory
         /// <summary>
         /// 放置判定
         /// </summary>
-        public bool CanPlace(ItemRtData item, Vector2Int anchorPos) =>
+        public bool CanPlace(IGridItem item, Vector2Int anchorPos) =>
         inventoryPlacementService.CanPlace(item, anchorPos);
 
         /// <summary>
@@ -183,7 +183,7 @@ namespace MmInventory
         /// </summary>
         /// <param name="anchorPos"> 锚点坐标 </param>
         /// <param name="itemData"> 物品数据 </param>
-        public bool SetAt(Vector2Int anchorPos, ItemRtData itemData) =>
+        public bool SetAt(Vector2Int anchorPos, IGridItem itemData) =>
         inventoryPlacementService.SetAt(anchorPos, itemData);
 
         /// <summary>
@@ -192,7 +192,7 @@ namespace MmInventory
         /// <param name="itemData"> 物品数据 </param>
         /// <param name="anchorPos"> 锚点坐标 </param>
         /// <returns></returns>
-        public bool FindSetAtFirst(ItemRtData itemData, out Vector2Int anchorPos) =>
+        public bool FindSetAtFirst(IGridItem itemData, out Vector2Int anchorPos) =>
         inventoryPlacementService.FindSetAtFirst(itemData, out anchorPos);
 
         /// <summary>
@@ -201,49 +201,21 @@ namespace MmInventory
         /// <param name="itemData"> 物品数据 </param>
         /// <param name="anchorPos"> 锚点坐标 </param>
         /// <returns> 是否成功 </returns>
-        public bool SetAtFirst(ItemRtData itemData, out Vector2Int anchorPos) =>
+        public bool SetAtFirst(IGridItem itemData, out Vector2Int anchorPos) =>
         inventoryPlacementService.SetAtFirst(itemData, out anchorPos);
-        #endregion
-
-        #region 堆叠功能
-        /// <summary>
-        /// 堆叠判定
-        /// </summary>
-        /// <param name="aItemData">拖动物品</param>
-        /// <param name="bItemData">目标物品</param>
-        /// <returns></returns>
-        public bool CanStack(ItemRtData aItemData, ItemRtData bItemData, out int remainingCount)
-        {
-            remainingCount = 0;
-
-            if (aItemData is null || bItemData is null) return false;
-            // 物品是否相同
-            if (aItemData.PersistenceItemId != bItemData.PersistenceItemId)
-                return false;
-
-            // 堆叠类型是否为可堆
-            var a = ItemRtDataMgr.Instance.GetItemData<IItemRootData>(aItemData.PersistenceItemId);
-            var b = ItemRtDataMgr.Instance.GetItemData<IItemRootData>(bItemData.PersistenceItemId);
-            if (a.ItemStackType is EItemStackType.Single || b.ItemStackType is EItemStackType.Single)
-                return false;
-
-            // 计算剩余数量 向b堆叠 所以是b + a - b.MaxStackCount
-            remainingCount = b.MaxStackCount - (aItemData.CurStackCount + bItemData.CurStackCount);
-            return true;
-        }
         #endregion
 
         #region 交换功能
 
-        public bool CanSwap(ItemRtData aItemData,
-                            ItemRtData bItemData,
+        public bool CanSwap(IGridItem aItemData,
+                            IGridItem bItemData,
                             Vector2Int placeAnchorPos) =>
         inventorySwapService.CanSwap(aItemData, bItemData, placeAnchorPos);
 
 
-        public bool TrySwap(ItemRtData aItemData,
-                            ItemRtData bItemData,
-                            List<ItemRtData> oldItemDataList,
+        public bool TrySwap(IGridItem aItemData,
+                            IGridItem bItemData,
+                            List<IGridItem> oldItemDataList,
                             Vector2Int placeAnchorPos) =>
         inventorySwapService.TrySwap(aItemData, bItemData, oldItemDataList, placeAnchorPos);
         
@@ -254,9 +226,9 @@ namespace MmInventory
         /// <param name="placeAnchorPos">放置锚点</param>
         /// <param name="swapTargetItem">交换目标物品</param>
         /// <returns></returns>
-        public bool TryGetSwapTargetItem(ItemRtData dragItemData,
+        public bool TryGetSwapTargetItem(IGridItem dragItemData,
                                          Vector2Int placeAnchorPos,
-                                         out ItemRtData swapTargetItem) =>
+                                         out IGridItem swapTargetItem) =>
         inventorySwapService.TryGetSwapTargetItem(dragItemData, placeAnchorPos, out swapTargetItem);
 
 
@@ -277,14 +249,14 @@ namespace MmInventory
         /// <summary>
         /// 获取格子物品
         /// </summary>
-        public ItemRtData GetItemAt(Vector2Int pos) =>
+        public IGridItem GetItemAt(Vector2Int pos) =>
         inventoryPlacementService.GetItemAt(pos);
         /// <summary>
         /// 获取格子上的物品
         /// </summary>
         /// <param name="pos"></param>
         /// <returns></returns>
-        public ItemRtData GetItemByMask(Vector2Int pos) =>
+        public IGridItem GetItemByMask(Vector2Int pos) =>
         inventoryPlacementService.GetItemByMask(pos);
 
         /// <summary>

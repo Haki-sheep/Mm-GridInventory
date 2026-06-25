@@ -70,17 +70,19 @@
     <Compile Include="Assets\GridInventory\Scripts\Data\ItemBaseDataList.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Runtime\View\GridContainer\IGridContainerAudioAndView.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Data\IItemRootData.cs" />
-    <Compile Include="Assets\GridInventory\Scripts\Runtime\Logic\RunTimeItemDataMgr.cs" />
+    <Compile Include="Assets\GridInventory\Scripts\Core\IGridItem.cs" />
+    <Compile Include="Assets\GridInventory\Scripts\Runtime\Logic\ItemRtData.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Runtime\View\GridContainer\GridMainContainerView.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Runtime\Logic\InventoryViewModel.cs" />
-    <Compile Include="Assets\GridInventory\Scripts\Runtime\Logic\RunTimeItemData.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Runtime\View\ItemView\InventoryItemView.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Core\InventoryState.SwapService.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Core\InventoryState.PlacementService.cs" />
     <Compile Include="Assets\TutorialInfo\Scripts\Readme.cs" />
+    <Compile Include="Assets\GridInventory\Scripts\Runtime\Logic\ItemRtDataMgr.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Runtime\View\frameBorad\FrameBoardView.cs" />
     <Compile Include="Assets\GridInventory\Samples\1.SampleCreat&amp;ReplaceGrid\TestAudioAndAnima.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Runtime\View\GridContainer\GridMainContainerView.Operate.cs" />
+    <Compile Include="Assets\GridInventory\Scripts\Runtime\Logic\InventoryStackService.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Runtime\View\GridContainer\GridMainContainerView.Tools.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Data\ItemBaseData.cs" />
   </ItemGroup>

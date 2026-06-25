@@ -87,10 +87,10 @@ namespace MmInventory
                 return new InventoryOpReport(true, oldItemData);
             }
 
-            var newItemData = inventoryState.GetItemByMask(newAnchorPos);
+            var newItemData = inventoryState.GetItemByMask(newAnchorPos) as ItemRtData;
 
             // 尝试堆叠
-            if (inventoryState.CanStack(oldItemData, newItemData, out int remainingCount))
+            if (InventoryStackService.CanStack(oldItemData, newItemData, out int remainingCount))
             {
                 // 更新新旧物品的计数
                 newItemData.SetStackCount(oldItemData.CurStackCount + newItemData.CurStackCount);
@@ -113,16 +113,17 @@ namespace MmInventory
             if (inventoryState.TryGetSwapTargetItem(oldItemData, newAnchorPos, out var swapTargetItem)
                 && inventoryState.CanSwap(oldItemData, swapTargetItem, newAnchorPos))
             {
-                var oldItemDataList = new List<ItemRtData>();
+                var swapDisplacedList = new List<IGridItem>();
                 if (inventoryState.TrySwap(oldItemData,
                                            swapTargetItem,
-                                           oldItemDataList,
+                                           swapDisplacedList,
                                            newAnchorPos))
                 {
-                    return new InventoryOpReport(true, oldItemData, swapTargetItem, oldItemDataList);
+                    var oldItemDataList = ToItemRtDataList(swapDisplacedList);
+                    return new InventoryOpReport(true, oldItemData, swapTargetItem as ItemRtData, oldItemDataList);
                 }
 
-                return new InventoryOpReport(false, oldItemData, swapTargetItem);
+                return new InventoryOpReport(false, oldItemData, swapTargetItem as ItemRtData);
             }
 
             // 全部尝试失败 回滚状态
@@ -141,7 +142,18 @@ namespace MmInventory
 
         public bool CanStack(ItemRtData oldItemData, ItemRtData newItemData, out int remainingCount)
         {
-            return inventoryState.CanStack(oldItemData, newItemData, out remainingCount);
+            return InventoryStackService.CanStack(oldItemData, newItemData, out remainingCount);
+        }
+
+        /// <summary>
+        /// IGridItem列表转ItemRtData列表
+        /// </summary>
+        private static List<ItemRtData> ToItemRtDataList(List<IGridItem> gridItemList)
+        {
+            var itemRtDataList = new List<ItemRtData>(gridItemList.Count);
+            for (int i = 0; i < gridItemList.Count; i++)
+                itemRtDataList.Add((ItemRtData)gridItemList[i]);
+            return itemRtDataList;
         }
 
         /// <summary>
@@ -151,7 +163,7 @@ namespace MmInventory
         /// <returns></returns>
         public InventoryOpReport TryRemoveItem(Vector2Int anchorPos)
         {
-            var item = inventoryState.GetItemByMask(anchorPos);
+            var item = inventoryState.GetItemByMask(anchorPos) as ItemRtData;
             if (item is null)
             {
                 return new InventoryOpReport(false, null);
@@ -170,7 +182,7 @@ namespace MmInventory
         /// <returns></returns>
         public ItemRtData GetItemAt(Vector2Int anyPos)
         {
-            return inventoryState.GetItemByMask(anyPos);
+            return inventoryState.GetItemByMask(anyPos) as ItemRtData;
         }
 
         /// <summary>

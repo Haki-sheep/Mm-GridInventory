@@ -5,7 +5,7 @@ namespace MmInventory
     /// <summary>
     /// 运行时物品数据
     /// </summary>
-    public class ItemRtData
+    public class ItemRtData : IGridItem
     {
         /// <summary>
         /// 持久化物品ID
