@@ -107,5 +107,56 @@ namespace MmInventory
         }
 
         #endregion
+
+
+        #region 公共接口
+
+        /// <summary>
+        /// 从配置表创建物品UI并且将其放置到网格指定锚点上
+        /// </summary>
+        /// <param name="excelItemId"></param>
+        /// <param name="anchorPos"></param>
+        public ItemView CreatItemUI(int excelItemId, Vector2Int anchorPos)
+        {
+            // 数据层创建并占格
+            var itemRtData = gridInventoryService.CreatItem(excelItemId, anchorPos);
+            if (itemRtData is null) return null;
+
+            // 实例化物品UI并注册到字典
+            var itemView = SpawnItemView(itemRtData);
+            if (itemView is null)
+            {
+                gridInventoryService.TryRemoveItem(itemRtData.AnchorPos);
+                return null;
+            }
+
+            // 设置物品UI的位置
+            itemView.ItemRectTransform.localPosition =
+                GetItemUIPivotPos(itemRtData.AnchorPos, itemRtData.DataSize);
+            return itemView;
+        }
+
+        /// <summary>
+        /// 销毁物品UI
+        /// </summary>
+        /// <param name="itemView"></param>
+        public void DestroyItemUI(ItemView itemView)
+        {
+            if (itemView is null || itemView.ItemData is null) return;
+
+            // 数据层移除
+            var removeReport = gridInventoryService.TryRemoveItem(itemView.ItemData.AnchorPos);
+            if (!removeReport.IsSuccess)
+            {
+                Debug.Log($"移除物品失败 物品ID:{itemView.ItemData.InstancedItemId}不存在");
+                return;
+            }
+
+            // 移除物品UI信息到字典
+            itemViewDict.Remove(itemView.ItemData.InstancedItemId);
+            Destroy(itemView.gameObject);
+        }
+
+        #endregion
     }
 }

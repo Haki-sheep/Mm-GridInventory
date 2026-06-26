@@ -17,6 +17,8 @@ namespace MmInventory
     public partial class GridMainContainerView
     {
 
+
+        #region 高亮格子
         private void SetCellHighlight(int cellIndex)
         {
             if (cellIndex == -1) return;
@@ -48,7 +50,9 @@ namespace MmInventory
             }
         }
 
+        #endregion
 
+        #region 吸附框  
         /// <summary>
         /// 处理吸附框状态
         /// </summary>
@@ -142,5 +146,6 @@ namespace MmInventory
             frameBoardView.SetFrameBoardView(state, pos, size);
         }
 
+        #endregion
     }
 }

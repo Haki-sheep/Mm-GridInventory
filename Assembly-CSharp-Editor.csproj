@@ -65,6 +65,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets\GridInventory\Scripts\Data\Editor\ItemBaseDataListSoEditorUtil.cs" />
+    <Compile Include="Assets\GridInventory\Scripts\Runtime\Editor\ViewEditorWindow.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Data\Editor\ItemDataEditorSession.cs" />
     <Compile Include="Assets\TutorialInfo\Scripts\Editor\ReadmeEditor.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Core\Editor\EditorGridMockItem.cs" />
@@ -72,6 +73,7 @@
     <Compile Include="Assets\GridInventory\Scripts\Data\Editor\EItemTypeCodeGenerator.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Data\Editor\ItemDataEditorWindow.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Core\Editor\GridInventoryDebugWindow.cs" />
+    <Compile Include="Assets\GridInventory\Scripts\Data\Editor\LootSimConfigSoEditorUtil.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Core\Editor\GridInventoryDebugSession.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Data\Editor\ItemDataEditorPages.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Data\Editor\ItemViewPrefabListSoEditorUtil.cs" />

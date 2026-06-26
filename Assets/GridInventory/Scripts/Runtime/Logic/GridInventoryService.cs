@@ -48,7 +48,6 @@ namespace MmInventory
     /// </summary>
     public class GridInventoryService
     {
-
         private InventoryState inventoryState;
 
         /// <summary>
@@ -58,6 +57,78 @@ namespace MmInventory
         {
             inventoryState = new InventoryState(gridSize);
         }
+
+        #region 创建与销毁
+
+        /// <summary>
+        /// 创建物品数据并占格
+        /// </summary>
+        public ItemRtData CreatItem(int excelItemId, Vector2Int anchorPos)
+        {
+            // 获取模版数据
+            var itemData = ItemRtDataMgr.Instance.GetItemData<IItemBaseData>(excelItemId);
+            if (itemData is null)
+            {
+                Debug.Log($"创建物品失败 没有找到模版为ID:{excelItemId}的物品");
+                return null;
+            }
+
+            // 创建运行时数据
+            var itemRtData = ItemRtData.FromConfig(itemData);
+
+            // 尝试放到指定锚点
+            if (!CommitPlace(itemRtData, anchorPos))
+            {
+                // 该位置已存在物品 尝试放置到第一个可放置位置
+                if (!inventoryState.SetAtFirst(itemRtData, out var firstAnchor))
+                {
+                    Debug.Log("创建物品失败 没有找到可放置位置");
+                    return null;
+                }
+                itemRtData.SetAnchorPos(firstAnchor);
+            }
+
+            return itemRtData;
+        }
+
+        /// <summary>
+        /// 创建物品并放到首个空位
+        /// </summary>
+        public ItemRtData CreatItemAtFirstEmpty(int excelItemId)
+        {
+            // 获取模版数据
+            var itemData = ItemRtDataMgr.Instance.GetItemData<IItemBaseData>(excelItemId);
+            if (itemData is null)
+            {
+                Debug.Log($"创建物品失败 没有找到模版为ID:{excelItemId}的物品");
+                return null;
+            }
+
+            // 创建运行时数据
+            var itemRtData = ItemRtData.FromConfig(itemData);
+            if (!inventoryState.SetAtFirst(itemRtData, out var firstAnchor))
+            {
+                Debug.Log("创建物品失败 没有找到可放置位置");
+                return null;
+            }
+
+            itemRtData.SetAnchorPos(firstAnchor);
+            return itemRtData;
+        }
+
+        /// <summary>
+        /// 尝试移除物品(数据层)
+        /// </summary>
+        public InventoryOpReport TryRemoveItem(Vector2Int anchorPos)
+        {
+            var item = inventoryState.GetItemByMask(anchorPos) as ItemRtData;
+            if (item is null || !inventoryState.RemoveAtAny(anchorPos))
+                return new InventoryOpReport(false, null);
+
+            return new InventoryOpReport(true, item);
+        }
+
+        #endregion
 
         #region 放置
 
@@ -132,21 +203,6 @@ namespace MmInventory
 
         #endregion
 
-        #region 移除
-
-        /// <summary>
-        /// 尝试移除物品
-        /// </summary>
-        public InventoryOpReport TryRemoveItem(Vector2Int anchorPos)
-        {
-            var item = inventoryState.GetItemByMask(anchorPos) as ItemRtData;
-            if (item is null || !inventoryState.RemoveAtAny(anchorPos))
-                return new InventoryOpReport(false, null);
-
-            return new InventoryOpReport(true, item);
-        }
-
-        #endregion
 
         #region 查询
 

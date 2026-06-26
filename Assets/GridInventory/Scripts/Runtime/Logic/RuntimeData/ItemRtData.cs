@@ -112,7 +112,7 @@ namespace MmInventory
         }
 
         /// <summary>
-        /// 从配置表创建
+        /// 从配置表(模版)创建运行时数据
         /// </summary>
         public static ItemRtData FromConfig(IItemBaseData config,
                                             int curStackCount = 1,

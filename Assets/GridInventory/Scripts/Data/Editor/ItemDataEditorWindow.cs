@@ -64,6 +64,7 @@ namespace MmInventory.Editor
 
             homePage.ListSo?.EditorSave();
             homePage.ViewPrefabListSo?.EditorSave();
+            homePage.LootSimConfigSo?.EditorSave();
 
             if (!string.IsNullOrEmpty(homePage.EnumFilePath))
                 EItemTypeCodeGenerator.WriteEnum(homePage.EnumNameList, homePage.EnumFilePath);
@@ -121,6 +122,7 @@ namespace MmInventory.Editor
 
             tree.Add("枚举管理器", homePage);
             tree.Add("视图预制体", new ItemViewPrefabPage(this, homePage));
+            tree.Add("容器投放模拟", new ItemLootSimPage(this, homePage));
 
             var listSo = homePage.ListSo;
             if (listSo == null)

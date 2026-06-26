@@ -215,6 +215,36 @@ namespace MmInventory
         }
 
         /// <summary>
+        /// 实例化物品视图并注册到字典
+        /// </summary>
+        private ItemView SpawnItemView(ItemRtData itemRtData)
+        {
+            // 按尺寸取视图预制体
+            var prefabList = ItemViewPrefabListSo.Instance;
+            if (prefabList is null || !prefabList.TryGetPrefab(itemRtData.DataSize, out var prefab))
+            {
+                Debug.LogWarning($"创建物品UI失败 未找到尺寸 {itemRtData.DataSize} 的预制体");
+                return null;
+            }
+
+            // 实例化到物品层
+            var itemGo = Instantiate(prefab, itemContent);
+            var itemView = itemGo.GetComponent<ItemView>();
+            if (itemView is null)
+            {
+                Debug.LogError("ItemView 预制体缺少 ItemView 组件");
+                Destroy(itemGo);
+                return null;
+            }
+
+            itemView.BindOwner(this);
+            itemView.InitWithData(itemRtData);
+            // 注册到字典
+            itemViewDict[itemRtData.InstancedItemId] = itemView;
+            return itemView;
+        }
+
+        /// <summary>
         /// 外部调用，创建物品格子
         /// </summary>
         [Button]

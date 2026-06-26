@@ -15,6 +15,7 @@ namespace MmInventory.Editor
         private const string LegacyRegistrySoGuidKey = "MmInventory.ItemDataEditor.RegistrySoGuid";
         private const string ViewPrefabListSoGuidKey = "MmInventory.ItemDataEditor.ViewPrefabListSoGuid";
         private const string LegacyViewPrefabRegistrySoGuidKey = "MmInventory.ItemDataEditor.ViewPrefabRegistrySoGuid";
+        private const string LootSimConfigSoGuidKey = "MmInventory.ItemDataEditor.LootSimConfigSoGuid";
 
         public const string DefaultEnumFilePath = "Assets/GridInventory/Scripts/Data/TableData/EItemType.cs";
         public const string DefaultCreateSoFolder = "Assets/GridInventory/SoDatas";
@@ -111,6 +112,50 @@ namespace MmInventory.Editor
 
             string path = AssetDatabase.GetAssetPath(listSo);
             ViewPrefabListSoGuid = AssetDatabase.AssetPathToGUID(path);
+        }
+
+        /// <summary>
+        /// 投放模拟配置 SO 的 GUID
+        /// </summary>
+        public static string LootSimConfigSoGuid
+        {
+            get => EditorPrefs.GetString(LootSimConfigSoGuidKey, string.Empty);
+            set => EditorPrefs.SetString(LootSimConfigSoGuidKey, value);
+        }
+
+        /// <summary>
+        /// 加载投放模拟配置 SO
+        /// </summary>
+        public static LootSimConfigSo LoadLootSimConfigSo()
+        {
+            string guid = LootSimConfigSoGuid;
+            if (!string.IsNullOrEmpty(guid))
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                var so = AssetDatabase.LoadAssetAtPath<LootSimConfigSo>(path);
+                if (so != null)
+                {
+                    SaveLootSimConfigSo(so);
+                    return so;
+                }
+            }
+
+            return LootSimConfigSoEditorUtil.EnsureConfigAsset();
+        }
+
+        /// <summary>
+        /// 保存投放模拟配置 SO 引用
+        /// </summary>
+        public static void SaveLootSimConfigSo(LootSimConfigSo configSo)
+        {
+            if (configSo == null)
+            {
+                LootSimConfigSoGuid = string.Empty;
+                return;
+            }
+
+            string path = AssetDatabase.GetAssetPath(configSo);
+            LootSimConfigSoGuid = AssetDatabase.AssetPathToGUID(path);
         }
 
         /// <summary>

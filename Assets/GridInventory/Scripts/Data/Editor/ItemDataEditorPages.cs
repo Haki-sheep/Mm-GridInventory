@@ -34,6 +34,10 @@ namespace MmInventory.Editor
         [OnValueChanged(nameof(OnViewPrefabListSoChanged))]
         public ItemViewPrefabListSo ViewPrefabListSo;
 
+        [Title("投放模拟配置")]
+        [OnValueChanged(nameof(OnLootSimConfigSoChanged))]
+        public LootSimConfigSo LootSimConfigSo;
+
         [Title("输出设置")]
         [Sirenix.OdinInspector.FilePath(Extensions = "cs")]
         [OnValueChanged(nameof(OnEnumPathChanged))]
@@ -152,6 +156,7 @@ namespace MmInventory.Editor
         {
             ListSo = ItemDataEditorSession.LoadListSo();
             ViewPrefabListSo = ItemDataEditorSession.LoadViewPrefabListSo();
+            LootSimConfigSo = ItemDataEditorSession.LoadLootSimConfigSo();
             EnumFilePath = ItemDataEditorSession.EnumFilePath;
             EnumNameList = EItemTypeCodeGenerator.ReadEnumNames(EnumFilePath);
         }
@@ -165,6 +170,11 @@ namespace MmInventory.Editor
         private void OnViewPrefabListSoChanged()
         {
             ItemDataEditorSession.SaveViewPrefabListSo(ViewPrefabListSo);
+        }
+
+        private void OnLootSimConfigSoChanged()
+        {
+            ItemDataEditorSession.SaveLootSimConfigSo(LootSimConfigSo);
         }
 
         private void OnEnumPathChanged()
@@ -405,6 +415,72 @@ namespace MmInventory.Editor
                 EditorUtility.SetDirty(viewRegistry);
                 Window?.MarkDirty();
             }
+        }
+    }
+
+    /// <summary>
+    /// 容器投放模拟页签
+    /// 配置随机池与规则 执行在 View Editor
+    /// </summary>
+    public sealed class ItemLootSimPage
+    {
+        [HideInInspector]
+        public ItemDataEditorWindow Window;
+
+        [HideInInspector]
+        public ItemDataEditorHomePage HomePage;
+
+        public ItemLootSimPage(ItemDataEditorWindow window, ItemDataEditorHomePage homePage)
+        {
+            Window = window;
+            HomePage = homePage;
+        }
+
+        [ShowInInspector, ReadOnly]
+        [LabelText("当前配置资产")]
+        private string ConfigAssetLabel
+        {
+            get
+            {
+                var configSo = HomePage?.LootSimConfigSo;
+                return configSo != null ? configSo.name : "(未指定)";
+            }
+        }
+
+        [OnInspectorGUI]
+        private void DrawLootSimGuide()
+        {
+            EditorGUILayout.HelpBox(
+                "方案 A\n" +
+                "· 此页：随机池 权重 容器筛选等配置（LootSimConfigSo）\n" +
+                "· View Editor：Play 模式下向场景容器投放与模拟\n" +
+                "· 后续随机算法读取同一份 LootSimConfigSo",
+                MessageType.Info);
+
+            var configSo = HomePage?.LootSimConfigSo;
+            if (configSo is null)
+            {
+                EditorGUILayout.HelpBox("请先在「枚举管理器」中指定投放模拟配置", MessageType.Warning);
+                return;
+            }
+
+            EditorGUILayout.Space(6f);
+
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                if (GUILayout.Button("定位配置资产", GUILayout.Height(24f)))
+                    EditorGUIUtility.PingObject(configSo);
+
+                if (GUILayout.Button("打开 View Editor", GUILayout.Height(24f)))
+                    EditorApplication.ExecuteMenuItem("Tools/MmInventory/View Editor");
+            }
+
+            EditorGUILayout.Space(6f);
+            EditorGUILayout.LabelField("待扩展", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("· 随机物品池条目");
+            EditorGUILayout.LabelField("· 权重与数量范围");
+            EditorGUILayout.LabelField("· 容器标签筛选");
+            EditorGUILayout.LabelField("· 一键随机填充（调用 View Editor）");
         }
     }
 }

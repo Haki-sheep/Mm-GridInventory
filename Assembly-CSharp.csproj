@@ -64,30 +64,33 @@
     <Analyzer Include="C:\Program Files\Unity\Hub\Editor\6000.4.10f1\Editor\Data\Tools\BuildPipeline\Unity.SourceGenerators\Unity.UIToolkit.SourceGenerator.dll" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Assets\GridInventory\Scripts\Runtime\View\GridContainer\ContainerMainPart\GridMainContainerView.cs" />
+    <Compile Include="Assets\GridInventory\Scripts\Runtime\View\GridContainer\ContainerMainPart\GridMainContainerView.Compute.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Runtime\View\GridContainer\IGridContainer.cs" />
-    <Compile Include="Assets\GridInventory\Scripts\Runtime\View\GridContainer\GridCellView.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Data\TableData\ItemViewPrefabListSo.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Core\InventoryState.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Runtime\View\ItemView\ItemView.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Data\TableData\IItemBaseData.cs" />
-    <Compile Include="Assets\GridInventory\Scripts\Runtime\View\GridContainer\GridMainContainerView.Behaviour.cs" />
-    <Compile Include="Assets\GridInventory\Scripts\Runtime\View\GridContainer\GridMainContainerView.Compute.cs" />
+    <Compile Include="Assets\GridInventory\Scripts\Runtime\View\GridContainerMgr\GridMainContainerView.Gm.cs" />
+    <Compile Include="Assets\GridInventory\Scripts\Runtime\View\GridContainerMgr\GridMainContainerRegistry.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Runtime\Logic\RuntimeData\ItemRtData.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Core\InventoryState.Debug.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Data\TableData\ItemBaseDataListSo.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Data\TableData\EItemType.cs" />
-    <Compile Include="Assets\GridInventory\Scripts\Runtime\View\GridContainer\GridMainContainerView.cs" />
+    <Compile Include="Assets\GridInventory\Scripts\Data\LootSimulation\LootSimConfigSo.cs" />
+    <Compile Include="Assets\GridInventory\Scripts\Runtime\View\GridContainer\ContainerMainPart\GridMainContainerView.Behaviour.cs" />
+    <Compile Include="Assets\GridInventory\Scripts\Runtime\View\GridContainer\ContainerMainPart\GridMainContainerView.ViewTools.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Data\TableData\ItemBaseData.cs" />
+    <Compile Include="Assets\GridInventory\Scripts\Runtime\View\GridContainer\ContainerSecondaryPart\GridCellView.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Core\InventoryState.SwapService.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Core\InventoryState.PlacementService.cs" />
     <Compile Include="Assets\TutorialInfo\Scripts\Readme.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Core\InventoryState.PersisService.cs" />
-    <Compile Include="Assets\GridInventory\Scripts\Runtime\View\GridContainer\FrameBoardView.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Core\IItemRt.cs" />
+    <Compile Include="Assets\GridInventory\Scripts\Runtime\View\GridContainer\ContainerSecondaryPart\FrameBoardView.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Runtime\Logic\GridInventoryService.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Core\InventoryState.StackableService.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Runtime\Logic\RuntimeData\ItemRtDataMgr.cs" />
-    <Compile Include="Assets\GridInventory\Scripts\Runtime\View\GridContainer\GridMainContainerView.ViewTools.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="UnityEngine">
