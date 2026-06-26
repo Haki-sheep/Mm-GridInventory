@@ -9,13 +9,18 @@ namespace MmInventory
     /// </summary>
     public class GridCellView : MonoBehaviour
     {
-        [SerializeField] private Image backgroundImage;
-
+        [SerializeField] 
+        private Image backgroundImage;
+        
+        [SerializeField] 
         private Color defaultColor = new(0, 0, 0, 0.8f);
+        
+        [SerializeField] 
         private Color highLightColor = new(0, 0, 0, 0.6f);
+        
         void Start()
         {
-            backgroundImage = this.transform.Find("Bk").GetComponent<Image>();
+            backgroundImage = this.transform.Find("Highlight").GetComponent<Image>();
             SetBkHighLight(false);
         }
 
@@ -26,24 +31,6 @@ namespace MmInventory
         public void SetBkHighLight(bool isHighLight)
         {
             backgroundImage.color = isHighLight ? highLightColor : defaultColor;
-        }
-
-        /// <summary>
-        /// 清除所有高亮格子
-        /// </summary>
-        public void ClearCellHighlight(int curHighLightCellIndex, GridCellView[] gridCellViews)
-        {
-            if (curHighLightCellIndex >= 0)
-            {
-                gridCellViews[curHighLightCellIndex].SetBkHighLight(false);
-                curHighLightCellIndex = -1;
-                return;
-            }
-
-            foreach (var cellView in gridCellViews)
-            {
-                cellView.SetBkHighLight(false);
-            }
         }
 
     }

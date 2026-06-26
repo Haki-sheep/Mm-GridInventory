@@ -10,13 +10,8 @@ namespace MmInventory
     /// 此脚本用于背包容器挂载 用于处理各种拖拽事件
     /// </summary>
 
-    public partial class GridMainContainerView : MonoBehaviour, 
-                                    IBeginDragHandler, IDragHandler, IEndDragHandler
+    public partial class GridMainContainerView 
     {
-        [Header("运行时信息")]
-        // 鼠标按下的物品
-        [SerializeField] private ItemView activeItem;
-
         // 拖动运行时状态
         private bool isDragging = false;
 
@@ -25,6 +20,7 @@ namespace MmInventory
         private ItemView draggingItem;
 
         /// Drag - 拖拽信息相关
+        /// 拖拽物品锚点
         private Vector2Int dragStartAnchorPos;
         // 拖拽缓存
         private bool hasFrameBoardStateCache = false;
@@ -33,64 +29,33 @@ namespace MmInventory
         // 拖拽物起始层级
         private int dragStartSiblingIndex = -1;
 
+
+        // 下面两个变量遵从一个公式:
+        // 抓取时:抓取相对偏移 = 鼠标位置 - 锚点位置
+        // 那么放置时:锚点位置 = 鼠标位置 - 抓取相对偏移
+        private Vector2Int dragStartOffset;
+
         [SerializeField, ReadOnly, LabelText("预览锚点")]
         private Vector2Int dragPreviewAnchorPos;
-
-        // 抓取相对偏移 鼠标格减去物品锚点
-        private Vector2Int dragStartOffset;
 
         // View - 高亮格子与吸附框
         private int curHighLightCellIndex = -1;
 
-
-        #region ItemEvent
-
-        public void AddItemEventListener(ItemView itemView)
-        {
-            itemView.OnPointerEnterEvent += OnItemEnter;
-            itemView.OnPointerExitEvent += OnItemExit;
-            itemView.OnPointerDownEvent += OnItemSelect;
-        }
-
-        public void RemoveItemEventListener(ItemView itemView)
-        {
-            itemView.OnPointerEnterEvent -= OnItemEnter;
-            itemView.OnPointerExitEvent -= OnItemExit;
-            itemView.OnPointerDownEvent -= OnItemSelect;
-        }
-        private void OnItemEnter(ItemView itemView) => activeItem = itemView;
-        private void OnItemSelect(ItemView itemView) => activeItem = itemView;
-        private void OnItemExit(ItemView itemView)
-        {
-            if (isDragging) return;
-            activeItem = null;
-        }
-        #endregion
-
         #region A
 
-        private void BeginDragHandler(PointerEventData eventData)
+        private void BeginDragHandler(ItemView itemView, PointerEventData eventData)
         {
+            if (itemView is null || itemView.ItemData is null) return;
+            if (!TryGetMouseInGridInfo(eventData.position, out var mouseOnGridPos, out _)) return;
 
-            if (activeItem is null) return;
-            if (!TryGetMousePosInGrid(eventData.position, out var mouseOnGridPos, out _)) return;
-            
-            // 选中物品音效
-            if(IGridAudioAndAnimation is not null)
-            {
-                IGridAudioAndAnimation.OnSelectItem();
-            }
-
-            // 设置拖拽物品信息
-            draggingItem = activeItem;
-            draggingItemRectTransform = activeItem.ItemRectTransform;
+            draggingItem = itemView;
+            draggingItemRectTransform = itemView.ItemRectTransform;
             dragStartSiblingIndex = draggingItemRectTransform.GetSiblingIndex();
 
-            // 禁用父容器滚动
-            scrollRect.enabled = false;
+            if (scrollRect is not null)
+                scrollRect.enabled = false;
 
-            // 物品拖拽的起始锚点
-            dragStartAnchorPos = activeItem.ItemData.AnchorPos;
+            dragStartAnchorPos = itemView.ItemData.AnchorPos;
 
             // 物品拖拽的预览锚点 = 物品起始锚点
             dragPreviewAnchorPos = dragStartAnchorPos;
@@ -121,7 +86,7 @@ namespace MmInventory
             draggingItemRectTransform.position = eventData.position;
 
             // 计算网格坐标
-            if (!TryGetMousePosInGrid(eventData.position, out var mouseOnGridPos, out var gridIndex))
+            if (!TryGetMouseInGridInfo(eventData.position, out var mouseOnGridPos, out var gridIndex))
             {
                 ClearCellHighlight();
                 frameBoardView.SetFrameBoardView(EFrameBoard.Hidden, Vector2.zero, Vector2.zero);
@@ -169,13 +134,7 @@ namespace MmInventory
         {
             if (draggingItem is null) return;
 
-            // 松手时物品音效
-            if(IGridAudioAndAnimation is not null)
-            {
-                IGridAudioAndAnimation.OnDeselectItem();
-            }
-
-            if (!TryGetMousePosInGrid(eventData.position, out var mouseOnGridPos, out _))
+            if (!TryGetMouseInGridInfo(eventData.position, out var mouseOnGridPos, out _))
                 dragPreviewAnchorPos = dragStartAnchorPos;
             else
                 dragPreviewAnchorPos = GetPreviewAnchorPos(mouseOnGridPos, dragStartOffset);
@@ -191,7 +150,10 @@ namespace MmInventory
             // 如果放置失败 原物品复位
             if (!result.IsSuccess)
             {
-                draggingItemRectTransform.localPosition = GetItemUIPos(oldItemData.AnchorPos, oldItemData.DataSize);
+                var resetData = oldItemData ?? draggingItem.ItemData;
+                resetData.SetAnchorPos(dragStartAnchorPos);
+                gridInventoryService.PlaceItem(resetData, dragStartAnchorPos);
+                draggingItemRectTransform.localPosition = GetItemUIPos(dragStartAnchorPos, resetData.DataSize);
             }
             // 堆叠成功：被拖拽物被合并并销毁
             else if (oldItemData is null)
@@ -242,9 +204,9 @@ namespace MmInventory
             // 吸附框保持最高层级。
             frameBoardView.transform.SetAsLastSibling();
 
-            activeItem = null;
             draggingItemRectTransform = null;
-            scrollRect.enabled = true;
+            if (scrollRect is not null)
+                scrollRect.enabled = true;
             curHighLightCellIndex = -1;
             draggingItem = null;
             dragStartSiblingIndex = -1;
@@ -287,7 +249,7 @@ namespace MmInventory
                 draggingItemRectTransform.localRotation =
                                         Quaternion.Euler(0, 0, itemData.IsRotated ? 90f : 0f);
 
-                if (!TryGetMousePosInGrid(Input.mousePosition, out var mouseOnGridPos, out _)) return;
+                if (!TryGetMouseInGridInfo(Input.mousePosition, out var mouseOnGridPos, out _)) return;
                 dragPreviewAnchorPos = GetPreviewAnchorPos(mouseOnGridPos, dragStartOffset);
                 var pos = GetFrameBoardTransform(itemData, dragPreviewAnchorPos);
                 var size = GetItemUISize(itemData.DataSize);

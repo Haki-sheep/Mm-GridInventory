@@ -3,6 +3,9 @@ using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 
 namespace MmInventory
@@ -11,84 +14,76 @@ namespace MmInventory
     /// 背包主容器视图 
     /// 用于初始化背包格子 提供View层组件给Operate脚本使用
     /// </summary>
-    public partial class GridMainContainerView : MonoBehaviour
+    public partial class GridMainContainerView : SerializedMonoBehaviour, IGridContainer
     {
 
-        [Header("Content系组件")]
-        [SerializeField] private RectTransform gridContent;
-        [SerializeField] private GridLayoutGroup contentLayoutGroup;
-        [SerializeField] private RectTransform itemContent;
-        [SerializeField, ReadOnly] private GridCellView[] gridCellViews;
+        #region 字段与属性
+        /// <summary>网格内容容器 用于坐标转换</summary>
+        private RectTransform gridContentCache;
+        private RectTransform gridContent => gridContentCache ??= transform.Find("Viewport/GridContent") as RectTransform;
 
-        [Header("ScrollRect系组件")]
-        [SerializeField] private ScrollRect scrollRect;
-        [SerializeField] private RectTransform containertRectTransform;
+        /// <summary>网格内容布局组 用于提供格子Size等基础参数</summary>
+        private GridLayoutGroup contentLayoutGroupCache;
+        private GridLayoutGroup contentLayoutGroup => contentLayoutGroupCache ??= gridContent.GetComponent<GridLayoutGroup>();
 
-        [Header("GridView系组件")]
+        /// <summary>物品内容容器 用于承载物品</summary>
+        private RectTransform itemContentCache;
+        private RectTransform itemContent => itemContentCache ??= transform.Find("Viewport/ItemContent") as RectTransform;
+
+        [Header("自定义View组件")]
         private GridInventoryService gridInventoryService;
-        [SerializeField] private FrameBoardView frameBoardView;
-        [SerializeField] private ItemView[] itemViews;
 
-        [Header("Canvas")]
-        [SerializeField] private Canvas canvas;
-        private Camera canvasCamera;
+        private FrameBoardView frameBoardViewCache;
+        private FrameBoardView frameBoardView => frameBoardViewCache ??= itemContent.Find("frameBoard")?.GetComponent<FrameBoardView>();
+
+        private ItemView[] itemViewsCache;
+        private ItemView[] itemViews => itemViewsCache ??= itemContent.GetComponentsInChildren<ItemView>();
+
 
         [Header("配置信息")]
-        [SerializeField] private GameObject CellPrefab;
+        [SerializeField]
+        private GameObject CellPrefab;
         public const int gridSize = 100;
         public const int spacing = 0;
         public Vector2Int gridRowAndCloumns = Vector2Int.zero;
-        public IGridAudioAndAnimation IGridAudioAndAnimation;
 
-        [Header("表现层物品管理容器")]
+        // 下列组件皆为自动获取
+        /// <summary>滚动区域 用于拖拽物品时临时禁用不然拖拽物品过程中会触发父级视图滚动</summary>
+        private ScrollRect scrollRectCache;
+        private ScrollRect scrollRect => scrollRectCache ??= GetComponentInParent<ScrollRect>();
+
+        /// <summary>容器RectTransform 用于设置整体容器大小</summary>
+        private RectTransform containertRectTransformCache;
+        private RectTransform containertRectTransform => containertRectTransformCache ??= scrollRect.content as RectTransform;
+
+        /// <summary>Canvas 用于保证网格坐标计算的正确性</summary>
+        private Canvas canvasCache;
+        private Canvas canvas => canvasCache ??= GetComponentInParent<Canvas>();
+
+        private Camera canvasCameraCache;
+        private Camera canvasCamera => canvasCameraCache ??= canvas.worldCamera;
+
+        [Header("Debug")]
+        [SerializeField, ReadOnly]
+        /// <summary>网格格子视图 用于显示网格格子</summary>
+        private GridCellView[] gridCellViews;
+
+        [DictionaryDrawerSettings(KeyLabel = "物品实例ID", ValueLabel = "物品视图")]
+        [SerializeField]
         private Dictionary<string, ItemView> itemViewDict = new();
-
-
-
-        #region 表现
-
         #endregion
 
         #region 生命周期/逻辑周期
         void OnEnable()
         {
-            // AddItemEventListener(testItem);
+
         }
 
         void Start()
         {
-            canvas = this.transform.GetComponentInParent<Canvas>();
-            canvasCamera = canvas.worldCamera;
-
-            // Content系组件初始化
-            gridContent = transform.Find("Viewport/GridContent") as RectTransform;
-            if (gridContent is not null)
-                contentLayoutGroup = gridContent.GetComponent<GridLayoutGroup>();
-            frameBoardView = itemContent.Find("frameBoard").GetComponent<FrameBoardView>();
-            if (frameBoardView is null)
-            {
-                Debug.LogError("GridMainContainerView: 未找到 frameBoardView，请挂在子节点或当前节点。");
-                return;
-            }
-            gridCellViews = gridContent.GetComponentsInChildren<GridCellView>();
-
             gridInventoryService = new GridInventoryService();
             gridInventoryService.Init(gridRowAndCloumns);
-
-            // ScrollRect系组件初始化
-            scrollRect = GetComponentInParent<ScrollRect>();
-
-
-            itemViews = itemContent.GetComponentsInChildren<ItemView>();
-            foreach (var itemView in itemViews)
-            {
-                AddItemEventListener(itemView);
-            }
-
-
-            // ----------------------测试---------------------------
-            // test.Init(this,gridInventoryService,itemViewDict);
-       
+            RegisterSceneItemViews();
         }
 
         void Update()
@@ -98,75 +93,68 @@ namespace MmInventory
 
         void OnDisable()
         {
-            // RemoveItemEventListener(testItem);
-            foreach (var itemView in itemViews)
-            {
-                RemoveItemEventListener(itemView);
-            }
+
         }
 
-        public void OnBeginDrag(PointerEventData eventData)
+        /// <summary>
+        /// 物品开始拖拽
+        /// </summary>
+        public void OnItemBeginDrag(ItemView itemView, PointerEventData eventData)
         {
-            if (eventData.button != PointerEventData.InputButton.Left) return;
             isDragging = true;
-
-            BeginDragHandler(eventData);
+            BeginDragHandler(itemView, eventData);
         }
 
-        public void OnDrag(PointerEventData eventData)
+        /// <summary>
+        /// 物品拖拽中
+        /// </summary>
+        public void OnItemDrag(PointerEventData eventData)
         {
             if (!isDragging) return;
             DraggingHandler(eventData);
         }
 
-        public void OnEndDrag(PointerEventData eventData)
+        /// <summary>
+        /// 物品结束拖拽
+        /// </summary>
+        public void OnItemEndDrag(PointerEventData eventData)
         {
             if (!isDragging) return;
             isDragging = false;
-
             EndDragHandler(eventData);
+        }
+
+        public void InitComponents()
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public void ViewUpdate()
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public void OnBeginDrag(ItemView itemView, PointerEventData eventData)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public void OnDragging(PointerEventData eventData)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public void OnEndDrag(PointerEventData eventData)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        bool IGridContainer.TryGetMouseInGridInfo(Vector2 mousePos, out Vector2Int mouseOnGridPosInt, out int mouseOnGridIndex)
+        {
+            return TryGetMouseInGridInfo(mousePos, out mouseOnGridPosInt, out mouseOnGridIndex);
         }
 
 
         #endregion
-
-        /// <summary>
-        /// 外部调用，创建物品格子
-        /// </summary>
-        /// <param name="cellCount"></param>
-        [Button]
-        public void CreatItemCells()
-        {
-            // 同步格子数据
-            var cellCount = gridRowAndCloumns.x * gridRowAndCloumns.y;
-
-            // 同步ItemContent与GridContent数据
-            containertRectTransform.sizeDelta = new Vector2(gridSize * gridRowAndCloumns.x, gridSize * gridRowAndCloumns.y);
-            if (gridContent == null || itemContent == null) return;
-            if (gridContent.parent != itemContent.parent) return;
-            itemContent.anchorMin = gridContent.anchorMin;
-            itemContent.anchorMax = gridContent.anchorMax;
-            itemContent.pivot = gridContent.pivot;
-            itemContent.localScale = gridContent.localScale;
-            itemContent.localRotation = gridContent.localRotation;
-
-            itemContent.offsetMin = gridContent.offsetMin;
-            itemContent.offsetMax = gridContent.offsetMax;
-
-            // 同步表现
-            for (int i = contentLayoutGroup.transform.childCount - 1; i >= 0; i--)
-            {
-                GameObject.DestroyImmediate(contentLayoutGroup.transform.GetChild(i).gameObject);
-            }
-
-            if (cellCount <= 0) return;
-
-            for (int i = 0; i < cellCount; i++)
-            {
-                GameObject cell = GameObject.Instantiate(CellPrefab, this.contentLayoutGroup.transform);
-                cell.AddComponent<GridCellView>();
-                cell.name = $"Cell_{i}";
-            }
-        }
     }
 }

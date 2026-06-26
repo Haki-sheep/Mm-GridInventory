@@ -13,14 +13,14 @@ MonoBehaviour:
   m_Name: ItemBaseDataList
   m_EditorClassIdentifier: Assembly-CSharp::MmInventory.ItemBaseDataListSo
   itemDataList:
-  - excelItemId: 0
+  - excelItemId: 1
     name: A
     iconPath: 
     dataSize: {x: 1, y: 1}
     itemType: 0
     itemStackType: 0
     maxStackCount: 1
-  - excelItemId: 1
+  - excelItemId: 3
     name: B
     iconPath: 
     dataSize: {x: 2, y: 2}
@@ -30,7 +30,7 @@ MonoBehaviour:
   - excelItemId: 2
     name: C
     iconPath: 
-    dataSize: {x: 1, y: 1}
-    itemType: 2
+    dataSize: {x: 2, y: 1}
+    itemType: 0
     itemStackType: 0
     maxStackCount: 1

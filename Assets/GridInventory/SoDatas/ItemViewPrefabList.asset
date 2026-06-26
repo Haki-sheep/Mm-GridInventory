@@ -16,9 +16,15 @@ MonoBehaviour:
   - width: 1
     height: 1
     prefab: {fileID: 6743332090410101968, guid: 39a01f871b1443842b22851bd72718fa, type: 3}
-  - width: 1
+  - width: 2
     height: 1
-    prefab: {fileID: 0}
+    prefab: {fileID: 6743332090410101968, guid: 768aab05bee1ec9448e614409ecf7b63, type: 3}
   - width: 2
     height: 2
-    prefab: {fileID: 0}
+    prefab: {fileID: 6743332090410101968, guid: fff88fbe5913a384db0fdf24f9b5875f, type: 3}
+  - width: 1
+    height: 2
+    prefab: {fileID: 6743332090410101968, guid: e29b7cd480168cb48994a5d4644b9bf8, type: 3}
+  - width: 2
+    height: 2
+    prefab: {fileID: 6743332090410101968, guid: fff88fbe5913a384db0fdf24f9b5875f, type: 3}
