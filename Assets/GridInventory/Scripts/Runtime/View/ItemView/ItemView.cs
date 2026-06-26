@@ -78,7 +78,7 @@ namespace MmInventory
         public void OnBeginDrag(PointerEventData eventData)
         {
             if (eventData.button != PointerEventData.InputButton.Left) return;
-            ownerContainer?.OnItemBeginDrag(this, eventData);
+            ownerContainer?.OnBeginDrag(this, eventData);
         }
 
         /// <summary>
@@ -86,7 +86,7 @@ namespace MmInventory
         /// </summary>
         public void OnDrag(PointerEventData eventData)
         {
-            ownerContainer?.OnItemDrag(eventData);
+            ownerContainer?.OnDragging(eventData);
         }
 
         /// <summary>
@@ -94,7 +94,7 @@ namespace MmInventory
         /// </summary>
         public void OnEndDrag(PointerEventData eventData)
         {
-            ownerContainer?.OnItemEndDrag(eventData);
+            ownerContainer?.OnEndDrag(eventData);
         }
     }
 }

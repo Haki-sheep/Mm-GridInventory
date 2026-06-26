@@ -38,24 +38,25 @@ public class FrameBoardView : MonoBehaviour
         frameBoard = this.GetComponent<Image>();
         frameBoardBackground = this.transform as RectTransform;
     }
+
     /// <summary>
     /// 设置吸附框信息
     /// </summary>
-    /// <param name="frameBoardColor">吸附框</param>
-    public void SetFrameBoardView(EFrameBoard frameBoardColor, Vector2 pos, Vector2 size)
+    /// <param name="eframeBoardColor">吸附框枚举状态</param>
+    /// <param name="pos">吸附框位置</param>
+    /// <param name="size">吸附框大小</param>
+    public void SetFrameBoardView(EFrameBoard eframeBoardColor, Vector2 pos, Vector2 size)
     {
-
         // 显示和隐藏
-        if (frameBoardColor == EFrameBoard.Hidden)
+        if (eframeBoardColor == EFrameBoard.Hidden)
         {
             if (this.gameObject.activeSelf) this.gameObject.SetActive(false);
             return;
         }
-
         if (!this.gameObject.activeSelf) this.gameObject.SetActive(true);
 
-        // 颜色
-        switch (frameBoardColor)
+        // 根据枚举状态设置颜色
+        switch (eframeBoardColor)
         {
             case EFrameBoard.Normal:
                 frameBoard.color = NormalColor;

@@ -11,7 +11,7 @@ namespace MmInventory
     /// 此脚本放置工具方法 一般不提供给外部使用
     /// </summary>
 
-    public partial class GridMainContainerView 
+    public partial class GridMainContainerView
     {
         #region 坐标转换
         /// <summary>
@@ -80,27 +80,34 @@ namespace MmInventory
         }
         #endregion
 
-        #region 视觉表现
+
+        #region UI位置计算
         /// <summary>
-        /// 通过锚点格坐标获取其UI位置
+        /// 通过锚点坐标获取UI中心的位置
+        /// 原理: 网格坐标---> UI坐标 ---加物品半宽高--> UI中心位置
         /// </summary>
         /// <param name="anchorPos">锚点格坐标</param>
         /// <param name="dataSize">物品数据尺寸</param>
         /// <returns>物品RectTransform的localPosition</returns>
-        private Vector2 GetItemUIPos(Vector2Int anchorPos, Vector2Int dataSize)
+        private Vector2 GetItemUIPivotPos(Vector2Int anchorPos, Vector2Int dataSize)
         {
+            // 格子步长
             Vector2 step = new Vector2(gridSize + contentLayoutGroup.spacing.x,
                                        gridSize + contentLayoutGroup.spacing.y);
 
-            Vector2 topLeft = new Vector2(
+            // 锚点位置反推出UI位置
+            // 比如: anchorPos = 1,2 padding =0 格子步长 = 100
+            // 左上角 (100, -200)
+            var topLeftPos = new Vector2(
                 contentLayoutGroup.padding.left + anchorPos.x * step.x,
                 -(contentLayoutGroup.padding.top + anchorPos.y * step.y));
 
-            Vector2 uiSize = GetItemUISize(dataSize);
+            // 物品UI宽高
+            var uiSize = GetItemUISize(dataSize);
 
-
-            // return new Vector2(topLeft.x + uiSize.x , topLeft.y - uiSize.y );
-            var position = new Vector2(topLeft.x + uiSize.x * 0.5f, topLeft.y - uiSize.y * 0.5f);
+            // 物品UI中心点位置
+            var position = new Vector2(topLeftPos.x + uiSize.x * 0.5f,
+                                       topLeftPos.y - uiSize.y * 0.5f);
             return position;
         }
 
@@ -114,18 +121,8 @@ namespace MmInventory
         private Vector2 GetFrameBoardTransform(ItemRtData itemData,
                                                Vector2Int anchorPos)
         {
-            var occupiedSize = GetItemSizeInCells(itemData);
-            return GetItemUIPos(anchorPos, occupiedSize);
-        }
-
-
-        /// <summary>
-        /// 获取物品当前占用宽高
-        /// </summary>
-        /// <param name="itemData">物品数据</param>
-        private Vector2Int GetItemSizeInCells(ItemRtData itemData)
-        {
-            return itemData.DataSize;
+            var occupiedSize = itemData.DataSize;
+            return GetItemUIPivotPos(anchorPos, occupiedSize);
         }
 
         /// <summary>
@@ -138,44 +135,21 @@ namespace MmInventory
             if (dataSize.x <= 0 || dataSize.y <= 0)
                 throw new System.Exception("格子大小不能小于1");
 
-            Vector2 uiSize = Vector2.zero;
-            // 宽度 = 格子数量 * 网格大小 + 间距 * (格子数量 - 1)
-            uiSize.x = dataSize.x * gridSize + (dataSize.x - 1) * contentLayoutGroup.spacing.x;
-            uiSize.y = dataSize.y * gridSize + (dataSize.y - 1) * contentLayoutGroup.spacing.y;
+            var uiSize = Vector2.zero;
+            // 宽度 = 格子宽度 * 网格大小 + 间距 * (格子宽度 - 1)
+            uiSize.x = dataSize.x * gridSize
+                                    + (dataSize.x - 1) * contentLayoutGroup.spacing.x;
+
+            // 高度 = 格子高度 * 网格大小 + 间距 * (格子高度 - 1)
+            uiSize.y = dataSize.y * gridSize
+                                    + (dataSize.y - 1) * contentLayoutGroup.spacing.y;
             return uiSize;
         }
-
-
-        /// <summary>
-        /// 设置吸附框状态
-        /// </summary>
-        /// <param name="oldItemData"></param>
-        /// <param name="newItemData"></param>
-        /// <param name="dragPreviewAnchorPos"></param>
-        /// <param name="pos"></param>
-        /// <param name="size"></param>
-        public void SetFrameBoardState(ItemRtData oldItemData,
-                                            ItemRtData newItemData,
-                                            Vector2Int dragPreviewAnchorPos,
-                                            Vector2 pos,
-                                            Vector2 size)
-        {
-            if (frameBoardView is null) return;
-
-            // 判断吸附框状态
-            var state = gridInventoryService.JudgeFrameBoardState(oldItemData,
-                                                                newItemData,
-                                                                dragPreviewAnchorPos);
-
-            // 设置吸附框状态
-            frameBoardView.SetFrameBoardView(state, pos, size);
-        }
-
-
         #endregion
 
 
         #region 锚点计算
+
         /// <summary>
         /// 获取预览锚点位置
         /// 塔科夫式连续锚点 鼠标格减去抓取偏移
@@ -183,13 +157,14 @@ namespace MmInventory
         /// <param name="mouseOnGridPos">鼠标当前悬停的格子位置</param>
         /// <param name="dragStartOffset">抓取相对偏移</param>
         /// <returns>预览锚点</returns>
-        private Vector2Int GetPreviewAnchorPos(Vector2Int mouseOnGridPos, Vector2Int dragStartOffset)
+        private Vector2Int GetPreviewAnchorPos(Vector2Int mouseOnGridPos,
+                                               Vector2Int dragStartOffset)
         {
             var itemData = draggingItem != null ? draggingItem.ItemData : null;
             if (itemData is null)
                 return dragPreviewAnchorPos;
 
-            var gridSizeInCells = GetItemSizeInCells(itemData);
+            var gridSizeInCells = itemData.DataSize;
             Vector2Int anchorPosition = mouseOnGridPos - dragStartOffset;
             return ClampAnchorPositionToGrid(anchorPosition, gridSizeInCells.x, gridSizeInCells.y);
         }
@@ -215,7 +190,7 @@ namespace MmInventory
 
         #endregion
 
-
+        #region 物品注册与配置调用
         /// <summary>
         /// 注册场景内物品到逻辑层与字典
         /// </summary>
@@ -234,7 +209,7 @@ namespace MmInventory
 
                 Vector2Int anchorPos = itemView.ItemData.AnchorPos;
                 gridInventoryService.PlaceItem(itemView.ItemData, anchorPos);
-                itemView.ItemRectTransform.localPosition = GetItemUIPos(anchorPos, itemView.ItemData.DataSize);
+                itemView.ItemRectTransform.localPosition = GetItemUIPivotPos(anchorPos, itemView.ItemData.DataSize);
                 itemViewDict[itemView.ItemData.InstancedItemId] = itemView;
             }
         }
@@ -336,5 +311,6 @@ namespace MmInventory
 #endif
             return CellPrefab;
         }
+        #endregion
     }
 }

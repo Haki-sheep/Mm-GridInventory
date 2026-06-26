@@ -70,6 +70,8 @@
     <Compile Include="Assets\GridInventory\Scripts\Core\InventoryState.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Runtime\View\ItemView\ItemView.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Data\TableData\IItemBaseData.cs" />
+    <Compile Include="Assets\GridInventory\Scripts\Runtime\View\GridContainer\GridMainContainerView.Behaviour.cs" />
+    <Compile Include="Assets\GridInventory\Scripts\Runtime\View\GridContainer\GridMainContainerView.Compute.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Runtime\Logic\RuntimeData\ItemRtData.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Core\InventoryState.Debug.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Data\TableData\ItemBaseDataListSo.cs" />
@@ -82,11 +84,10 @@
     <Compile Include="Assets\GridInventory\Scripts\Core\InventoryState.PersisService.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Runtime\View\GridContainer\FrameBoardView.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Core\IItemRt.cs" />
-    <Compile Include="Assets\GridInventory\Scripts\Runtime\View\GridContainer\GridMainContainerView.Operate.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Runtime\Logic\GridInventoryService.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Core\InventoryState.StackableService.cs" />
-    <Compile Include="Assets\GridInventory\Scripts\Runtime\View\GridContainer\GridMainContainerView.Tools.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Runtime\Logic\RuntimeData\ItemRtDataMgr.cs" />
+    <Compile Include="Assets\GridInventory\Scripts\Runtime\View\GridContainer\GridMainContainerView.ViewTools.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="UnityEngine">

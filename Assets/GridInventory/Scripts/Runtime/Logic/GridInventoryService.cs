@@ -4,6 +4,8 @@ using UnityEngine;
 namespace MmInventory
 {
 
+    #region 操作报告
+
     /// <summary>
     /// 操作结果结构体
     /// </summary>
@@ -12,34 +14,31 @@ namespace MmInventory
         /// <summary> 是否操作成功 </summary>
         public readonly bool IsSuccess;
 
-        /// <summary> 旧物品数据 </summary>
-        public readonly ItemRtData OldItemData;
+        /// <summary> 被拖拽物A </summary>
+        public readonly ItemRtData ItemDataA;
 
-        /// <summary> 新物品数据 </summary>
-        public readonly ItemRtData NewItemData;
+        /// <summary> 被交换物B </summary>
+        public readonly ItemRtData ItemDataB;
 
-        /// <summary> 旧物品数据列表 </summary>
-        public readonly List<ItemRtData> OldItemDataList;
+        /// <summary> 交换时被挤开的物品列表 </summary>
+        public readonly List<ItemRtData> DisplacedItemDataList;
 
         /// <summary>
         /// 构造函数
         /// </summary>
-        /// <param name="isSuccess"></param>
-        /// <param name="oldItemData"></param>
-        /// <param name="newItemData"></param>
-        /// <param name="oldItemDataList"></param>
         public InventoryOpReport(bool isSuccess,
-                                 ItemRtData oldItemData,
-                                 ItemRtData newItemData = null,
-                                 List<ItemRtData> oldItemDataList = null)
+                                 ItemRtData itemDataA,
+                                 ItemRtData itemDataB = null,
+                                 List<ItemRtData> displacedItemDataList = null)
         {
             IsSuccess = isSuccess;
-            OldItemData = oldItemData;
-            NewItemData = newItemData;
-            OldItemDataList = oldItemDataList;
+            ItemDataA = itemDataA;
+            ItemDataB = itemDataB;
+            DisplacedItemDataList = displacedItemDataList;
         }
     }
 
+    #endregion
 
     /// <summary>
     /// 此类的职责是 充当算法层与View层之间的桥梁
@@ -49,92 +48,175 @@ namespace MmInventory
     /// </summary>
     public class GridInventoryService
     {
+
         private InventoryState inventoryState;
 
+        /// <summary>
+        /// new一个InventoryState数据层
+        /// </summary>
         public void Init(Vector2Int gridSize)
         {
             inventoryState = new InventoryState(gridSize);
         }
 
+        #region 放置
+
         /// <summary>
         /// 尝试放置物品
         /// </summary>
-        /// <param name="oldItemData"></param>
-        /// <param name="newAnchorPos"></param>
-        /// <returns></returns>
-        public InventoryOpReport TryPlaceItem(ItemRtData oldItemData,
-                                              Vector2Int oldAnchorPos,
-                                              Vector2Int newAnchorPos)
+        public InventoryOpReport TryPlaceItem(ItemRtData itemDataA,
+                                              Vector2Int anchorPosA,
+                                              Vector2Int anchorPosB)
         {
-            if (oldItemData is null)
+            if (itemDataA is null)
                 return new InventoryOpReport(false, null);
 
-            void RestoreOldItem()
-            {
-                oldItemData.SetAnchorPos(oldAnchorPos);
-                inventoryState.SetAt(oldAnchorPos, oldItemData);
-            }
+            void RestoreItemA() => CommitPlace(itemDataA, anchorPosA);
 
             // 直接放
-            if (inventoryState.CanPlace(oldItemData, newAnchorPos))
+            if (inventoryState.CanPlace(itemDataA, anchorPosB))
             {
-                oldItemData.SetAnchorPos(newAnchorPos);
-                if (!inventoryState.SetAt(newAnchorPos, oldItemData))
+                if (!CommitPlace(itemDataA, anchorPosB))
                 {
-                    RestoreOldItem();
-                    return new InventoryOpReport(false, oldItemData);
+                    RestoreItemA();
+                    return new InventoryOpReport(false, itemDataA);
                 }
-                return new InventoryOpReport(true, oldItemData);
+                return new InventoryOpReport(true, itemDataA);
             }
 
-            var targetItemData = inventoryState.GetItemByMask(newAnchorPos);
+            var itemDataB = inventoryState.GetItemByMask(anchorPosB) as ItemRtData;
 
             // 尝试堆叠
-            if (targetItemData != null
-                && inventoryState.CanStack(oldItemData, targetItemData)
-                && inventoryState.TryStack(oldItemData, targetItemData))
+            if (itemDataB is not null
+                && inventoryState.CanStack(itemDataA, itemDataB)
+                && inventoryState.TryStack(itemDataA, itemDataB))
             {
-                if (oldItemData.CurrStackCount > 0)
-                {
-                    oldItemData.SetAnchorPos(oldAnchorPos);
-                    inventoryState.SetAt(oldAnchorPos, oldItemData);
-                }
+                if (itemDataA.CurrStackCount > 0)
+                    RestoreItemA();
 
-                return new InventoryOpReport(true, null, targetItemData as ItemRtData);
+                return new InventoryOpReport(true, null, itemDataB);
             }
 
-            if (inventoryState.TryGetSwapTargetItem(oldItemData, newAnchorPos, out var swapTargetItem)
-                && inventoryState.CanSwap(oldItemData, swapTargetItem, newAnchorPos))
+            // 尝试交换
+            if (inventoryState.TryGetSwapTargetItem(itemDataA, anchorPosB, out var swapTargetItem)
+                && inventoryState.CanSwap(itemDataA, swapTargetItem, anchorPosB))
             {
                 var swapDisplacedList = new List<IItemRuntime>();
-                if (inventoryState.TrySwap(oldItemData,
+                if (inventoryState.TrySwap(itemDataA,
                                            swapTargetItem,
                                            swapDisplacedList,
-                                           newAnchorPos))
+                                           anchorPosB))
                 {
-                    var oldItemDataList = ToItemRtDataList(swapDisplacedList);
-                    return new InventoryOpReport(true, oldItemData, swapTargetItem as ItemRtData, oldItemDataList);
+                    return new InventoryOpReport(true,
+                                                 itemDataA,
+                                                 swapTargetItem as ItemRtData,
+                                                 ToItemRtDataList(swapDisplacedList));
                 }
 
-                return new InventoryOpReport(false, oldItemData, swapTargetItem as ItemRtData);
+                return new InventoryOpReport(false, itemDataA, swapTargetItem as ItemRtData);
             }
 
             // 全部尝试失败 回滚状态
-            RestoreOldItem();
-            return new InventoryOpReport(false, oldItemData);
+            RestoreItemA();
+            return new InventoryOpReport(false, itemDataA);
         }
 
+        /// <summary>
+        /// 强制写入物品锚点与格子占用
+        /// </summary>
         public void PlaceItem(ItemRtData itemData, Vector2Int anchorPos)
         {
-            if (itemData is null)
-                return;
-
-            itemData.SetAnchorPos(anchorPos);
-            inventoryState.SetAt(anchorPos, itemData);
+            if (itemData is null) return;
+            CommitPlace(itemData, anchorPos);
         }
 
-        public bool CanStack(ItemRtData dragItem, ItemRtData targetItem) =>
-            inventoryState.CanStack(dragItem, targetItem);
+        #endregion
+
+        #region 移除
+
+        /// <summary>
+        /// 尝试移除物品
+        /// </summary>
+        public InventoryOpReport TryRemoveItem(Vector2Int anchorPos)
+        {
+            var item = inventoryState.GetItemByMask(anchorPos) as ItemRtData;
+            if (item is null || !inventoryState.RemoveAtAny(anchorPos))
+                return new InventoryOpReport(false, null);
+
+            return new InventoryOpReport(true, item);
+        }
+
+        #endregion
+
+        #region 查询
+
+        /// <summary>
+        /// 获取任意格上的物品
+        /// </summary>
+        public ItemRtData GetItemAt(Vector2Int anyPos)
+        {
+            return inventoryState.GetItemByMask(anyPos) as ItemRtData;
+        }
+
+        #endregion
+
+        #region 旋转
+
+        /// <summary>
+        /// 尝试旋转物品
+        /// 这里只是转变数据状态 不影响实际物品的旋转
+        /// </summary>
+        public InventoryOpReport TryRotateItem(ItemRtData itemData)
+        {
+            if (itemData is null)
+                return new InventoryOpReport(false, null);
+
+            var originData = ItemRtDataMgr.Instance.GetItemData<IItemBaseData>(itemData.ExcelItemId);
+
+            // 可叠加物品不允许旋转
+            if (originData is not null && originData.ItemStackType == EItemStackType.Stackable)
+                return new InventoryOpReport(false, itemData);
+
+            itemData.SetRotated(!itemData.IsRotated);
+            return new InventoryOpReport(true, itemData);
+        }
+
+        #endregion
+
+        #region 预览判定
+
+        /// <summary>
+        /// 判定拖拽落点预览状态
+        /// </summary>
+        public EFrameBoard JudgeFrameBoardState(ItemRtData itemDataA,
+                                                ItemRtData itemDataB,
+                                                Vector2Int dragPreviewAnchorPos)
+        {
+            if (inventoryState.CanPlace(itemDataA, dragPreviewAnchorPos))
+                return EFrameBoard.CanPlace;
+
+            if (itemDataB is not null && inventoryState.CanStack(itemDataA, itemDataB))
+                return EFrameBoard.CanStack;
+
+            if (inventoryState.TryGetSwapTargetItem(itemDataA, dragPreviewAnchorPos, out var swapTargetItem) &&
+                inventoryState.CanSwap(itemDataA, swapTargetItem, dragPreviewAnchorPos))
+                return EFrameBoard.CanPlaceSwap;
+
+            return EFrameBoard.CannotPlace;
+        }
+
+        #endregion
+
+        #region 工具
+
+        /// <summary>
+        /// 写入锚点并占用格子
+        /// </summary>
+        private bool CommitPlace(ItemRtData itemData, Vector2Int anchorPos)
+        {
+            itemData.SetAnchorPos(anchorPos);
+            return inventoryState.SetAt(anchorPos, itemData);
+        }
 
         /// <summary>
         /// IGridItem列表转ItemRtData列表
@@ -147,93 +229,6 @@ namespace MmInventory
             return itemRtDataList;
         }
 
-        /// <summary>
-        /// 尝试移除物品
-        /// </summary>
-        /// <param name="anchorPos"></param>
-        /// <returns></returns>
-        public InventoryOpReport TryRemoveItem(Vector2Int anchorPos)
-        {
-            var item = inventoryState.GetItemByMask(anchorPos) as ItemRtData;
-            if (item is null)
-            {
-                return new InventoryOpReport(false, null);
-            }
-            if (!inventoryState.RemoveAtAny(anchorPos))
-            {
-                return new InventoryOpReport(false, null);
-            }
-            return new InventoryOpReport(true, item);
-        }
-
-        /// <summary>
-        /// 获取任意格上的物品
-        /// </summary>
-        /// <param name="anyPos"></param>
-        /// <returns></returns>
-        public ItemRtData GetItemAt(Vector2Int anyPos)
-        {
-            return inventoryState.GetItemByMask(anyPos) as ItemRtData;
-        }
-
-        /// <summary>
-        /// 判断是否可以放置物品
-        /// </summary>
-        /// <param name="itemData"></param>
-        /// <param name="anchorPos"></param>
-        /// <returns></returns>
-        public bool CanPlaceItem(ItemRtData itemData, Vector2Int anchorPos)
-        {
-            return inventoryState.CanPlace(itemData, anchorPos);
-        }
-
-
-        /// <summary>
-        /// 尝试旋转物品
-        /// 这里只是转变数据状态 不影响实际物品的旋转
-        /// </summary>
-        /// <param name="itemData"></param>
-        public InventoryOpReport TryRotateItem(ItemRtData itemData)
-        {
-            if (itemData is null)
-                return new InventoryOpReport(false, null);
-
-            var originData = ItemRtDataMgr.Instance.GetItemData<IItemBaseData>(itemData.ExcelItemId);
-
-            // 可叠加物品不允许旋转（默认会配成正方形）
-            if (originData is not null && originData.ItemStackType == EItemStackType.Stackable)
-                return new InventoryOpReport(false, itemData);
-
-            itemData.SetRotated(!itemData.IsRotated);
-            return new InventoryOpReport(true, itemData);
-        }
-
-
-        /// <summary>
-        /// 获取操作类型    
-        /// </summary>
-        /// <returns></returns>
-        public EFrameBoard JudgeFrameBoardState(ItemRtData oldItemData,
-                                            ItemRtData newItemData,
-                                            Vector2Int dragPreviewAnchorPos)
-        {
-            if (CanPlaceItem(oldItemData, dragPreviewAnchorPos))
-            {
-                return EFrameBoard.CanPlace;
-            }
-            else if (newItemData is not null && CanStack(oldItemData, newItemData))
-            {
-                return EFrameBoard.CanStack;
-            }
-            else if (inventoryState.TryGetSwapTargetItem(oldItemData, dragPreviewAnchorPos, out var swapTargetItem) &&
-                     inventoryState.CanSwap(oldItemData, swapTargetItem, dragPreviewAnchorPos))
-            {
-                return EFrameBoard.CanPlaceSwap;
-            }
-            else
-            {
-                return EFrameBoard.CannotPlace;
-            }
-        }
+        #endregion
     }
 }

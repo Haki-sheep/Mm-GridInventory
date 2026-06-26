@@ -73,11 +73,7 @@ namespace MmInventory
         private Dictionary<string, ItemView> itemViewDict = new();
         #endregion
 
-        #region 生命周期/逻辑周期
-        void OnEnable()
-        {
-
-        }
+        #region 生命周期
 
         void Start()
         {
@@ -91,69 +87,24 @@ namespace MmInventory
             HandleDraggingItemRotation();
         }
 
-        void OnDisable()
-        {
-
-        }
-
-        /// <summary>
-        /// 物品开始拖拽
-        /// </summary>
-        public void OnItemBeginDrag(ItemView itemView, PointerEventData eventData)
+        public void OnBeginDrag(ItemView itemView, PointerEventData eventData)
         {
             isDragging = true;
             BeginDragHandler(itemView, eventData);
         }
 
-        /// <summary>
-        /// 物品拖拽中
-        /// </summary>
-        public void OnItemDrag(PointerEventData eventData)
-        {
-            if (!isDragging) return;
-            DraggingHandler(eventData);
-        }
-
-        /// <summary>
-        /// 物品结束拖拽
-        /// </summary>
-        public void OnItemEndDrag(PointerEventData eventData)
-        {
-            if (!isDragging) return;
-            isDragging = false;
-            EndDragHandler(eventData);
-        }
-
-        public void InitComponents()
-        {
-            throw new System.NotImplementedException();
-        }
-
-        public void ViewUpdate()
-        {
-            throw new System.NotImplementedException();
-        }
-
-        public void OnBeginDrag(ItemView itemView, PointerEventData eventData)
-        {
-            throw new System.NotImplementedException();
-        }
-
         public void OnDragging(PointerEventData eventData)
         {
-            throw new System.NotImplementedException();
+              if (!isDragging) return;
+            DraggingHandler(eventData);
         }
 
         public void OnEndDrag(PointerEventData eventData)
         {
-            throw new System.NotImplementedException();
+              if (!isDragging) return;
+            isDragging = false;
+            EndDragHandler(eventData);
         }
-
-        bool IGridContainer.TryGetMouseInGridInfo(Vector2 mousePos, out Vector2Int mouseOnGridPosInt, out int mouseOnGridIndex)
-        {
-            return TryGetMouseInGridInfo(mousePos, out mouseOnGridPosInt, out mouseOnGridIndex);
-        }
-
 
         #endregion
     }
