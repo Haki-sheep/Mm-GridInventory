@@ -3,6 +3,9 @@ using UnityEngine;
 
 namespace MmInventory
 {
+    /// <summary>
+    /// 此脚本放置了GM相关的API 用于编辑器下GM投放物品
+    /// </summary>
     public partial class GridMainContainerView
     {
         /// <summary> 逻辑服务是否已初始化 </summary>
@@ -13,12 +16,12 @@ namespace MmInventory
 
         void OnEnable()
         {
-            GridMainContainerRegistry.Register(this);
+            GridMainContainerManager.Register(this);
         }
 
         void OnDisable()
         {
-            GridMainContainerRegistry.Unregister(this);
+            GridMainContainerManager.Unregister(this);
         }
 
         /// <summary>

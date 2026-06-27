@@ -130,7 +130,60 @@ namespace MmInventory
 
         #endregion
 
-        #region 放置
+        #region 放置 - 跨容器
+
+        /// <summary>
+        /// 尝试跨容器接收物品
+        /// </summary>
+        /// <param name="itemDataA">被拖拽物</param>
+        /// <param name="anchorPosB">目标锚点</param>
+        /// <returns>操作结果</returns>
+        public InventoryOpReport TryReceiveItem(ItemRtData itemDataA, Vector2Int anchorPosB)
+        {
+            if (itemDataA is null)
+                return new InventoryOpReport(false, null);
+
+            // 直接放
+            if (inventoryState.CanPlace(itemDataA, anchorPosB))
+            {
+                if (!CommitPlace(itemDataA, anchorPosB))
+                    return new InventoryOpReport(false, itemDataA);
+                return new InventoryOpReport(true, itemDataA);
+            }
+
+            // 如果不能直接放说明B锚点有东西
+            var itemDataB = inventoryState.GetItemByMask(anchorPosB) as ItemRtData;
+
+            // 尝试堆叠
+            if (itemDataB is not null
+                && inventoryState.CanStack(itemDataA, itemDataB)
+                && inventoryState.TryStack(itemDataA, itemDataB))
+            {
+                return new InventoryOpReport(true, null, itemDataB);
+            }
+
+            if (inventoryState.TryGetSwapTargetItem(itemDataA, anchorPosB, out var swapTargetItem)
+                && inventoryState.CanSwap(itemDataA, swapTargetItem, anchorPosB, false))
+            {
+                // 小物品列表
+                var swapDisplacedList = new List<IItemRuntime>();
+                // 尝试交换
+                if (inventoryState.TrySwap(itemDataA, swapTargetItem, swapDisplacedList, anchorPosB, false))
+                {
+                    return new InventoryOpReport(true,
+                        itemDataA,
+                        swapTargetItem as ItemRtData,
+                        ToItemRtDataList(swapDisplacedList));
+                }
+
+                 return new InventoryOpReport(false, itemDataA, swapTargetItem as ItemRtData);
+            }
+            return new InventoryOpReport(false, itemDataA);
+        }
+
+        #endregion
+
+        #region 放置 - 同容器
 
         /// <summary>
         /// 尝试放置物品
@@ -195,10 +248,57 @@ namespace MmInventory
         /// <summary>
         /// 强制写入物品锚点与格子占用
         /// </summary>
-        public void PlaceItem(ItemRtData itemData, Vector2Int anchorPos)
+        public bool PlaceItem(ItemRtData itemData, Vector2Int anchorPos)
         {
-            if (itemData is null) return;
-            CommitPlace(itemData, anchorPos);
+            if (itemData is null) return false;
+            return CommitPlace(itemData, anchorPos);
+        }
+
+        /// <summary>
+        /// 判断物品是否可放到指定锚点
+        /// </summary>
+        public bool CanPlaceItem(ItemRtData itemData, Vector2Int anchorPos)
+        {
+            if (itemData is null)
+                return false;
+            return inventoryState.CanPlace(itemData, anchorPos);
+        }
+
+        /// <summary>
+        /// 在矩形 footprint 内查找首个可放置锚点并写入
+        /// </summary>
+        public bool TryPlaceInFootprint(ItemRtData itemData,
+                                        Vector2Int footprintAnchor,
+                                        Vector2Int footprintSize)
+        {
+            if (itemData is null)
+                return false;
+
+            for (int y = 0; y < footprintSize.y; y++)
+            {
+                for (int x = 0; x < footprintSize.x; x++)
+                {
+                    var candidate = new Vector2Int(footprintAnchor.x + x, footprintAnchor.y + y);
+                    if (!inventoryState.CanPlace(itemData, candidate))
+                        continue;
+                    return CommitPlace(itemData, candidate);
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// 查找背包首个空位并放置
+        /// </summary>
+        public bool TryPlaceAtFirst(ItemRtData itemData)
+        {
+            if (itemData is null)
+                return false;
+            if (!inventoryState.SetAtFirst(itemData, out var anchorPos))
+                return false;
+            itemData.SetAnchorPos(anchorPos);
+            return true;
         }
 
         #endregion
@@ -246,7 +346,8 @@ namespace MmInventory
         /// </summary>
         public EFrameBoard JudgeFrameBoardState(ItemRtData itemDataA,
                                                 ItemRtData itemDataB,
-                                                Vector2Int dragPreviewAnchorPos)
+                                                Vector2Int dragPreviewAnchorPos,
+                                                bool shouldPlaceDisplacedItems = true)
         {
             if (inventoryState.CanPlace(itemDataA, dragPreviewAnchorPos))
                 return EFrameBoard.CanPlace;
@@ -255,7 +356,10 @@ namespace MmInventory
                 return EFrameBoard.CanStack;
 
             if (inventoryState.TryGetSwapTargetItem(itemDataA, dragPreviewAnchorPos, out var swapTargetItem) &&
-                inventoryState.CanSwap(itemDataA, swapTargetItem, dragPreviewAnchorPos))
+                inventoryState.CanSwap(itemDataA,
+                                       swapTargetItem,
+                                       dragPreviewAnchorPos,
+                                       shouldPlaceDisplacedItems))
                 return EFrameBoard.CanPlaceSwap;
 
             return EFrameBoard.CannotPlace;

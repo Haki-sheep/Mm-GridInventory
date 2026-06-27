@@ -12,15 +12,20 @@ namespace MmInventory
 {
     /// <summary>
     /// 背包主容器视图 
-    /// 用于初始化背包格子 提供View层组件给Operate脚本使用
+    /// 此脚本放置了基础组件和Unity生命周期以及公共接口
+    /// 如果你不想知道View层的具体实现细节 直接看这个脚本提供给外部的API即可
     /// </summary>
     public partial class GridMainContainerView : SerializedMonoBehaviour, IGridContainer
     {
 
         #region 字段与属性
+        /// <summary>滚动内容壳层 ScrollRect.content </summary>
+        private RectTransform scrollContentCache;
+        private RectTransform scrollContent => scrollContentCache ??= ScrollRect.content;
+
         /// <summary>网格内容容器 用于坐标转换</summary>
         private RectTransform gridContentCache;
-        private RectTransform gridContent => gridContentCache ??= transform.Find("Viewport/GridContent") as RectTransform;
+        private RectTransform gridContent => gridContentCache ??= FindChildRectTransform(scrollContent, "GridContent");
 
         /// <summary>网格内容布局组 用于提供格子Size等基础参数</summary>
         private GridLayoutGroup contentLayoutGroupCache;
@@ -28,7 +33,7 @@ namespace MmInventory
 
         /// <summary>物品内容容器 用于承载物品</summary>
         private RectTransform itemContentCache;
-        private RectTransform itemContent => itemContentCache ??= transform.Find("Viewport/ItemContent") as RectTransform;
+        private RectTransform itemContent => itemContentCache ??= FindChildRectTransform(scrollContent, "ItemContent");
 
         [Header("自定义View组件")]
         private GridInventoryService gridInventoryService;
@@ -47,36 +52,38 @@ namespace MmInventory
         public const int spacing = 0;
         public Vector2Int gridRowAndCloumns = Vector2Int.zero;
 
+        /// <summary> 可视高度 父容器显示区域高度 </summary>
+        [SerializeField]
+        private int visibleHeight = 700;
+
         // 下列组件皆为自动获取
         /// <summary>滚动区域 用于拖拽物品时临时禁用不然拖拽物品过程中会触发父级视图滚动</summary>
         private ScrollRect scrollRectCache;
-        private ScrollRect scrollRect => scrollRectCache ??= GetComponentInParent<ScrollRect>();
+        private ScrollRect ScrollRect => scrollRectCache ??= GetComponent<ScrollRect>();
 
         /// <summary>容器RectTransform 用于设置整体容器大小</summary>
         private RectTransform containertRectTransformCache;
-        private RectTransform containertRectTransform => containertRectTransformCache ??= scrollRect.content as RectTransform;
+        private RectTransform ContainertRectTransform => containertRectTransformCache ??= ScrollRect.content as RectTransform;
 
         /// <summary>Canvas 用于保证网格坐标计算的正确性</summary>
         private Canvas canvasCache;
-        private Canvas canvas => canvasCache ??= GetComponentInParent<Canvas>();
+        private Canvas Canvas => canvasCache ??= GetComponentInParent<Canvas>();
 
         private Camera canvasCameraCache;
-        private Camera canvasCamera => canvasCameraCache ??= canvas.worldCamera;
+        private Camera CanvasCamera => canvasCameraCache ??= Canvas.worldCamera;
+ 
 
-        [Header("Debug")]
-        [SerializeField, ReadOnly]
-        /// <summary>网格格子视图 用于显示网格格子</summary>
-        private GridCellView[] gridCellViews;
-
-        [DictionaryDrawerSettings(KeyLabel = "物品实例ID", ValueLabel = "物品视图")]
-        [SerializeField]
-        private Dictionary<string, ItemView> itemViewDict = new();
         #endregion
 
         #region 生命周期
 
         void Start()
         {
+#if UNITY_EDITOR
+            CreatItemCells();
+#else
+            EnsureScrollContentHierarchy();
+#endif
             gridInventoryService = new GridInventoryService();
             gridInventoryService.Init(gridRowAndCloumns);
             RegisterSceneItemViews();
@@ -84,13 +91,13 @@ namespace MmInventory
 
         void Update()
         {
+            HandleScrollWithMouseWheel();
             HandleDraggingItemRotation();
         }
 
         public void OnBeginDrag(ItemView itemView, PointerEventData eventData)
         {
-            isDragging = true;
-            BeginDragHandler(itemView, eventData);
+            isDragging = BeginDragHandler(itemView, eventData);
         }
 
         public void OnDragging(PointerEventData eventData)

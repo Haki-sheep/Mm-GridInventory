@@ -235,15 +235,21 @@ namespace MmInventory
 
         public bool CanSwap(IItemRuntime aItemData,
                             IItemRuntime bItemData,
-                            Vector2Int placeAnchorPos) =>
-        inventorySwapService.CanSwap(aItemData, bItemData, placeAnchorPos);
+                            Vector2Int placeAnchorPos,
+                            bool shouldPlaceDisplacedItems = true) =>
+        inventorySwapService.CanSwap(aItemData, bItemData, placeAnchorPos, shouldPlaceDisplacedItems);
 
 
         public bool TrySwap(IItemRuntime aItemData,
                             IItemRuntime bItemData,
                             List<IItemRuntime> oldItemDataList,
-                            Vector2Int placeAnchorPos) =>
-        inventorySwapService.TrySwap(aItemData, bItemData, oldItemDataList, placeAnchorPos);
+                            Vector2Int placeAnchorPos,
+                            bool shouldPlaceDisplacedItems = true) =>
+        inventorySwapService.TrySwap(aItemData,
+                                     bItemData,
+                                     oldItemDataList,
+                                     placeAnchorPos,
+                                     shouldPlaceDisplacedItems);
 
         /// <summary>
         /// 尝试获取交换目标物品信息
@@ -251,7 +257,7 @@ namespace MmInventory
         /// <param name="dragItemData">拖动物品</param>
         /// <param name="placeAnchorPos">放置锚点</param>
         /// <param name="swapTargetItem">交换目标物品</param>
-        /// <returns></returns>
+        /// <returns>是否成功</returns>
         public bool TryGetSwapTargetItem(IItemRuntime dragItemData,
                                          Vector2Int placeAnchorPos,
                                          out IItemRuntime swapTargetItem) =>

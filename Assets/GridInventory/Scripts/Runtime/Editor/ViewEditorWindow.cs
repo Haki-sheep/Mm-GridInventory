@@ -39,12 +39,37 @@ namespace MmInventory.Editor
 
         private void OnEnable()
         {
+            EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
             RefreshContainers();
             RefreshItemOptions();
         }
 
+        private void OnDisable()
+        {
+            EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
+        }
+
+        private void OnPlayModeStateChanged(PlayModeStateChange state)
+        {
+            if (state != PlayModeStateChange.EnteredPlayMode
+                && state != PlayModeStateChange.EnteredEditMode)
+                return;
+
+            EditorApplication.delayCall += RefreshContainersDelayed;
+        }
+
+        private void RefreshContainersDelayed()
+        {
+            if (this == null)
+                return;
+
+            RefreshContainers();
+            Repaint();
+        }
+
         private void OnGUI()
         {
+            SanitizeContainerRefs();
             DrawToolbar();
 
             using (new EditorGUILayout.HorizontalScope())
@@ -52,6 +77,30 @@ namespace MmInventory.Editor
                 DrawContainerPanel();
                 DrawGmPanel();
             }
+        }
+
+        /// <summary>
+        /// 清理已销毁容器引用
+        /// Unity 销毁对象后 is null 无效 需用 ==
+        /// </summary>
+        private void SanitizeContainerRefs()
+        {
+            for (int i = containerList.Count - 1; i >= 0; i--)
+            {
+                if (containerList[i] == null)
+                    containerList.RemoveAt(i);
+            }
+
+            if (selectedContainer == null && containerList.Count > 0)
+                selectedContainer = containerList[0];
+        }
+
+        /// <summary>
+        /// 容器引用是否仍有效
+        /// </summary>
+        private static bool IsContainerAlive(GridMainContainerView container)
+        {
+            return container != null;
         }
 
         /// <summary>
@@ -85,7 +134,8 @@ namespace MmInventory.Editor
                 for (int i = 0; i < containerList.Count; i++)
                 {
                     var container = containerList[i];
-                    if (container is null) continue;
+                    if (!IsContainerAlive(container))
+                        continue;
 
                     bool isSelected = selectedContainer == container;
                     string label = $"{container.ContainerName}  {container.gridRowAndCloumns.x}x{container.gridRowAndCloumns.y}";
@@ -109,7 +159,7 @@ namespace MmInventory.Editor
         {
             using (new EditorGUILayout.VerticalScope())
             {
-                if (selectedContainer is null)
+                if (!IsContainerAlive(selectedContainer))
                 {
                     EditorGUILayout.HelpBox("请选择一个背包容器", MessageType.Info);
                     return;
@@ -197,7 +247,7 @@ namespace MmInventory.Editor
                 for (int i = 0; i < itemViewList.Count; i++)
                 {
                     var itemView = itemViewList[i];
-                    if (itemView is null || itemView.ItemData is null) continue;
+                    if (itemView == null || itemView.ItemData == null) continue;
 
                     var data = itemView.ItemData;
                     using (new EditorGUILayout.HorizontalScope())
@@ -221,7 +271,7 @@ namespace MmInventory.Editor
         /// </summary>
         private void SpawnSelectedItem()
         {
-            if (selectedContainer is null || itemOptionList.Count == 0) return;
+            if (!IsContainerAlive(selectedContainer) || itemOptionList.Count == 0) return;
 
             int excelItemId = itemOptionList[selectedItemIndex].ExcelItemId;
             ItemView itemView;
@@ -243,23 +293,29 @@ namespace MmInventory.Editor
         {
             containerList.Clear();
 
-            var registryList = GridMainContainerRegistry.Containers;
+            var registryList = GridMainContainerManager.ContainerList;
             for (int i = 0; i < registryList.Count; i++)
             {
-                if (registryList[i] is not null)
-                    containerList.Add(registryList[i]);
+                var container = registryList[i];
+                if (IsContainerAlive(container))
+                    containerList.Add(container);
             }
 
             if (containerList.Count == 0)
             {
-                var foundList = Object.FindObjectsByType<GridMainContainerView>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-                containerList.AddRange(foundList);
+                var foundList = Object.FindObjectsByType<GridMainContainerView>(
+                    FindObjectsInactive.Include,
+                    FindObjectsSortMode.None);
+
+                for (int i = 0; i < foundList.Length; i++)
+                {
+                    if (IsContainerAlive(foundList[i]))
+                        containerList.Add(foundList[i]);
+                }
             }
 
-            if (selectedContainer is not null && !containerList.Contains(selectedContainer))
+            if (!IsContainerAlive(selectedContainer) || !containerList.Contains(selectedContainer))
                 selectedContainer = containerList.Count > 0 ? containerList[0] : null;
-            else if (selectedContainer is null && containerList.Count > 0)
-                selectedContainer = containerList[0];
 
             statusMessage = $"容器数量 {containerList.Count}";
         }

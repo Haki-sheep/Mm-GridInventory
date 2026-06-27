@@ -72,9 +72,9 @@
     <Compile Include="Assets\GridInventory\Scripts\Runtime\View\ItemView\ItemView.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Data\TableData\IItemBaseData.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Runtime\View\GridContainerMgr\GridMainContainerView.Gm.cs" />
-    <Compile Include="Assets\GridInventory\Scripts\Runtime\View\GridContainerMgr\GridMainContainerRegistry.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Runtime\Logic\RuntimeData\ItemRtData.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Core\InventoryState.Debug.cs" />
+    <Compile Include="Assets\GridInventory\Scripts\Runtime\View\GridContainerMgr\GridMainContainerManager.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Data\TableData\ItemBaseDataListSo.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Data\TableData\EItemType.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Data\LootSimulation\LootSimConfigSo.cs" />

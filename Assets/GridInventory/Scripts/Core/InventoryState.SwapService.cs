@@ -11,6 +11,10 @@ namespace MmInventory
             private readonly InventoryState inventoryState;
             /// <summary> 临时覆盖物品集合 </summary>
             private readonly HashSet<IItemRuntime> tempLittleItemHashList = new();
+            /// <summary>
+            /// 临时小物品相对偏移字典
+            /// </summary>
+            private readonly Dictionary<IItemRuntime, Vector2Int> tempLittleItemOffsetDict = new();
             /// <summary> 试算用临时列表 </summary>
             private readonly List<IItemRuntime> simulateOldItemList = new();
 
@@ -33,8 +37,9 @@ namespace MmInventory
             /// <returns>是否可交换</returns>
             public bool CanSwap(IItemRuntime aItemData,
                                 IItemRuntime bItemData,
-                                Vector2Int placeAnchorPos) =>
-            SimulateSwap(aItemData, bItemData, placeAnchorPos);
+                                Vector2Int placeAnchorPos,
+                                bool shouldPlaceDisplacedItems = true) =>
+            SimulateSwap(aItemData, bItemData, placeAnchorPos, shouldPlaceDisplacedItems);
 
             /// <summary>
             /// 执行交换
@@ -47,8 +52,9 @@ namespace MmInventory
             public bool TrySwap(IItemRuntime aItemData,
                                 IItemRuntime bItemData,
                                 List<IItemRuntime> oldItemDataList,
-                                Vector2Int placeAnchorPos) =>
-            CommitSwap(aItemData, bItemData, placeAnchorPos, oldItemDataList);
+                                Vector2Int placeAnchorPos,
+                                bool shouldPlaceDisplacedItems = true) =>
+            CommitSwap(aItemData, bItemData, placeAnchorPos, oldItemDataList, shouldPlaceDisplacedItems);
             #endregion
 
 
@@ -63,7 +69,8 @@ namespace MmInventory
             /// <returns>是否可以交换</returns>
             private bool SimulateSwap(IItemRuntime aItemData,
                                       IItemRuntime bItemData,
-                                      Vector2Int placeAnchorPos)
+                                      Vector2Int placeAnchorPos,
+                                      bool shouldPlaceDisplacedItems)
             {
                 // 获取交换计划
                 var plan = GetSwapPlan(aItemData, bItemData);
@@ -87,7 +94,12 @@ namespace MmInventory
                 try
                 {
                     // 尝试执行交换
-                    return TryExecuteSwap(plan, aIndex, bIndex, placeAnchorPos, simulateOldItemList);
+                    return TryExecuteSwap(plan,
+                                          aIndex,
+                                          bIndex,
+                                          placeAnchorPos,
+                                          simulateOldItemList,
+                                          shouldPlaceDisplacedItems);
                 }
                 // 如果交换失败 则回滚真实网格
                 finally
@@ -109,7 +121,8 @@ namespace MmInventory
             private bool CommitSwap(IItemRuntime aItemData,
                                     IItemRuntime bItemData,
                                     Vector2Int placeAnchorPos,
-                                    List<IItemRuntime> oldItemDataList)
+                                    List<IItemRuntime> oldItemDataList,
+                                    bool shouldPlaceDisplacedItems)
             {
                 // 获取交换计划
                 var plan = GetSwapPlan(aItemData, bItemData);
@@ -129,7 +142,12 @@ namespace MmInventory
                 try
                 {
                     // 尝试执行交换
-                    var canSwap = TryExecuteSwap(plan, aIndex, bIndex, placeAnchorPos, oldItemDataList);
+                    var canSwap = TryExecuteSwap(plan,
+                                                 aIndex,
+                                                 bIndex,
+                                                 placeAnchorPos,
+                                                 oldItemDataList,
+                                                 shouldPlaceDisplacedItems);
                     if (!canSwap) return false;
 
                     // 更新物品信息
@@ -164,19 +182,27 @@ namespace MmInventory
                                         int aIndex,
                                         int bIndex,
                                         Vector2Int placeAnchorPos,
-                                        List<IItemRuntime> oldItemDataList)
+                                        List<IItemRuntime> oldItemDataList,
+                                        bool shouldPlaceReturnedItems)
             {
                 oldItemDataList.Clear();
                 switch (plan.SwapState)
                 {
                     case ESwapState.Same:
-                        return SwapSameItem(plan, aIndex, bIndex);
+                        return SwapSameItem(plan,
+                                            aIndex,
+                                            bIndex,
+                                            placeAnchorPos,
+                                            shouldPlaceReturnedItems);
 
                     case ESwapState.LargeToSmall:
-                        return SwapLargeToSmallItem(plan, placeAnchorPos, oldItemDataList);
+                        return SwapLargeToSmallItem(plan,
+                                                    placeAnchorPos,
+                                                    oldItemDataList,
+                                                    shouldPlaceReturnedItems);
 
                     case ESwapState.SmallToLarge:
-                        return SwapSmallToLargeItem(plan, placeAnchorPos);
+                        return SwapSmallToLargeItem(plan, placeAnchorPos, shouldPlaceReturnedItems);
 
                     default:
                         return false;
@@ -276,7 +302,11 @@ namespace MmInventory
             /// <param name="aIndex">A索引</param>
             /// <param name="bIndex">B索引</param>
             /// <returns>是否成功</returns>
-            public bool SwapSameItem(SwapPlan plan, int aIndex, int bIndex)
+            public bool SwapSameItem(SwapPlan plan,
+                                     int aIndex,
+                                     int bIndex,
+                                     Vector2Int placeAnchorPos,
+                                     bool shouldPlaceReturnedItems)
             {
                 var aItemData = plan.aItemData;
                 var bItemData = plan.bItemData;
@@ -284,6 +314,16 @@ namespace MmInventory
                 // 如果旋转状态不同 则不能交换
                 if (aItemData.IsRotated != bItemData.IsRotated)
                     return false;
+
+                if (!shouldPlaceReturnedItems)
+                {
+                    inventoryState.RemoveAt(bItemData.AnchorPos);
+                    if (!inventoryState.CanPlace(aItemData, placeAnchorPos))
+                        return false;
+
+                    inventoryState.SetItemData(aItemData, placeAnchorPos);
+                    return true;
+                }
 
                 // 清空锚点物品
                 inventoryState.itemAnchorArray[aIndex] = null;
@@ -316,9 +356,11 @@ namespace MmInventory
             /// <returns>是否成功</returns>
             public bool SwapLargeToSmallItem(SwapPlan plan,
                                              Vector2Int placeAnchorPos,
-                                             List<IItemRuntime> oldItemDataList)
+                                             List<IItemRuntime> oldItemDataList,
+                                             bool shouldPlaceDisplacedItems)
             {
                 tempLittleItemHashList.Clear();
+                tempLittleItemOffsetDict.Clear();
                 
                 // 获取大物品信息
                 var largeItemData = plan.aItemData;
@@ -334,8 +376,12 @@ namespace MmInventory
                         // 如果物品不为空 并且物品不是大物品 则添加到临时物品集合
                         if (littleItem is not null && littleItem.InstancedItemId != plan.aItemData.InstancedItemId)
                         {
-                            // 添加到临时物品集合
-                            tempLittleItemHashList.Add(littleItem);
+                            // 同一个多格物品只记录一次
+                            if (!tempLittleItemHashList.Add(littleItem))
+                                continue;
+
+                            // 记录小物品在新落点覆盖区域内的相对偏移
+                            tempLittleItemOffsetDict.Add(littleItem, littleItem.AnchorPos - placeAnchorPos);
                             // 添加到旧物品列表 用于UI层使用
                             oldItemDataList.Add(littleItem);
                         }
@@ -343,7 +389,8 @@ namespace MmInventory
                 }
 
                 // 移除大物品
-                inventoryState.RemoveAt(largeItemData.AnchorPos);
+                if (shouldPlaceDisplacedItems)
+                    inventoryState.RemoveAt(largeItemData.AnchorPos);
                 // 移除被覆盖的小物品
                 foreach (var littleItem in tempLittleItemHashList)
                     inventoryState.RemoveAt(littleItem.AnchorPos);
@@ -355,31 +402,19 @@ namespace MmInventory
                 // 放下大物品
                 inventoryState.SetItemData(largeItemData, placeAnchorPos);
 
+                if (!shouldPlaceDisplacedItems)
+                    return true;
+
                 foreach (var littleItem in tempLittleItemHashList)
                 {
-                    bool placed = false;
-
-                    // 优先放回旧大物品区域
-                    for (int i = largeItemData.AnchorPos.x; i < largeItemData.AnchorPos.x + largeItemData.DataSize.x && !placed; i++)
-                    {
-                        for (int j = largeItemData.AnchorPos.y; j < largeItemData.AnchorPos.y + largeItemData.DataSize.y; j++)
-                        {
-                            var candidate = new Vector2Int(i, j);
-                            if (!inventoryState.CanPlace(littleItem, candidate)) continue;
-
-                            inventoryState.SetItemData(littleItem, candidate);
-                            placed = true;
-                            break;
-                        }
-                    }
-
-                    // 放不回原区域时 再尝试全背包首个空位放置
-                    if (!placed && inventoryState.SetAtFirst(littleItem, out _))
-                        placed = true;
-
-                    // 如果既放不回原区域 又放不回全背包首个空位 则交换失败
-                    if (!placed)
+                    if (!tempLittleItemOffsetDict.TryGetValue(littleItem, out var relativeOffset))
                         return false;
+
+                    var targetAnchorPos = largeItemData.AnchorPos + relativeOffset;
+                    if (!inventoryState.CanPlace(littleItem, targetAnchorPos))
+                        return false;
+
+                    inventoryState.SetItemData(littleItem, targetAnchorPos);
                 }
 
                 return true;
@@ -391,17 +426,23 @@ namespace MmInventory
             /// <param name="plan">交换计划</param>
             /// <param name="placeAnchorPos">放置锚点</param>
             /// <returns>是否成功</returns>
-            public bool SwapSmallToLargeItem(SwapPlan plan, Vector2Int placeAnchorPos)
+            public bool SwapSmallToLargeItem(SwapPlan plan,
+                                             Vector2Int placeAnchorPos,
+                                             bool shouldPlaceReturnedItems)
             {
                 var smallItemData = plan.aItemData;
                 var largeItemData = plan.bItemData;
 
-                inventoryState.RemoveAt(smallItemData.AnchorPos);
+                if (shouldPlaceReturnedItems)
+                    inventoryState.RemoveAt(smallItemData.AnchorPos);
                 inventoryState.RemoveAt(largeItemData.AnchorPos);
                 if (!inventoryState.CanPlace(smallItemData, placeAnchorPos))
                     return false;
 
                 inventoryState.SetItemData(smallItemData, placeAnchorPos);
+                if (!shouldPlaceReturnedItems)
+                    return true;
+
                 if (!inventoryState.CanPlace(largeItemData, smallItemData.AnchorPos))
                 {
                     if (inventoryState.SetAtFirst(largeItemData, out _))
