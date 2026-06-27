@@ -23,18 +23,23 @@ namespace MmInventory
         /// <summary> 交换时被挤开的物品列表 </summary>
         public readonly List<ItemRtData> DisplacedItemDataList;
 
+        /// <summary> 交换类型 </summary>
+        public readonly ESwapState SwapState;
+
         /// <summary>
         /// 构造函数
         /// </summary>
         public InventoryOpReport(bool isSuccess,
                                  ItemRtData itemDataA,
                                  ItemRtData itemDataB = null,
-                                 List<ItemRtData> displacedItemDataList = null)
+                                 List<ItemRtData> displacedItemDataList = null,
+                                 ESwapState swapState = ESwapState.CanNotSwap)
         {
             IsSuccess = isSuccess;
             ItemDataA = itemDataA;
             ItemDataB = itemDataB;
             DisplacedItemDataList = displacedItemDataList;
+            SwapState = swapState;
         }
     }
 
@@ -163,22 +168,57 @@ namespace MmInventory
             }
 
             if (inventoryState.TryGetSwapTargetItem(itemDataA, anchorPosB, out var swapTargetItem)
-                && inventoryState.CanSwap(itemDataA, swapTargetItem, anchorPosB, false))
+                && inventoryState.CanSwap(itemDataA, swapTargetItem, anchorPosB, ESwapPlaceMode.CrossContainer))
             {
                 // 小物品列表
                 var swapDisplacedList = new List<IItemRuntime>();
+                var swapState = GetSwapState(itemDataA, swapTargetItem as ItemRtData);
                 // 尝试交换
-                if (inventoryState.TrySwap(itemDataA, swapTargetItem, swapDisplacedList, anchorPosB, false))
+                if (inventoryState.TrySwap(itemDataA,
+                                           swapTargetItem,
+                                           swapDisplacedList,
+                                           anchorPosB,
+                                           ESwapPlaceMode.CrossContainer))
                 {
                     return new InventoryOpReport(true,
                         itemDataA,
                         swapTargetItem as ItemRtData,
-                        ToItemRtDataList(swapDisplacedList));
+                        ToItemRtDataList(swapDisplacedList),
+                        swapState);
                 }
 
-                 return new InventoryOpReport(false, itemDataA, swapTargetItem as ItemRtData);
+                 return new InventoryOpReport(false, itemDataA, swapTargetItem as ItemRtData, swapState: swapState);
             }
             return new InventoryOpReport(false, itemDataA);
+        }
+
+        /// <summary>
+        /// 尝试接收跨容器交换返回物
+        /// </summary>
+        public bool TryReceiveSwapReturnItem(InventoryOpReport result, Vector2Int anchorPos)
+        {
+            if (!ShouldReceiveSwapReturnItem(result))
+                return true;
+
+            if (PlaceItem(result.ItemDataB, anchorPos))
+                return true;
+
+            return result.SwapState == ESwapState.SmallToLarge
+                   && TryPlaceAtFirst(result.ItemDataB);
+        }
+
+        /// <summary>
+        /// 尝试接收跨容器大换小被挤物
+        /// </summary>
+        public bool TryReceiveDisplacedItem(ItemRtData itemData,
+                                            Vector2Int fromAnchorPos,
+                                            Vector2Int toAnchorPos)
+        {
+            if (itemData is null)
+                return false;
+
+            var relativeOffset = itemData.AnchorPos - fromAnchorPos;
+            return PlaceItem(itemData, toAnchorPos + relativeOffset);
         }
 
         #endregion
@@ -226,6 +266,7 @@ namespace MmInventory
                 && inventoryState.CanSwap(itemDataA, swapTargetItem, anchorPosB))
             {
                 var swapDisplacedList = new List<IItemRuntime>();
+                var swapState = GetSwapState(itemDataA, swapTargetItem as ItemRtData);
                 if (inventoryState.TrySwap(itemDataA,
                                            swapTargetItem,
                                            swapDisplacedList,
@@ -234,10 +275,11 @@ namespace MmInventory
                     return new InventoryOpReport(true,
                                                  itemDataA,
                                                  swapTargetItem as ItemRtData,
-                                                 ToItemRtDataList(swapDisplacedList));
+                                                 ToItemRtDataList(swapDisplacedList),
+                                                 swapState);
                 }
 
-                return new InventoryOpReport(false, itemDataA, swapTargetItem as ItemRtData);
+                return new InventoryOpReport(false, itemDataA, swapTargetItem as ItemRtData, swapState: swapState);
             }
 
             // 全部尝试失败 回滚状态
@@ -252,50 +294,6 @@ namespace MmInventory
         {
             if (itemData is null) return false;
             return CommitPlace(itemData, anchorPos);
-        }
-
-        /// <summary>
-        /// 判断物品是否可放到指定锚点
-        /// </summary>
-        public bool CanPlaceItem(ItemRtData itemData, Vector2Int anchorPos)
-        {
-            if (itemData is null)
-                return false;
-            return inventoryState.CanPlace(itemData, anchorPos);
-        }
-
-        /// <summary>
-        /// 判断背包是否存在首个可放置空位
-        /// </summary>
-        public bool CanPlaceAtFirst(ItemRtData itemData)
-        {
-            if (itemData is null)
-                return false;
-            return inventoryState.FindSetAtFirst(itemData, out _);
-        }
-
-        /// <summary>
-        /// 在矩形 footprint 内查找首个可放置锚点并写入
-        /// </summary>
-        public bool TryPlaceInFootprint(ItemRtData itemData,
-                                        Vector2Int footprintAnchor,
-                                        Vector2Int footprintSize)
-        {
-            if (itemData is null)
-                return false;
-
-            for (int y = 0; y < footprintSize.y; y++)
-            {
-                for (int x = 0; x < footprintSize.x; x++)
-                {
-                    var candidate = new Vector2Int(footprintAnchor.x + x, footprintAnchor.y + y);
-                    if (!inventoryState.CanPlace(itemData, candidate))
-                        continue;
-                    return CommitPlace(itemData, candidate);
-                }
-            }
-
-            return false;
         }
 
         /// <summary>
@@ -357,7 +355,7 @@ namespace MmInventory
         public EFrameBoard JudgeFrameBoardState(ItemRtData itemDataA,
                                                 ItemRtData itemDataB,
                                                 Vector2Int dragPreviewAnchorPos,
-                                                bool shouldPlaceDisplacedItems = true)
+                                                ESwapPlaceMode swapPlaceMode = ESwapPlaceMode.SameContainer)
         {
             if (inventoryState.CanPlace(itemDataA, dragPreviewAnchorPos))
                 return EFrameBoard.CanPlace;
@@ -369,7 +367,7 @@ namespace MmInventory
                 inventoryState.CanSwap(itemDataA,
                                        swapTargetItem,
                                        dragPreviewAnchorPos,
-                                       shouldPlaceDisplacedItems))
+                                       swapPlaceMode))
                 return EFrameBoard.CanPlaceSwap;
 
             return EFrameBoard.CannotPlace;
@@ -397,6 +395,35 @@ namespace MmInventory
             for (int i = 0; i < gridItemList.Count; i++)
                 itemRtDataList.Add((ItemRtData)gridItemList[i]);
             return itemRtDataList;
+        }
+
+        /// <summary>
+        /// 获取交换类型
+        /// </summary>
+        private static ESwapState GetSwapState(ItemRtData itemDataA, ItemRtData itemDataB)
+        {
+            if (itemDataA is null || itemDataB is null)
+                return ESwapState.CanNotSwap;
+
+            int sizeA = itemDataA.DataSize.x * itemDataA.DataSize.y;
+            int sizeB = itemDataB.DataSize.x * itemDataB.DataSize.y;
+
+            if (sizeA == sizeB)
+                return ESwapState.Same;
+
+            return sizeA > sizeB ? ESwapState.LargeToSmall : ESwapState.SmallToLarge;
+        }
+
+        /// <summary>
+        /// 是否接收跨容器交换返回物
+        /// </summary>
+        private static bool ShouldReceiveSwapReturnItem(InventoryOpReport result)
+        {
+            if (result.ItemDataA is null || result.ItemDataB is null)
+                return false;
+
+            return result.SwapState == ESwapState.Same
+                   || result.SwapState == ESwapState.SmallToLarge;
         }
 
         #endregion

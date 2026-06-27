@@ -67,6 +67,7 @@
     <Compile Include="Assets\GridInventory\Scripts\Runtime\View\GridContainer\ContainerMainPart\GridMainContainerView.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Runtime\View\GridContainer\ContainerMainPart\GridMainContainerView.Compute.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Runtime\View\GridContainer\IGridContainer.cs" />
+    <Compile Include="Assets\GridInventory\Scripts\Core\InventoryState.SwapService.Branch.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Data\TableData\ItemViewPrefabListSo.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Core\InventoryState.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Runtime\View\ItemView\ItemView.cs" />
@@ -90,6 +91,7 @@
     <Compile Include="Assets\GridInventory\Scripts\Runtime\View\GridContainer\ContainerSecondaryPart\FrameBoardView.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Runtime\Logic\GridInventoryService.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Core\InventoryState.StackableService.cs" />
+    <Compile Include="Assets\GridInventory\Scripts\Core\InventoryState.SwapService.Plan.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Runtime\Logic\RuntimeData\ItemRtDataMgr.cs" />
   </ItemGroup>
   <ItemGroup>

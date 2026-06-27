@@ -152,14 +152,14 @@ namespace MmInventory
                                         Vector2Int dragPreviewAnchorPos,
                                         Vector2 pos,
                                         Vector2 size,
-                                        bool shouldPlaceDisplacedItems = true)
+                                        ESwapPlaceMode swapPlaceMode = ESwapPlaceMode.SameContainer)
         {
             if (frameBoardView is null) return;
 
             var state = gridInventoryService.JudgeFrameBoardState(itemDataA,
                                                                   itemDataB,
                                                                   dragPreviewAnchorPos,
-                                                                  shouldPlaceDisplacedItems);
+                                                                  swapPlaceMode);
 
             frameBoardView.SetFrameBoardView(state, pos, size);
         }
@@ -204,7 +204,12 @@ namespace MmInventory
             var frameSize = GetItemUISize(itemView.ItemData.DataSize);
 
             // 设置吸附框状态
-            SetFrameBoardState(itemView.ItemData, itemDataB, previewAnchor, framePos, frameSize, false);
+            SetFrameBoardState(itemView.ItemData,
+                               itemDataB,
+                               previewAnchor,
+                               framePos,
+                               frameSize,
+                               ESwapPlaceMode.CrossContainer);
         }
 
         #endregion

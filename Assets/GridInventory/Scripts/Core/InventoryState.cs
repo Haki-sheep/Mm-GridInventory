@@ -20,6 +20,17 @@ namespace MmInventory
     }
 
     /// <summary>
+    /// 交换放置模式
+    /// </summary>
+    public enum ESwapPlaceMode
+    {
+        // 同容器交换
+        SameContainer,
+        // 跨容器交换
+        CrossContainer,
+    }
+
+    /// <summary>
     /// 交换结构体 
     /// aItemData: 交换的物品
     /// bItemData: 交换的物品
@@ -236,20 +247,20 @@ namespace MmInventory
         public bool CanSwap(IItemRuntime aItemData,
                             IItemRuntime bItemData,
                             Vector2Int placeAnchorPos,
-                            bool shouldPlaceDisplacedItems = true) =>
-        inventorySwapService.CanSwap(aItemData, bItemData, placeAnchorPos, shouldPlaceDisplacedItems);
+                            ESwapPlaceMode swapPlaceMode = ESwapPlaceMode.SameContainer) =>
+        inventorySwapService.CanSwap(aItemData, bItemData, placeAnchorPos, swapPlaceMode);
 
 
         public bool TrySwap(IItemRuntime aItemData,
                             IItemRuntime bItemData,
                             List<IItemRuntime> oldItemDataList,
                             Vector2Int placeAnchorPos,
-                            bool shouldPlaceDisplacedItems = true) =>
+                            ESwapPlaceMode swapPlaceMode = ESwapPlaceMode.SameContainer) =>
         inventorySwapService.TrySwap(aItemData,
                                      bItemData,
                                      oldItemDataList,
                                      placeAnchorPos,
-                                     shouldPlaceDisplacedItems);
+                                     swapPlaceMode);
 
         /// <summary>
         /// 尝试获取交换目标物品信息

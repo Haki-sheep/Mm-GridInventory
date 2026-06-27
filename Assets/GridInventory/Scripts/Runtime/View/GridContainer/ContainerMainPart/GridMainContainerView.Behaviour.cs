@@ -249,6 +249,8 @@ namespace MmInventory
         }
         #endregion
 
+
+        #region E 跨容器
         /// <summary>
         /// 同容器内结束拖拽
         /// </summary>
@@ -316,9 +318,7 @@ namespace MmInventory
             var newA = result.ItemDataA;
             var newB = result.ItemDataB;
 
-            if (newB is not null
-                && ShouldSwapItemReturnToA(newA, newB)
-                && !aContainer.TryPlaceReturnedItem(newA, newB))
+            if (!aContainer.gridInventoryService.TryReceiveSwapReturnItem(result, aContainer.dragStartAnchorPos))
             {
                 bContainer.gridInventoryService.TryRemoveItem(newA.AnchorPos);
                 bContainer.gridInventoryService.PlaceItem(newB, newB.AnchorPos);
@@ -340,77 +340,67 @@ namespace MmInventory
             itemView.ItemRectTransform.localPosition =
                 bContainer.GetItemUIPivotPos(newA.AnchorPos, newA.DataSize);
 
-            // 交换时 B 物品迁回 A 仅适用于同尺寸或小换大
-            if (newB is not null
-                && ShouldSwapItemReturnToA(newA, newB)
-                && bContainer.itemViewDict.TryGetValue(newB.InstancedItemId, out var swappedView))
+            aContainer.MoveReturnItemView(result, bContainer);
+
+            aContainer.MoveDisplacedItemViews(result, bContainer);
+        }
+
+        /// <summary>
+        /// 迁移跨容器交换返回物视图
+        /// </summary>
+        private void MoveReturnItemView(InventoryOpReport result, GridMainContainerView fromContainer)
+        {
+            if (!ShouldMoveReturnItem(result))
+                return;
+
+            var itemDataB = result.ItemDataB;
+            if (!fromContainer.itemViewDict.TryGetValue(itemDataB.InstancedItemId, out var swappedView))
+                return;
+
+            fromContainer.RemoveItemView(swappedView);
+            AddItemView(swappedView);
+
+            swappedView.ItemRectTransform.localPosition =
+                GetItemUIPivotPos(itemDataB.AnchorPos, itemDataB.DataSize);
+        }
+
+        /// <summary>
+        /// 迁移大换小被挤开物品视图
+        /// </summary>
+        private void MoveDisplacedItemViews(InventoryOpReport result, GridMainContainerView fromContainer)
+        {
+            if (result.SwapState != ESwapState.LargeToSmall
+                || result.DisplacedItemDataList is null
+                || result.DisplacedItemDataList.Count == 0)
+                return;
+
+            foreach (var data in result.DisplacedItemDataList)
             {
-                bContainer.RemoveItemView(swappedView);
-                aContainer.AddItemView(swappedView);
+                if (!fromContainer.itemViewDict.TryGetValue(data.InstancedItemId, out var displacedView))
+                    continue;
 
-                swappedView.ItemRectTransform.localPosition =
-                    aContainer.GetItemUIPivotPos(newB.AnchorPos, newB.DataSize);
-            }
+                fromContainer.RemoveItemView(displacedView);
 
-            // 大换小 被挤开的小物按相对偏移迁回 A 原大物占格
-            if (result.DisplacedItemDataList is not null
-                        && result.DisplacedItemDataList.Count > 0)
-            {
-                foreach (var data in result.DisplacedItemDataList)
-                {
-                    if (!bContainer.itemViewDict.TryGetValue(data.InstancedItemId, out var displacedView))
-                        continue;
+                gridInventoryService.TryReceiveDisplacedItem(data, dragPreviewAnchorPos, dragStartAnchorPos);
 
-                    bContainer.RemoveItemView(displacedView);
-
-                    var relativeOffset = data.AnchorPos - dragPreviewAnchorPos;
-                    var targetAnchorPos = aContainer.dragStartAnchorPos + relativeOffset;
-                    aContainer.gridInventoryService.PlaceItem(data, targetAnchorPos);
-
-                    aContainer.AddItemView(displacedView);
-                    displacedView.ItemRectTransform.localPosition =
-                        aContainer.GetItemUIPivotPos(data.AnchorPos, data.DataSize);
-                }
+                AddItemView(displacedView);
+                displacedView.ItemRectTransform.localPosition =
+                    GetItemUIPivotPos(data.AnchorPos, data.DataSize);
             }
         }
 
         /// <summary>
-        /// 跨容器交换时 B 物品是否应定点回到 A
-        /// 同尺寸与小换大需要 大换小走 DisplacedItemDataList
+        /// 是否迁移跨容器交换返回物
         /// </summary>
-        private bool ShouldSwapItemReturnToA(ItemRtData itemA, ItemRtData itemB)
+        private static bool ShouldMoveReturnItem(InventoryOpReport result)
         {
-            if (itemA is null || itemB is null)
+            if (result.ItemDataA is null || result.ItemDataB is null)
                 return false;
 
-            int sizeA = itemA.DataSize.x * itemA.DataSize.y;
-            int sizeB = itemB.DataSize.x * itemB.DataSize.y;
-            return sizeA <= sizeB;
+            return result.SwapState == ESwapState.Same
+                   || result.SwapState == ESwapState.SmallToLarge;
         }
 
-        /// <summary>
-        /// 尝试接收跨容器交换返回物品
-        /// </summary>
-        private bool TryPlaceReturnedItem(ItemRtData itemA, ItemRtData itemB)
-        {
-            if (gridInventoryService.PlaceItem(itemB, dragStartAnchorPos))
-                return true;
-
-            return IsSmallToLargeSwap(itemA, itemB)
-                   && gridInventoryService.TryPlaceAtFirst(itemB);
-        }
-
-        /// <summary>
-        /// 是否为小物品交换大物品
-        /// </summary>
-        private static bool IsSmallToLargeSwap(ItemRtData itemA, ItemRtData itemB)
-        {
-            if (itemA is null || itemB is null)
-                return false;
-
-            int sizeA = itemA.DataSize.x * itemA.DataSize.y;
-            int sizeB = itemB.DataSize.x * itemB.DataSize.y;
-            return sizeA < sizeB;
-        }
+        #endregion
     }
 }
