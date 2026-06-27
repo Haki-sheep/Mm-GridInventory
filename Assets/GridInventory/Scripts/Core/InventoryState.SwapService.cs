@@ -402,6 +402,7 @@ namespace MmInventory
                 tempLittleItemOffsetDict.Clear();
 
                 var largeItemData = plan.aItemData;
+                var largeOldAnchorPos = largeItemData.AnchorPos;
                 var largeSize = largeItemData.DataSize;
 
                 for (int x = 0; x < largeSize.x; x++)
@@ -439,14 +440,72 @@ namespace MmInventory
                     if (!tempLittleItemOffsetDict.TryGetValue(littleItem, out var relativeOffset))
                         return false;
 
-                    var targetAnchorPos = largeItemData.AnchorPos + relativeOffset;
-                    if (!inventoryState.CanPlace(littleItem, targetAnchorPos))
+                    if (!TryPlaceLittleItemAfterLargeSwap(littleItem,
+                                                          largeOldAnchorPos,
+                                                          largeSize,
+                                                          relativeOffset))
                         return false;
-
-                    inventoryState.SetItemData(littleItem, targetAnchorPos);
                 }
 
                 return true;
+            }
+
+            /// <summary>
+            /// 大换小后放置被挤开的小物品
+            /// </summary>
+            private bool TryPlaceLittleItemAfterLargeSwap(IItemRuntime littleItemData,
+                                                          Vector2Int largeOldAnchorPos,
+                                                          Vector2Int largeOldSize,
+                                                          Vector2Int relativeOffset)
+            {
+                // 优先保持小物品相对大物品的摆放顺序
+                var targetAnchorPos = largeOldAnchorPos + relativeOffset;
+                if (inventoryState.CanPlace(littleItemData, targetAnchorPos))
+                {
+                    inventoryState.SetItemData(littleItemData, targetAnchorPos);
+                    return true;
+                }
+
+                // 相对位置被新大物品占用时回到大物品原占用区域内寻找
+                if (TryPlaceLittleItemInLargeOldArea(littleItemData,
+                                                     largeOldAnchorPos,
+                                                     largeOldSize))
+                    return true;
+
+                // 原区域也放不下时交给背包全局空位兜底
+                return inventoryState.SetAtFirst(littleItemData, out _);
+            }
+
+            /// <summary>
+            /// 在大物品原占用区域内查找小物品位置
+            /// </summary>
+            private bool TryPlaceLittleItemInLargeOldArea(IItemRuntime littleItemData,
+                                                          Vector2Int largeOldAnchorPos,
+                                                          Vector2Int largeOldSize)
+            {
+                var littleSize = littleItemData.DataSize;
+                // 扫描范围限制在大物品原占用矩形内
+                int maxOffsetX = largeOldSize.x - littleSize.x;
+                int maxOffsetY = largeOldSize.y - littleSize.y;
+                if (maxOffsetX < 0 || maxOffsetY < 0)
+                    return false;
+
+                // 从左上到右下寻找第一个能完整容纳小物品的位置
+                for (int y = 0; y <= maxOffsetY; y++)
+                {
+                    for (int x = 0; x <= maxOffsetX; x++)
+                    {
+                        var candidateAnchorPos = new Vector2Int(largeOldAnchorPos.x + x,
+                                                                 largeOldAnchorPos.y + y);
+                        if (!inventoryState.CanPlace(littleItemData, candidateAnchorPos))
+                            continue;
+
+                        inventoryState.SetItemData(littleItemData, candidateAnchorPos);
+                        return true;
+                    }
+                }
+
+                return false;
             }
 
             /// <summary>
