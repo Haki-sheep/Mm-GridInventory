@@ -265,6 +265,16 @@ namespace MmInventory
         }
 
         /// <summary>
+        /// 判断背包是否存在首个可放置空位
+        /// </summary>
+        public bool CanPlaceAtFirst(ItemRtData itemData)
+        {
+            if (itemData is null)
+                return false;
+            return inventoryState.FindSetAtFirst(itemData, out _);
+        }
+
+        /// <summary>
         /// 在矩形 footprint 内查找首个可放置锚点并写入
         /// </summary>
         public bool TryPlaceInFootprint(ItemRtData itemData,

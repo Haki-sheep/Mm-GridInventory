@@ -318,7 +318,7 @@ namespace MmInventory
 
             if (newB is not null
                 && ShouldSwapItemReturnToA(newA, newB)
-                && !aContainer.gridInventoryService.CanPlaceItem(newB, aContainer.dragStartAnchorPos))
+                && !aContainer.CanReceiveReturnedItem(newA, newB))
             {
                 bContainer.gridInventoryService.TryRemoveItem(newA.AnchorPos);
                 bContainer.gridInventoryService.PlaceItem(newB, newB.AnchorPos);
@@ -346,13 +346,17 @@ namespace MmInventory
                 && bContainer.itemViewDict.TryGetValue(newB.InstancedItemId, out var swappedView))
             {
                 bContainer.RemoveItemView(swappedView);
-                newB.SetAnchorPos(aContainer.dragStartAnchorPos);
 
-                aContainer.gridInventoryService.PlaceItem(newB, aContainer.dragStartAnchorPos);
+                if (!aContainer.gridInventoryService.PlaceItem(newB, aContainer.dragStartAnchorPos)
+                    && IsSmallToLargeSwap(newA, newB))
+                {
+                    aContainer.gridInventoryService.TryPlaceAtFirst(newB);
+                }
+
                 aContainer.AddItemView(swappedView);
 
                 swappedView.ItemRectTransform.localPosition =
-                    aContainer.GetItemUIPivotPos(aContainer.dragStartAnchorPos, newB.DataSize);
+                    aContainer.GetItemUIPivotPos(newB.AnchorPos, newB.DataSize);
             }
 
             // 大换小 被挤开的小物按相对偏移迁回 A 原大物占格
@@ -389,6 +393,31 @@ namespace MmInventory
             int sizeA = itemA.DataSize.x * itemA.DataSize.y;
             int sizeB = itemB.DataSize.x * itemB.DataSize.y;
             return sizeA <= sizeB;
+        }
+
+        /// <summary>
+        /// 源容器是否能接收返回物品
+        /// </summary>
+        private bool CanReceiveReturnedItem(ItemRtData itemA, ItemRtData itemB)
+        {
+            if (gridInventoryService.CanPlaceItem(itemB, dragStartAnchorPos))
+                return true;
+
+            return IsSmallToLargeSwap(itemA, itemB)
+                   && gridInventoryService.CanPlaceAtFirst(itemB);
+        }
+
+        /// <summary>
+        /// 是否为小物品交换大物品
+        /// </summary>
+        private static bool IsSmallToLargeSwap(ItemRtData itemA, ItemRtData itemB)
+        {
+            if (itemA is null || itemB is null)
+                return false;
+
+            int sizeA = itemA.DataSize.x * itemA.DataSize.y;
+            int sizeB = itemB.DataSize.x * itemB.DataSize.y;
+            return sizeA < sizeB;
         }
     }
 }
