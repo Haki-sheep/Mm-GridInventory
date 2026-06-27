@@ -373,25 +373,25 @@ namespace MmInventory
         /// <summary>
         /// 判定拖拽落点预览状态
         /// </summary>
-        public EFrameBoard JudgeFrameBoardState(ItemRtData itemDataA,
-                                                ItemRtData itemDataB,
-                                                Vector2Int dragPreviewAnchorPos,
-                                                ESwapPlaceMode swapPlaceMode = ESwapPlaceMode.SameContainer)
+        public EDragPreviewState JudgeDragPreviewState(ItemRtData itemDataA,
+                                                       ItemRtData itemDataB,
+                                                       Vector2Int dragPreviewAnchorPos,
+                                                       ESwapPlaceMode swapPlaceMode = ESwapPlaceMode.SameContainer)
         {
             if (inventoryState.CanPlace(itemDataA, dragPreviewAnchorPos))
-                return EFrameBoard.CanPlace;
+                return EDragPreviewState.CanPlace;
 
             if (itemDataB is not null && inventoryState.CanStack(itemDataA, itemDataB))
-                return EFrameBoard.CanStack;
+                return EDragPreviewState.CanStack;
 
             if (inventoryState.TryGetSwapTargetItem(itemDataA, dragPreviewAnchorPos, out var swapTargetItem) &&
                 inventoryState.CanSwap(itemDataA,
                                        swapTargetItem,
                                        dragPreviewAnchorPos,
                                        swapPlaceMode))
-                return EFrameBoard.CanPlaceSwap;
+                return EDragPreviewState.CanPlaceSwap;
 
-            return EFrameBoard.CannotPlace;
+            return EDragPreviewState.CannotPlace;
         }
 
         #endregion

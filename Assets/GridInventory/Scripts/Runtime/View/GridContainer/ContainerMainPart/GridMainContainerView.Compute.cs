@@ -281,6 +281,18 @@ namespace MmInventory
         }
 
         /// <summary>
+        /// 网格坐标转格子索引
+        /// </summary>
+        private int ToCellIndex(Vector2Int gridPos)
+        {
+            if (gridPos.x < 0 || gridPos.y < 0
+                || gridPos.x >= gridRowAndCloumns.x || gridPos.y >= gridRowAndCloumns.y)
+                return -1;
+
+            return gridPos.y * gridRowAndCloumns.x + gridPos.x;
+        }
+
+        /// <summary>
         /// 源容器回滚拖拽物
         /// </summary>
         /// <param name="itemView">拖拽物品</param>

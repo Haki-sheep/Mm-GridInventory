@@ -58,14 +58,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 0.6}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: e1c2b545b079d364da4ae2a8c27f3ca7, type: 3}
+  m_Sprite: {fileID: 0}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -135,4 +135,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MmInventory.InventoryItemView
   itemImage: {fileID: 6696254981261567927}
   ItemRectTransform: {fileID: 6819566953958952505}
-  itemId: 1
+  excelItemId: 0

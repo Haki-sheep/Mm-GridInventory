@@ -29,7 +29,87 @@ namespace MmInventory
         [SerializeField, LabelText("拖拽滚动速度")]
         private float dragScrollWheelSpeed = 100f;
 
-        #region 高亮格子与吸附框
+        #region 拖拽预览
+
+        /// <summary>
+        /// 清除 footprint 预览高亮
+        /// </summary>
+        private void ClearFootprintCellPreview()
+        {
+            if (gridCellViewList is null || previewFootprintCellIndexList.Count == 0)
+                return;
+
+            for (int i = 0; i < previewFootprintCellIndexList.Count; i++)
+            {
+                int cellIndex = previewFootprintCellIndexList[i];
+                if (cellIndex < 0 || cellIndex >= gridCellViewList.Length)
+                    continue;
+
+                gridCellViewList[cellIndex].SetPreviewState(ECellPreviewState.None);
+            }
+
+            previewFootprintCellIndexList.Clear();
+        }
+
+        /// <summary>
+        /// 刷新 footprint 预览高亮
+        /// </summary>
+        private void UpdateFootprintCellPreview(ItemRtData itemDataA,
+                                                Vector2Int previewAnchorPos,
+                                                ESwapPlaceMode swapPlaceMode)
+        {
+            ClearFootprintCellPreview();
+
+            if (itemDataA is null || gridCellViewList is null || gridCellViewList.Length == 0)
+                return;
+
+            var itemDataB = gridInventoryService.GetItemAt(previewAnchorPos);
+            var previewResult = gridInventoryService.JudgeDragPreviewState(itemDataA,
+                                                                           itemDataB,
+                                                                           previewAnchorPos,
+                                                                           swapPlaceMode);
+            var previewState = previewResult == EDragPreviewState.CannotPlace
+                ? ECellPreviewState.Invalid
+                : ECellPreviewState.Valid;
+
+            var dataSize = itemDataA.DataSize;
+            for (int x = 0; x < dataSize.x; x++)
+            {
+                for (int y = 0; y < dataSize.y; y++)
+                {
+                    int cellIndex = ToCellIndex(new Vector2Int(previewAnchorPos.x + x, previewAnchorPos.y + y));
+                    if (cellIndex < 0 || cellIndex >= gridCellViewList.Length)
+                        continue;
+
+                    gridCellViewList[cellIndex].SetPreviewState(previewState);
+                    previewFootprintCellIndexList.Add(cellIndex);
+                }
+            }
+        }
+
+        /// <summary>
+        /// 处理拖拽预览表现
+        /// </summary>
+        private void HandlerDragPreview(EOnDragState state,
+                                        ESwapPlaceMode swapPlaceMode = ESwapPlaceMode.SameContainer)
+        {
+            switch (state)
+            {
+                case EOnDragState.None:
+                case EOnDragState.OnEndDrag:
+                    ClearFootprintCellPreview();
+                    break;
+
+                case EOnDragState.OnBeginDrag:
+                case EOnDragState.OnDragging:
+                    if (draggingItem is null || draggingItem.ItemData is null)
+                        return;
+
+                    UpdateFootprintCellPreview(draggingItem.ItemData, dragPreviewAnchorPos, swapPlaceMode);
+                    break;
+            }
+        }
+
         private void SetCellHighlight(int cellIndex)
         {
             if (cellIndex == -1) return;
@@ -61,68 +141,15 @@ namespace MmInventory
             }
         }
         /// <summary>
-        /// 处理吸附框状态
+        /// 设置拖拽过程中物品层级
         /// </summary>
-        /// <param name="state"></param>
-        private void HandlerFrameBoardState(EOnDragState state)
-        {
-            if (frameBoardView is null) return;
-
-            switch (state)
-            {
-                case EOnDragState.None:
-                    frameBoardView.SetFrameBoardView(EFrameBoard.Hidden, Vector2.zero, Vector2.zero);
-                    break;
-
-                case EOnDragState.OnBeginDrag:
-                case EOnDragState.OnDragging:
-                case EOnDragState.OnEndDrag:
-                    if (draggingItem is null || draggingItem.ItemData is null) return;
-
-                    var itemDataB = gridInventoryService.GetItemAt(dragPreviewAnchorPos);
-                    // 计算吸附框位置和尺寸
-                    var framePos = GetItemUIPivotPos(dragPreviewAnchorPos, draggingItem.ItemData.DataSize);
-                    var frameSize = GetItemUISize(draggingItem.ItemData.DataSize);
-
-                    if (state == EOnDragState.OnBeginDrag)
-                    {
-                        frameBoardView.SetFrameBoardView(EFrameBoard.Normal, framePos, frameSize);
-                        break;
-                    }
-
-                    if (state == EOnDragState.OnEndDrag)
-                    {
-                        frameBoardView.SetFrameBoardView(EFrameBoard.Hidden, framePos, frameSize);
-                        break;
-                    }
-
-                    SetFrameBoardState(draggingItem.ItemData,
-                                       itemDataB,
-                                       dragPreviewAnchorPos,
-                                       framePos,
-                                       frameSize);
-                    break;
-            }
-        }
-
-        /// <summary>
-        /// 设置拖拽过程中 物品 和 吸附框 的层级
-        /// </summary>
-        /// <param name="state"></param>
         private void SetTransformSibingIndex(EOnDragState state)
         {
             switch (state)
             {
-                // 拖拽起来的时候 将被拖拽物放在最上层
                 case EOnDragState.OnBeginDrag:
                     draggingItem.ItemRectTransform.SetAsLastSibling();
-                    frameBoardView.transform.SetAsLastSibling();
                     break;
-                // 吸附框在次最上层
-                case EOnDragState.OnDragging:
-                    frameBoardView.transform.SetAsLastSibling();
-                    break;
-                // 放置的时候 将物品放在原来的层级 吸附框重置于最上层
 
                 case EOnDragState.OnEndDrag:
                     if (draggingItem is not null)
@@ -131,39 +158,9 @@ namespace MmInventory
                         int safeIndex = Mathf.Clamp(dragStartSiblingIndex, 0, maxIndex);
                         draggingItem.ItemRectTransform.SetSiblingIndex(safeIndex);
                     }
-
-                    // 吸附框保持最高层级。
-                    frameBoardView.transform.SetAsLastSibling();
                     break;
             }
         }
-
-        /// <summary>
-        /// 设置吸附框状态
-        /// 在做堆叠交换等判断以后设置吸附框的颜色和位置
-        /// </summary>
-        /// <param name="itemDataA">物品数据A</param>
-        /// <param name="itemDataB">物品数据B</param>
-        /// <param name="dragPreviewAnchorPos">预览锚点</param>
-        /// <param name="pos">吸附框位置</param>
-        /// <param name="size">吸附框尺寸</param>
-        private void SetFrameBoardState(ItemRtData itemDataA,
-                                        ItemRtData itemDataB,
-                                        Vector2Int dragPreviewAnchorPos,
-                                        Vector2 pos,
-                                        Vector2 size,
-                                        ESwapPlaceMode swapPlaceMode = ESwapPlaceMode.SameContainer)
-        {
-            if (frameBoardView is null) return;
-
-            var state = gridInventoryService.JudgeFrameBoardState(itemDataA,
-                                                                  itemDataB,
-                                                                  dragPreviewAnchorPos,
-                                                                  swapPlaceMode);
-
-            frameBoardView.SetFrameBoardView(state, pos, size);
-        }
-
 
         /// <summary>
         /// 清除本容器拖拽预览
@@ -171,7 +168,7 @@ namespace MmInventory
         public void ClearDragPreview()
         {
             ClearCellHighlight();
-            HandlerFrameBoardState(EOnDragState.None);
+            ClearFootprintCellPreview();
         }
 
 
@@ -190,26 +187,22 @@ namespace MmInventory
             if (itemView is null || itemView.ItemData is null)
                 return;
 
-            // 高亮格子
-            SetCellHighlight(gridIndex);
-
             // 在本容器坐标系下算预览锚点
             var previewAnchor = GetPreviewAnchorPos(mouseOnGridPos, dragOffset, itemView.ItemData);
+            
+            // 尝试自动旋转
+            TryAutoRotateForPreview(itemView,
+                                    ref previewAnchor,
+                                    mouseOnGridPos,
+                                    dragOffset,
+                                    ESwapPlaceMode.CrossContainer);
+                                    
             dragPreviewAnchorPos = previewAnchor;
-            cachedFrameBoardAnchorPos = previewAnchor;
+            cachedPreviewAnchorPos = previewAnchor;
 
-            // 查目标格上的物品 用于判断吸附框状态
-            var itemDataB = gridInventoryService.GetItemAt(previewAnchor);
-            var framePos = GetItemUIPivotPos(previewAnchor, itemView.ItemData.DataSize);
-            var frameSize = GetItemUISize(itemView.ItemData.DataSize);
-
-            // 设置吸附框状态
-            SetFrameBoardState(itemView.ItemData,
-                               itemDataB,
-                               previewAnchor,
-                               framePos,
-                               frameSize,
-                               ESwapPlaceMode.CrossContainer);
+            UpdateFootprintCellPreview(itemView.ItemData,
+                                       previewAnchor,
+                                       ESwapPlaceMode.CrossContainer);
         }
 
         #endregion
@@ -265,27 +258,24 @@ namespace MmInventory
             draggingItem.ItemRectTransform.position = screenPos;
 
             // 计算网格坐标
-            if (!TryGetMouseInGridInfo(screenPos, out var mouseOnGridPos, out var gridIndex))
+            if (!TryGetMouseInGridInfo(screenPos, out var mouseOnGridPos, out _))
             {
-                ClearCellHighlight();
-                HandlerFrameBoardState(EOnDragState.None);
+                ClearDragPreview();
                 return;
             }
 
-            // 设置高亮格子
-            SetCellHighlight(gridIndex);
-
-            // 计算预览锚点
             dragPreviewAnchorPos = GetPreviewAnchorPos(mouseOnGridPos, dragStartOffset, draggingItem.ItemData);
-            // 如果预览锚点与上一帧相同 则不进行后续操作
-            if (cachedFrameBoardAnchorPos == dragPreviewAnchorPos)
+            TryAutoRotateForPreview(draggingItem,
+                                    ref dragPreviewAnchorPos,
+                                    mouseOnGridPos,
+                                    dragStartOffset,
+                                    ESwapPlaceMode.SameContainer);
+
+            if (cachedPreviewAnchorPos == dragPreviewAnchorPos)
                 return;
 
-            // 缓存预览锚点
-            cachedFrameBoardAnchorPos = dragPreviewAnchorPos;
-
-            // 设置吸附框状态
-            HandlerFrameBoardState(EOnDragState.OnDragging);
+            cachedPreviewAnchorPos = dragPreviewAnchorPos;
+            HandlerDragPreview(EOnDragState.OnDragging);
         }
 
         #endregion

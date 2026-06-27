@@ -58,7 +58,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 0.6}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -135,4 +135,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MmInventory.InventoryItemView
   itemImage: {fileID: 6696254981261567927}
   ItemRectTransform: {fileID: 6819566953958952505}
-  itemId: 1
+  excelItemId: 0

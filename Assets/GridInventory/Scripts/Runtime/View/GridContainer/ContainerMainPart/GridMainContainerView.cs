@@ -38,9 +38,6 @@ namespace MmInventory
         [Header("自定义View组件")]
         private GridInventoryService gridInventoryService;
 
-        private FrameBoardView frameBoardViewCache;
-        private FrameBoardView frameBoardView => frameBoardViewCache ??= itemContent.Find("frameBoard")?.GetComponent<FrameBoardView>();
-
         private ItemView[] itemViewsCache;
         private ItemView[] itemViews => itemViewsCache ??= itemContent.GetComponentsInChildren<ItemView>();
 
