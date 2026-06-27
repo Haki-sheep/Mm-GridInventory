@@ -79,11 +79,6 @@ namespace MmInventory
 
         void Start()
         {
-#if UNITY_EDITOR
-            CreatItemCells();
-#else
-            EnsureScrollContentHierarchy();
-#endif
             gridInventoryService = new GridInventoryService();
             gridInventoryService.Init(gridRowAndCloumns);
             RegisterSceneItemViews();

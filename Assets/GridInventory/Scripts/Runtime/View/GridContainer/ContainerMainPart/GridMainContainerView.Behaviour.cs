@@ -318,7 +318,7 @@ namespace MmInventory
 
             if (newB is not null
                 && ShouldSwapItemReturnToA(newA, newB)
-                && !aContainer.CanReceiveReturnedItem(newA, newB))
+                && !aContainer.TryPlaceReturnedItem(newA, newB))
             {
                 bContainer.gridInventoryService.TryRemoveItem(newA.AnchorPos);
                 bContainer.gridInventoryService.PlaceItem(newB, newB.AnchorPos);
@@ -346,13 +346,6 @@ namespace MmInventory
                 && bContainer.itemViewDict.TryGetValue(newB.InstancedItemId, out var swappedView))
             {
                 bContainer.RemoveItemView(swappedView);
-
-                if (!aContainer.gridInventoryService.PlaceItem(newB, aContainer.dragStartAnchorPos)
-                    && IsSmallToLargeSwap(newA, newB))
-                {
-                    aContainer.gridInventoryService.TryPlaceAtFirst(newB);
-                }
-
                 aContainer.AddItemView(swappedView);
 
                 swappedView.ItemRectTransform.localPosition =
@@ -396,15 +389,15 @@ namespace MmInventory
         }
 
         /// <summary>
-        /// 源容器是否能接收返回物品
+        /// 尝试接收跨容器交换返回物品
         /// </summary>
-        private bool CanReceiveReturnedItem(ItemRtData itemA, ItemRtData itemB)
+        private bool TryPlaceReturnedItem(ItemRtData itemA, ItemRtData itemB)
         {
-            if (gridInventoryService.CanPlaceItem(itemB, dragStartAnchorPos))
+            if (gridInventoryService.PlaceItem(itemB, dragStartAnchorPos))
                 return true;
 
             return IsSmallToLargeSwap(itemA, itemB)
-                   && gridInventoryService.CanPlaceAtFirst(itemB);
+                   && gridInventoryService.TryPlaceAtFirst(itemB);
         }
 
         /// <summary>
