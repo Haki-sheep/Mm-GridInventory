@@ -82,7 +82,7 @@ namespace MmInventory
             var itemRtData = ItemRtData.FromConfig(itemData);
 
             // 尝试放到指定锚点
-            if (!CommitPlace(itemRtData, anchorPos))
+            if (!SetAnchorAndPlaceItem(itemRtData, anchorPos))
             {
                 // 该位置已存在物品 尝试放置到第一个可放置位置
                 if (!inventoryState.SetAtFirst(itemRtData, out var firstAnchor))
@@ -151,7 +151,7 @@ namespace MmInventory
             // 直接放
             if (inventoryState.CanPlace(itemDataA, anchorPosB))
             {
-                if (!CommitPlace(itemDataA, anchorPosB))
+                if (!SetAnchorAndPlaceItem(itemDataA, anchorPosB))
                     return new InventoryOpReport(false, itemDataA);
                 return new InventoryOpReport(true, itemDataA);
             }
@@ -193,32 +193,62 @@ namespace MmInventory
         }
 
         /// <summary>
-        /// 尝试接收跨容器交换返回物
+        /// 尝试接收跨容器交换 A 侧返回物
         /// </summary>
-        public bool TryReceiveSwapReturnItem(InventoryOpReport result, Vector2Int anchorPos)
+        /// <param name="result">交换结果</param>
+        /// <param name="returnBaseAnchorPos">A 侧大物拖起锚点</param>
+        /// <param name="dropAnchorPos">B 侧大物落点锚点</param>
+        /// <returns>是否成功</returns>
+        public bool TryReceiveSwapReturnItem(InventoryOpReport result,
+                                             Vector2Int returnBaseAnchorPos,
+                                             Vector2Int dropAnchorPos)
         {
-            if (!ShouldReceiveSwapReturnItem(result))
-                return true;
+            switch (result.SwapState)
+            {
+                case ESwapState.Same:
+                case ESwapState.SmallToLarge:
+                    if (result.ItemDataB is null)
+                        return false;
 
-            if (PlaceItem(result.ItemDataB, anchorPos))
-                return true;
+                    if (SetAnchorAndPlaceItem(result.ItemDataB, returnBaseAnchorPos))
+                        return true;
 
-            return result.SwapState == ESwapState.SmallToLarge
-                   && TryPlaceAtFirst(result.ItemDataB);
+                    return result.SwapState == ESwapState.SmallToLarge
+                           && TryPlaceAtFirst(result.ItemDataB);
+
+                case ESwapState.LargeToSmall:
+                    return TryReceiveDisplacedItemList(result.DisplacedItemDataList,
+                                                       dropAnchorPos,
+                                                       returnBaseAnchorPos);
+
+                default:
+                    return true;
+            }
         }
 
         /// <summary>
-        /// 尝试接收跨容器大换小被挤物
+        /// 接收大换小被挤物列表
         /// </summary>
-        public bool TryReceiveDisplacedItem(ItemRtData itemData,
-                                            Vector2Int fromAnchorPos,
-                                            Vector2Int toAnchorPos)
+        private bool TryReceiveDisplacedItemList(List<ItemRtData> displacedItemDataList,
+                                                 Vector2Int dropAnchorPos,
+                                                 Vector2Int returnBaseAnchorPos)
         {
-            if (itemData is null)
-                return false;
+            if (displacedItemDataList is null || displacedItemDataList.Count == 0)
+                return true;
 
-            var relativeOffset = itemData.AnchorPos - fromAnchorPos;
-            return PlaceItem(itemData, toAnchorPos + relativeOffset);
+            for (int i = 0; i < displacedItemDataList.Count; i++)
+            {
+                var itemData = displacedItemDataList[i];
+                if (itemData is null)
+                    return false;
+
+                // 小物在 B 相对大物落点的偏移 映射到 A 拖起锚点
+                var relativeOffset = itemData.AnchorPos - dropAnchorPos;
+                if (!SetAnchorAndPlaceItem(itemData, returnBaseAnchorPos + relativeOffset))
+                    return false;
+            }
+
+            return true;
         }
 
         #endregion
@@ -235,12 +265,12 @@ namespace MmInventory
             if (itemDataA is null)
                 return new InventoryOpReport(false, null);
 
-            void RestoreItemA() => CommitPlace(itemDataA, anchorPosA);
+            void RestoreItemA() => SetAnchorAndPlaceItem(itemDataA, anchorPosA);
 
             // 直接放
             if (inventoryState.CanPlace(itemDataA, anchorPosB))
             {
-                if (!CommitPlace(itemDataA, anchorPosB))
+                if (!SetAnchorAndPlaceItem(itemDataA, anchorPosB))
                 {
                     RestoreItemA();
                     return new InventoryOpReport(false, itemDataA);
@@ -285,15 +315,6 @@ namespace MmInventory
             // 全部尝试失败 回滚状态
             RestoreItemA();
             return new InventoryOpReport(false, itemDataA);
-        }
-
-        /// <summary>
-        /// 强制写入物品锚点与格子占用
-        /// </summary>
-        public bool PlaceItem(ItemRtData itemData, Vector2Int anchorPos)
-        {
-            if (itemData is null) return false;
-            return CommitPlace(itemData, anchorPos);
         }
 
         /// <summary>
@@ -378,10 +399,13 @@ namespace MmInventory
         #region 工具
 
         /// <summary>
-        /// 写入锚点并占用格子
+        /// 设置锚点并占用格子
         /// </summary>
-        private bool CommitPlace(ItemRtData itemData, Vector2Int anchorPos)
+        public bool SetAnchorAndPlaceItem(ItemRtData itemData, Vector2Int anchorPos)
         {
+            if (itemData is null)
+                return false;
+
             itemData.SetAnchorPos(anchorPos);
             return inventoryState.SetAt(anchorPos, itemData);
         }
@@ -412,18 +436,6 @@ namespace MmInventory
                 return ESwapState.Same;
 
             return sizeA > sizeB ? ESwapState.LargeToSmall : ESwapState.SmallToLarge;
-        }
-
-        /// <summary>
-        /// 是否接收跨容器交换返回物
-        /// </summary>
-        private static bool ShouldReceiveSwapReturnItem(InventoryOpReport result)
-        {
-            if (result.ItemDataA is null || result.ItemDataB is null)
-                return false;
-
-            return result.SwapState == ESwapState.Same
-                   || result.SwapState == ESwapState.SmallToLarge;
         }
 
         #endregion

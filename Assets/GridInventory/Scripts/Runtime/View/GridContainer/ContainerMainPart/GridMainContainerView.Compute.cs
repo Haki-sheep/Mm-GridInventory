@@ -27,7 +27,7 @@ namespace MmInventory
         private Dictionary<string, ItemView> itemViewDict = new();
 
         /// <summary>
-        /// 把物品视图迁入本容器
+        /// 把物品视图加入到本容器
         /// </summary>
         private void AddItemView(ItemView itemView)
         {
@@ -39,7 +39,7 @@ namespace MmInventory
         }
 
         /// <summary>
-        /// 把物品视图迁出本容器
+        /// 把物品视图从本容器移除
         /// </summary>
         /// <param name="itemView"></param>
         private void RemoveItemView(ItemView itemView)
@@ -64,7 +64,7 @@ namespace MmInventory
                     continue;
 
                 Vector2Int anchorPos = itemView.ItemData.AnchorPos;
-                gridInventoryService.PlaceItem(itemView.ItemData, anchorPos);
+                gridInventoryService.SetAnchorAndPlaceItem(itemView.ItemData, anchorPos);
                 itemView.ItemRectTransform.localPosition = GetItemUIPivotPos(anchorPos, itemView.ItemData.DataSize);
                 itemViewDict[itemView.ItemData.InstancedItemId] = itemView;
             }
@@ -290,7 +290,7 @@ namespace MmInventory
             resetData.SetRotated(dragStartIsRotated);
             // 数据层位置重置
             resetData.SetAnchorPos(dragStartAnchorPos);
-            gridInventoryService.PlaceItem(resetData, dragStartAnchorPos);
+            gridInventoryService.SetAnchorAndPlaceItem(resetData, dragStartAnchorPos);
             // UI位置重置
             itemView.ItemRectTransform.localRotation =
                 Quaternion.Euler(0, 0, resetData.IsRotated ? 90f : 0f);

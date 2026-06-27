@@ -5,7 +5,7 @@ namespace MmInventory
 {
     public partial class InventoryState
     {
-        private sealed partial class InventorySwapService
+        private sealed class InventorySwapService
         {
             /// <summary> 背包状态引用 </summary>
             private readonly InventoryState inventoryState;
@@ -28,6 +28,7 @@ namespace MmInventory
             }
 
             #region 对外交换接口
+
             /// <summary>
             /// 检查是否可交换
             /// </summary>
@@ -40,7 +41,7 @@ namespace MmInventory
                                 IItemRuntime bItemData,
                                 Vector2Int placeAnchorPos,
                                 ESwapPlaceMode swapPlaceMode = ESwapPlaceMode.SameContainer) =>
-            SimulateSwap(aItemData, bItemData, placeAnchorPos, swapPlaceMode);
+                SimulateSwap(aItemData, bItemData, placeAnchorPos, swapPlaceMode);
 
             /// <summary>
             /// 执行交换
@@ -56,10 +57,12 @@ namespace MmInventory
                                 List<IItemRuntime> oldItemDataList,
                                 Vector2Int placeAnchorPos,
                                 ESwapPlaceMode swapPlaceMode = ESwapPlaceMode.SameContainer) =>
-            CommitSwap(aItemData, bItemData, placeAnchorPos, oldItemDataList, swapPlaceMode);
+                CommitSwap(aItemData, bItemData, placeAnchorPos, oldItemDataList, swapPlaceMode);
+
             #endregion
 
             #region 提交与试算
+
             /// <summary>
             /// 在克隆网格上试算交换
             /// 不会修改真实背包数据
@@ -74,28 +77,21 @@ namespace MmInventory
                                       Vector2Int placeAnchorPos,
                                       ESwapPlaceMode swapPlaceMode)
             {
-                // 获取交换计划
                 var plan = GetSwapPlan(aItemData, bItemData);
                 if (plan.SwapState == ESwapState.CanNotSwap) return false;
 
-                // 获取交换物品的锚点索引
                 int aIndex = inventoryState.ToIndex(plan.aItemData.AnchorPos);
                 int bIndex = inventoryState.ToIndex(plan.bItemData.AnchorPos);
 
-                // 克隆物品数组和占用信息
                 var simAnchorArray = (IItemRuntime[])inventoryState.itemAnchorArray.Clone();
                 var simOccupancyArray = (IItemRuntime[])inventoryState.occupancyOwnerArray.Clone();
-                // 真实物品数组和占用信息
                 var realAnchorArray = inventoryState.itemAnchorArray;
-                // 真实占用信息
                 var realOccupancyArray = inventoryState.occupancyOwnerArray;
 
-                // 临时交换物品数组和占用信息
                 inventoryState.itemAnchorArray = simAnchorArray;
                 inventoryState.occupancyOwnerArray = simOccupancyArray;
                 try
                 {
-                    // 尝试执行交换
                     return TryExecuteSwap(plan,
                                           aIndex,
                                           bIndex,
@@ -103,7 +99,6 @@ namespace MmInventory
                                           simulateOldItemList,
                                           swapPlaceMode);
                 }
-                // 如果交换失败 则回滚真实网格
                 finally
                 {
                     inventoryState.itemAnchorArray = realAnchorArray;
@@ -126,24 +121,19 @@ namespace MmInventory
                                     List<IItemRuntime> oldItemDataList,
                                     ESwapPlaceMode swapPlaceMode)
             {
-                // 获取交换计划
                 var plan = GetSwapPlan(aItemData, bItemData);
                 if (plan.SwapState == ESwapState.CanNotSwap)
                     return false;
 
-                // 获取交换物品的锚点索引
                 int aIndex = inventoryState.ToIndex(plan.aItemData.AnchorPos);
                 int bIndex = inventoryState.ToIndex(plan.bItemData.AnchorPos);
 
-                // 备份物品数组和占用信息
                 var backupItemArray = (IItemRuntime[])inventoryState.itemAnchorArray.Clone();
                 var backupOccupancyOwner = (IItemRuntime[])inventoryState.occupancyOwnerArray.Clone();
 
-                // 是否需要回滚标记
                 bool shouldRollback = true;
                 try
                 {
-                    // 尝试执行交换
                     var canSwap = TryExecuteSwap(plan,
                                                  aIndex,
                                                  bIndex,
@@ -152,23 +142,18 @@ namespace MmInventory
                                                  swapPlaceMode);
                     if (!canSwap) return false;
 
-                    // 更新物品信息
                     for (int i = 0; i < inventoryState.itemAnchorArray.Length; i++)
                     {
-                        // 获取物品
                         var item = inventoryState.itemAnchorArray[i];
                         if (item is null) continue;
-                        // 更新物品锚点
                         item.SetAnchorPos(inventoryState.ToVector2Int(i));
                     }
-                    // 不需要回滚
+
                     shouldRollback = false;
                     return true;
                 }
-                // 如果交换失败 则回滚真实网格
                 finally
                 {
-                    // 如果需要回滚 则回滚物品数组和占用信息
                     if (shouldRollback)
                     {
                         inventoryState.itemAnchorArray = backupItemArray;
@@ -210,6 +195,295 @@ namespace MmInventory
                         return false;
                 }
             }
+
+            #endregion
+
+            #region 目标检测
+
+            /// <summary>
+            /// 获取交换目标物品
+            /// </summary>
+            /// <param name="dragItemData">拖动物品</param>
+            /// <param name="placeAnchorPos">放置锚点</param>
+            /// <param name="swapTargetItem">交换目标</param>
+            /// <returns>是否找到目标</returns>
+            public bool TryGetSwapTargetItem(IItemRuntime dragItemData,
+                                             Vector2Int placeAnchorPos,
+                                             out IItemRuntime swapTargetItem)
+            {
+                swapTargetItem = null;
+                if (dragItemData is null) return false;
+
+                var dragSize = dragItemData.DataSize;
+                if (dragSize.x <= 0 || dragSize.y <= 0) return false;
+
+                var overlapItemHashList = new HashSet<IItemRuntime>();
+                for (int x = 0; x < dragSize.x; x++)
+                {
+                    for (int y = 0; y < dragSize.y; y++)
+                    {
+                        var pos = new Vector2Int(placeAnchorPos.x + x, placeAnchorPos.y + y);
+                        if (!inventoryState.IsInside(pos)) return false;
+
+                        var overlapItem = inventoryState.GetItemByMask(pos);
+                        if (overlapItem is null) continue;
+                        if (overlapItem.InstancedItemId == dragItemData.InstancedItemId) continue;
+                        overlapItemHashList.Add(overlapItem);
+                    }
+                }
+
+                if (overlapItemHashList.Count == 0) return false;
+
+                IItemRuntime fullCoveredItem = null;
+                foreach (var overlapItem in overlapItemHashList)
+                {
+                    var swapPlan = GetSwapPlan(dragItemData, overlapItem);
+                    if (swapPlan.SwapState == ESwapState.CanNotSwap)
+                        return false;
+
+                    if (swapPlan.SwapState == ESwapState.SmallToLarge)
+                    {
+                        if (fullCoveredItem is not null &&
+                            fullCoveredItem.InstancedItemId != overlapItem.InstancedItemId)
+                            return false;
+
+                        fullCoveredItem = overlapItem;
+                        continue;
+                    }
+
+                    var overlapSize = overlapItem.DataSize;
+                    var overlapAnchorPos = overlapItem.AnchorPos;
+                    bool isFullyCovered = true;
+                    for (int x = 0; x < overlapSize.x && isFullyCovered; x++)
+                    {
+                        for (int y = 0; y < overlapSize.y; y++)
+                        {
+                            var overlapPos = new Vector2Int(overlapAnchorPos.x + x, overlapAnchorPos.y + y);
+                            bool coveredByDrag =
+                                overlapPos.x >= placeAnchorPos.x &&
+                                overlapPos.x < placeAnchorPos.x + dragSize.x &&
+                                overlapPos.y >= placeAnchorPos.y &&
+                                overlapPos.y < placeAnchorPos.y + dragSize.y;
+                            if (!coveredByDrag)
+                            {
+                                isFullyCovered = false;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (!isFullyCovered) return false;
+                    if (fullCoveredItem is null)
+                        fullCoveredItem = overlapItem;
+                }
+
+                swapTargetItem = fullCoveredItem;
+                return swapTargetItem is not null;
+            }
+
+            #endregion
+
+            #region 交换计划
+
+            /// <summary>
+            /// 构建交换计划
+            /// </summary>
+            /// <param name="aItemData">拖动物品</param>
+            /// <param name="bItemData">目标物品</param>
+            /// <returns>交换计划</returns>
+            private SwapPlan GetSwapPlan(IItemRuntime aItemData, IItemRuntime bItemData)
+            {
+                if (aItemData is null || bItemData is null)
+                    return new SwapPlan { SwapState = ESwapState.CanNotSwap };
+
+                if (aItemData.InstancedItemId == bItemData.InstancedItemId)
+                    return new SwapPlan { SwapState = ESwapState.CanNotSwap };
+
+                var aAnchorPos = aItemData.AnchorPos;
+                var bAnchorPos = bItemData.AnchorPos;
+
+                if (aAnchorPos == bAnchorPos)
+                    return new SwapPlan { SwapState = ESwapState.CanNotSwap };
+
+                if (!inventoryState.IsInside(aAnchorPos) || !inventoryState.IsInside(bAnchorPos))
+                    return new SwapPlan { SwapState = ESwapState.CanNotSwap };
+
+                SwapPlan swapPlan = new();
+                var aSize = aItemData.DataSize.x * aItemData.DataSize.y;
+                var bSize = bItemData.DataSize.x * bItemData.DataSize.y;
+
+                if (aSize == bSize)
+                {
+                    swapPlan.SwapState = ESwapState.Same;
+                    swapPlan.aItemData = aItemData;
+                    swapPlan.bItemData = bItemData;
+                    return swapPlan;
+                }
+
+                if (aSize > bSize)
+                {
+                    swapPlan.SwapState = ESwapState.LargeToSmall;
+                    swapPlan.aItemData = aItemData;
+                    swapPlan.bItemData = bItemData;
+                    return swapPlan;
+                }
+
+                swapPlan.SwapState = ESwapState.SmallToLarge;
+                swapPlan.aItemData = aItemData;
+                swapPlan.bItemData = bItemData;
+                return swapPlan;
+            }
+
+            #endregion
+
+            #region 交换分支
+
+            /// <summary>
+            /// 相同面积交换
+            /// </summary>
+            /// <param name="plan">交换计划</param>
+            /// <param name="aIndex">A索引</param>
+            /// <param name="bIndex">B索引</param>
+            /// <param name="placeAnchorPos">放置锚点</param>
+            /// <param name="swapPlaceMode">交换放置模式</param>
+            /// <returns>是否成功</returns>
+            public bool SwapSameItem(SwapPlan plan,
+                                     int aIndex,
+                                     int bIndex,
+                                     Vector2Int placeAnchorPos,
+                                     ESwapPlaceMode swapPlaceMode)
+            {
+                var aItemData = plan.aItemData;
+                var bItemData = plan.bItemData;
+
+                if (aItemData.IsRotated != bItemData.IsRotated)
+                    return false;
+
+                if (swapPlaceMode == ESwapPlaceMode.CrossContainer)
+                {
+                    inventoryState.RemoveAt(bItemData.AnchorPos);
+                    if (!inventoryState.CanPlace(aItemData, placeAnchorPos))
+                        return false;
+
+                    inventoryState.SetItemData(aItemData, placeAnchorPos);
+                    return true;
+                }
+
+                inventoryState.itemAnchorArray[aIndex] = null;
+                inventoryState.itemAnchorArray[bIndex] = null;
+                inventoryState.WriteOccupancy(aItemData, aItemData.AnchorPos, false);
+                inventoryState.WriteOccupancy(bItemData, bItemData.AnchorPos, false);
+
+                if (!inventoryState.CanPlace(aItemData, bItemData.AnchorPos))
+                    return false;
+                inventoryState.SetItemData(aItemData, bItemData.AnchorPos);
+
+                if (!inventoryState.CanPlace(bItemData, aItemData.AnchorPos))
+                    return false;
+                inventoryState.SetItemData(bItemData, aItemData.AnchorPos);
+
+                return true;
+            }
+
+            /// <summary>
+            /// 大物品交换小物品
+            /// </summary>
+            /// <param name="plan">交换计划</param>
+            /// <param name="placeAnchorPos">放置锚点</param>
+            /// <param name="oldItemDataList">被覆盖旧物品列表</param>
+            /// <param name="swapPlaceMode">交换放置模式</param>
+            /// <returns>是否成功</returns>
+            public bool SwapLargeToSmallItem(SwapPlan plan,
+                                             Vector2Int placeAnchorPos,
+                                             List<IItemRuntime> oldItemDataList,
+                                             ESwapPlaceMode swapPlaceMode)
+            {
+                tempLittleItemHashList.Clear();
+                tempLittleItemOffsetDict.Clear();
+
+                var largeItemData = plan.aItemData;
+                var largeSize = largeItemData.DataSize;
+
+                for (int x = 0; x < largeSize.x; x++)
+                {
+                    for (int y = 0; y < largeSize.y; y++)
+                    {
+                        var coverPos = new Vector2Int(placeAnchorPos.x + x, placeAnchorPos.y + y);
+                        var littleItem = inventoryState.GetItemByMask(coverPos);
+                        if (littleItem is not null && littleItem.InstancedItemId != plan.aItemData.InstancedItemId)
+                        {
+                            if (!tempLittleItemHashList.Add(littleItem))
+                                continue;
+
+                            tempLittleItemOffsetDict.Add(littleItem, littleItem.AnchorPos - placeAnchorPos);
+                            oldItemDataList.Add(littleItem);
+                        }
+                    }
+                }
+
+                if (swapPlaceMode == ESwapPlaceMode.SameContainer)
+                    inventoryState.RemoveAt(largeItemData.AnchorPos);
+                foreach (var littleItem in tempLittleItemHashList)
+                    inventoryState.RemoveAt(littleItem.AnchorPos);
+
+                if (!inventoryState.CanPlace(largeItemData, placeAnchorPos))
+                    return false;
+
+                inventoryState.SetItemData(largeItemData, placeAnchorPos);
+
+                if (swapPlaceMode == ESwapPlaceMode.CrossContainer)
+                    return true;
+
+                foreach (var littleItem in tempLittleItemHashList)
+                {
+                    if (!tempLittleItemOffsetDict.TryGetValue(littleItem, out var relativeOffset))
+                        return false;
+
+                    var targetAnchorPos = largeItemData.AnchorPos + relativeOffset;
+                    if (!inventoryState.CanPlace(littleItem, targetAnchorPos))
+                        return false;
+
+                    inventoryState.SetItemData(littleItem, targetAnchorPos);
+                }
+
+                return true;
+            }
+
+            /// <summary>
+            /// 小物品交换大物品
+            /// </summary>
+            /// <param name="plan">交换计划</param>
+            /// <param name="placeAnchorPos">放置锚点</param>
+            /// <param name="swapPlaceMode">交换放置模式</param>
+            /// <returns>是否成功</returns>
+            public bool SwapSmallToLargeItem(SwapPlan plan,
+                                             Vector2Int placeAnchorPos,
+                                             ESwapPlaceMode swapPlaceMode)
+            {
+                var smallItemData = plan.aItemData;
+                var largeItemData = plan.bItemData;
+
+                if (swapPlaceMode == ESwapPlaceMode.SameContainer)
+                    inventoryState.RemoveAt(smallItemData.AnchorPos);
+                inventoryState.RemoveAt(largeItemData.AnchorPos);
+                if (!inventoryState.CanPlace(smallItemData, placeAnchorPos))
+                    return false;
+
+                inventoryState.SetItemData(smallItemData, placeAnchorPos);
+                if (swapPlaceMode == ESwapPlaceMode.CrossContainer)
+                    return true;
+
+                if (!inventoryState.CanPlace(largeItemData, smallItemData.AnchorPos))
+                {
+                    if (inventoryState.SetAtFirst(largeItemData, out _))
+                        return true;
+                    return false;
+                }
+
+                inventoryState.SetItemData(largeItemData, smallItemData.AnchorPos);
+                return true;
+            }
+
             #endregion
         }
     }
