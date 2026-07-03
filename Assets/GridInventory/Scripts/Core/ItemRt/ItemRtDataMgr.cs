@@ -8,11 +8,11 @@ namespace MmInventory
         public static ItemRtDataMgr Instance { get; private set; }
 
         [SerializeField]
-        private ItemBaseDataListSo listSo;
+        private ItemTableDataListSo listSo;
 
         /// <summary> 物品数据字典 key物品ExcelID value物品配置表数据 </summary>
-        private Dictionary<int, IItemBaseData> itemDataDict = new();
-        public IReadOnlyDictionary<int, IItemBaseData> ItemDataDict => itemDataDict;
+        private Dictionary<int, IItemTableData> itemDataDict = new();
+        public IReadOnlyDictionary<int, IItemTableData> ItemDataDict => itemDataDict;
 
         private void Awake()
         {
@@ -26,7 +26,7 @@ namespace MmInventory
         public void RegisterItemData()
         {
             if (listSo == null)
-                listSo = ItemBaseDataListSo.Instance;
+                listSo = ItemTableDataListSo.Instance;
 
             itemDataDict.Clear();
             if (listSo == null)
@@ -48,7 +48,7 @@ namespace MmInventory
         /// <summary>
         /// 根据id获取物品数据
         /// </summary>
-        public T GetItemData<T>(int id) where T : IItemBaseData
+        public T GetItemData<T>(int id) where T : IItemTableData
         {
             if (itemDataDict.Count == 0)
             {

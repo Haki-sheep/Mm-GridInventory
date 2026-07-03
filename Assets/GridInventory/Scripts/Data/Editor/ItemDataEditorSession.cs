@@ -32,7 +32,7 @@ namespace MmInventory.Editor
         /// <summary>
         /// 加载总库 SO
         /// </summary>
-        public static ItemBaseDataListSo LoadListSo()
+        public static ItemTableDataListSo LoadListSo()
         {
             string guid = ListSoGuid;
             if (string.IsNullOrEmpty(guid))
@@ -41,7 +41,7 @@ namespace MmInventory.Editor
             if (!string.IsNullOrEmpty(guid))
             {
                 string path = AssetDatabase.GUIDToAssetPath(guid);
-                var so = AssetDatabase.LoadAssetAtPath<ItemBaseDataListSo>(path);
+                var so = AssetDatabase.LoadAssetAtPath<ItemTableDataListSo>(path);
                 if (so != null)
                 {
                     SaveListSo(so);
@@ -55,7 +55,7 @@ namespace MmInventory.Editor
         /// <summary>
         /// 保存总库 SO 引用
         /// </summary>
-        public static void SaveListSo(ItemBaseDataListSo listSo)
+        public static void SaveListSo(ItemTableDataListSo listSo)
         {
             if (listSo == null)
             {

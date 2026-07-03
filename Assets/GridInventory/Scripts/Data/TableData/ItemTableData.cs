@@ -7,7 +7,7 @@ namespace MmInventory
     /// 物品配置数据
     /// </summary>
     [Serializable]
-    public class ItemBaseData : IItemBaseData
+    public class ItemTableData : IItemTableData
     {
         /// <summary> 物品Excel ID </summary>
         [SerializeField]
@@ -56,7 +56,7 @@ namespace MmInventory
         /// <param name="itemStackType"></param>
         /// <param name="maxStackCount"></param>
         /// <returns></returns>
-        public static ItemBaseData Create(int excelItemId,
+        public static ItemTableData Create(int excelItemId,
                                           string name,
                                           string iconPath,
                                           Vector2Int dataSize,
@@ -64,7 +64,7 @@ namespace MmInventory
                                           EItemStackType itemStackType,
                                           int maxStackCount)
         {
-            return new ItemBaseData
+            return new ItemTableData
             {
                 excelItemId = excelItemId,
                 name = name,

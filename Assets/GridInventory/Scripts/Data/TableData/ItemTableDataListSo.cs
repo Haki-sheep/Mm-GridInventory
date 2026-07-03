@@ -8,19 +8,19 @@ namespace MmInventory
     /// 运行时唯一模版数据源
     /// </summary>
     [CreateAssetMenu(fileName = "ItemBaseDataList", menuName = "MmInventory/Data/Item Base Data List")]
-    public class ItemBaseDataListSo : ScriptableObject
+    public class ItemTableDataListSo : ScriptableObject
     {
         public const string DefaultAssetPath = "Assets/GridInventory/SoDatas/ItemBaseDataList.asset";
 
-        private static ItemBaseDataListSo instance;
+        private static ItemTableDataListSo instance;
 
         /// <summary> 运行时单例 </summary>
-        public static ItemBaseDataListSo Instance => instance;
+        public static ItemTableDataListSo Instance => instance;
 
         [SerializeField]
-        private List<ItemBaseData> itemDataList = new();
+        private List<ItemTableData> itemDataList = new();
 
-        public IReadOnlyList<ItemBaseData> ItemDataList => itemDataList;
+        public IReadOnlyList<ItemTableData> ItemDataList => itemDataList;
 
         private void OnEnable()
         {
@@ -37,7 +37,7 @@ namespace MmInventory
         /// <summary>
         /// 编辑器替换全部物品
         /// </summary>
-        public void EditorReplaceItems(List<ItemBaseData> items)
+        public void EditorReplaceItems(List<ItemTableData> items)
         {
             itemDataList.Clear();
             if (items != null)
@@ -47,7 +47,7 @@ namespace MmInventory
         /// <summary>
         /// 编辑器添加物品
         /// </summary>
-        public void EditorAddItem(ItemBaseData item)
+        public void EditorAddItem(ItemTableData item)
         {
             if (item == null) return;
             itemDataList.Add(item);

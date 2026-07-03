@@ -71,7 +71,7 @@ namespace MmInventory
         public ItemRtData CreatItem(int excelItemId, Vector2Int anchorPos)
         {
             // 获取模版数据
-            var itemData = ItemRtDataMgr.Instance.GetItemData<IItemBaseData>(excelItemId);
+            var itemData = ItemRtDataMgr.Instance.GetItemData<IItemTableData>(excelItemId);
             if (itemData is null)
             {
                 Debug.Log($"创建物品失败 没有找到模版为ID:{excelItemId}的物品");
@@ -79,7 +79,7 @@ namespace MmInventory
             }
 
             // 创建运行时数据
-            var itemRtData = ItemRtData.FromConfig(itemData);
+            var itemRtData = ItemRtData.ItemTableData2ItemRtData(itemData);
 
             // 尝试放到指定锚点
             if (!SetAnchorAndPlaceItem(itemRtData, anchorPos))
@@ -101,7 +101,7 @@ namespace MmInventory
         public ItemRtData CreatItemAtFirstEmpty(int excelItemId)
         {
             // 获取模版数据
-            var itemData = ItemRtDataMgr.Instance.GetItemData<IItemBaseData>(excelItemId);
+            var itemData = ItemRtDataMgr.Instance.GetItemData<IItemTableData>(excelItemId);
             if (itemData is null)
             {
                 Debug.Log($"创建物品失败 没有找到模版为ID:{excelItemId}的物品");
@@ -109,7 +109,7 @@ namespace MmInventory
             }
 
             // 创建运行时数据 锚点由数据层同步
-            var itemRtData = ItemRtData.FromConfig(itemData);
+            var itemRtData = ItemRtData.ItemTableData2ItemRtData(itemData);
             if (!inventoryState.SetAtFirst(itemRtData, out _))
             {
                 Debug.Log("创建物品失败 没有找到可放置位置");
@@ -136,116 +136,26 @@ namespace MmInventory
         #region 放置 - 跨容器
 
         /// <summary>
-        /// 尝试跨容器接收物品
+        /// 跨容器放置 委托 Core 双背包协调
         /// </summary>
-        /// <param name="itemDataA">被拖拽物</param>
-        /// <param name="anchorPosB">目标锚点</param>
+        /// <param name="targetService">落点容器 Service</param>
+        /// <param name="dragItem">被拖拽物</param>
+        /// <param name="sourceAnchor">A 侧拖起锚点</param>
+        /// <param name="dropAnchor">B 侧预览落点</param>
         /// <returns>操作结果</returns>
-        public InventoryOpReport TryReceiveItem(ItemRtData itemDataA, Vector2Int anchorPosB)
+        public InventoryOpReport TryCrossContainerDrop(GridInventoryService targetService,
+                                                       ItemRtData dragItem,
+                                                       Vector2Int sourceAnchor,
+                                                       Vector2Int dropAnchor)
         {
-            if (itemDataA is null)
-                return new InventoryOpReport(false, null);
+            var coreResult = InventoryCrossContainerService.TryCrossContainerDrop(
+                inventoryState,
+                targetService.inventoryState,
+                dragItem,
+                sourceAnchor,
+                dropAnchor);
 
-            // 直接放
-            if (inventoryState.CanPlace(itemDataA, anchorPosB))
-            {
-                if (!SetAnchorAndPlaceItem(itemDataA, anchorPosB))
-                    return new InventoryOpReport(false, itemDataA);
-                return new InventoryOpReport(true, itemDataA);
-            }
-
-            // 如果不能直接放说明B锚点有东西
-            var itemDataB = inventoryState.GetItemByMask(anchorPosB) as ItemRtData;
-
-            // 尝试堆叠
-            if (itemDataB is not null
-                && inventoryState.CanStack(itemDataA, itemDataB)
-                && inventoryState.TryStack(itemDataA, itemDataB))
-            {
-                return new InventoryOpReport(true, null, itemDataB);
-            }
-
-            if (inventoryState.TryGetSwapTargetItem(itemDataA, anchorPosB, out var swapTargetItem))
-            {
-                // 小物品列表
-                var swapDisplacedList = new List<IItemRuntime>();
-                var swapState = inventoryState.GetSwapState(itemDataA, swapTargetItem);
-                // 尝试交换 TrySwap 失败时内部自行回滚 无需预演
-                if (inventoryState.TrySwap(itemDataA,
-                                           swapTargetItem,
-                                           swapDisplacedList,
-                                           anchorPosB,
-                                           ESwapPlaceMode.CrossContainer))
-                {
-                    return new InventoryOpReport(true,
-                        itemDataA,
-                        swapTargetItem as ItemRtData,
-                        ToItemRtDataList(swapDisplacedList),
-                        swapState);
-                }
-
-                 return new InventoryOpReport(false, itemDataA, swapTargetItem as ItemRtData, swapState: swapState);
-            }
-            return new InventoryOpReport(false, itemDataA);
-        }
-
-        /// <summary>
-        /// 尝试接收跨容器交换 A 侧返回物
-        /// </summary>
-        /// <param name="result">交换结果</param>
-        /// <param name="returnBaseAnchorPos">A 侧大物拖起锚点</param>
-        /// <param name="dropAnchorPos">B 侧大物落点锚点</param>
-        /// <returns>是否成功</returns>
-        public bool TryReceiveSwapReturnItem(InventoryOpReport result,
-                                             Vector2Int returnBaseAnchorPos,
-                                             Vector2Int dropAnchorPos)
-        {
-            switch (result.SwapState)
-            {
-                case ESwapState.Same:
-                case ESwapState.SmallToLarge:
-                    if (result.ItemDataB is null)
-                        return false;
-
-                    if (SetAnchorAndPlaceItem(result.ItemDataB, returnBaseAnchorPos))
-                        return true;
-
-                    return result.SwapState == ESwapState.SmallToLarge
-                           && TryPlaceAtFirst(result.ItemDataB);
-
-                case ESwapState.LargeToSmall:
-                    return TryReceiveDisplacedItemList(result.DisplacedItemDataList,
-                                                       dropAnchorPos,
-                                                       returnBaseAnchorPos);
-
-                default:
-                    return true;
-            }
-        }
-
-        /// <summary>
-        /// 接收大换小被挤物列表
-        /// </summary>
-        private bool TryReceiveDisplacedItemList(List<ItemRtData> displacedItemDataList,
-                                                 Vector2Int dropAnchorPos,
-                                                 Vector2Int returnBaseAnchorPos)
-        {
-            if (displacedItemDataList is null || displacedItemDataList.Count == 0)
-                return true;
-
-            for (int i = 0; i < displacedItemDataList.Count; i++)
-            {
-                var itemData = displacedItemDataList[i];
-                if (itemData is null)
-                    return false;
-
-                // 小物在 B 相对大物落点的偏移 映射到 A 拖起锚点
-                var relativeOffset = itemData.AnchorPos - dropAnchorPos;
-                if (!SetAnchorAndPlaceItem(itemData, returnBaseAnchorPos + relativeOffset))
-                    return false;
-            }
-
-            return true;
+            return ToOpReport(coreResult);
         }
 
         #endregion
@@ -352,7 +262,7 @@ namespace MmInventory
             if (itemData is null)
                 return new InventoryOpReport(false, null);
 
-            var originData = ItemRtDataMgr.Instance.GetItemData<IItemBaseData>(itemData.ExcelItemId);
+            var originData = ItemRtDataMgr.Instance.GetItemData<IItemTableData>(itemData.ExcelItemId);
 
             // 可叠加物品不允许旋转
             if (originData is not null && originData.ItemStackType == EItemStackType.Stackable)
@@ -407,22 +317,26 @@ namespace MmInventory
         }
 
         /// <summary>
-        /// 捕获背包快照
+        /// Core 跨容器结果转 View 操作报告
         /// </summary>
-        public InventoryState.Snapshot CaptureSnapshot() =>
-            inventoryState.CaptureSnapshot();
-
-        /// <summary>
-        /// 还原背包快照
-        /// </summary>
-        public void RestoreSnapshot(InventoryState.Snapshot snapshot) =>
-            inventoryState.RestoreSnapshot(snapshot);
+        private static InventoryOpReport ToOpReport(CrossContainerOpResult coreResult)
+        {
+            return new InventoryOpReport(
+                coreResult.IsSuccess,
+                coreResult.ItemDataA as ItemRtData,
+                coreResult.ItemDataB as ItemRtData,
+                ToItemRtDataList(coreResult.DisplacedItemDataList),
+                coreResult.SwapState);
+        }
 
         /// <summary>
         /// IGridItem列表转ItemRtData列表
         /// </summary>
         private static List<ItemRtData> ToItemRtDataList(List<IItemRuntime> gridItemList)
         {
+            if (gridItemList is null)
+                return null;
+
             var itemRtDataList = new List<ItemRtData>(gridItemList.Count);
             for (int i = 0; i < gridItemList.Count; i++)
                 itemRtDataList.Add((ItemRtData)gridItemList[i]);

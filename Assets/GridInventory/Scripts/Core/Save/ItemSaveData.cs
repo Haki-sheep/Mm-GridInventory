@@ -33,13 +33,10 @@ namespace MmInventory
         /// <summary> 物品是否旋转 </summary>
         public bool rotated;
 
-        /// <summary> 物品所属背包ID </summary>
-        public int containerId;
-
         /// <summary>
         /// 从运行时物品提取存档
         /// </summary>
-        public static ItemSaveData FromItemRt(IItemRuntime item)
+        public static ItemSaveData ItemRtToItemSaveData(IItemRuntime item)
         {
             var save = new ItemSaveData
             {
@@ -50,26 +47,12 @@ namespace MmInventory
                 hasStackCount = item.CurrStackCount,
                 maxStackCount = item.MaxStackCount,
                 itemStackType = item.ItemStackType,
-                rotated = item.IsRotated,
-                containerId = item.ContainerId
+                rotated = item.IsRotated
             };
 
             return save;
         }
     }
 
-    /// <summary>
-    /// 单个背包存档
-    /// </summary>
-    public class InventorySaveData
-    {
-        /// <summary> 背包ID </summary>
-        public int containerId;
-
-        /// <summary> 背包尺寸 </summary>
-        public Vector2Int gridSize;
-
-        /// <summary> 物品列表 </summary>
-        public List<ItemSaveData> itemSaveDataList = new();
-    }
+   
 }

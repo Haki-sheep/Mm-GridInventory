@@ -3,14 +3,11 @@ using UnityEngine;
 namespace MmInventory
 {
     /// <summary>
-    /// 网格占格物品最小契约
-    /// Core 只依赖此接口
+    /// 运行时物品接口 算法层使用此接口进行容器管理
+    /// 如果没有此接口 会和View层耦合到一起
     /// </summary>
     public interface IItemRuntime
     {
-        /// <summary> 背包ID </summary>
-        int ContainerId { get; }
-
         /// <summary> 配表物品ID </summary>
         int ExcelItemId { get; }
 

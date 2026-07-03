@@ -52,8 +52,8 @@ namespace MmInventory
             BindViewComponents();
             if (ItemData is not null) return;
 
-            var excelItemData = ItemRtDataMgr.Instance?.GetItemData<IItemBaseData>(excelItemId);
-            ItemData = ItemRtData.FromConfig(excelItemData);
+            var excelItemData = ItemRtDataMgr.Instance?.GetItemData<IItemTableData>(excelItemId);
+            ItemData = ItemRtData.ItemTableData2ItemRtData(excelItemData);
         }
 
         /// <summary>

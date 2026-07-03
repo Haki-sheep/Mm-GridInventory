@@ -13,7 +13,7 @@ namespace MmInventory.Editor
         private const float LeftPanelWidth = 220f;
 
         private readonly List<GridMainContainerView> containerList = new();
-        private readonly List<ItemBaseData> itemOptionList = new();
+        private readonly List<ItemTableData> itemOptionList = new();
 
         private GridMainContainerView selectedContainer;
         private Vector2 containerScrollPos;

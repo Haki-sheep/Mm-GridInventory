@@ -4,13 +4,16 @@ using UnityEngine;
 
 namespace MmInventory
 {
+  /// <summary>
+  /// 该脚本用于编辑器调试，提供一些调试方法
+  /// </summary>
   public partial class InventoryState
   {
     /// <summary> 背包列数 </summary>
-    public int GridWidth => gridInventorySize.x;
+    public int GridWidth => inventorySize.x;
 
     /// <summary> 背包行数 </summary>
-    public int GridHeight => gridInventorySize.y;
+    public int GridHeight => inventorySize.y;
 
     /// <summary>
     /// 格子快照
@@ -38,7 +41,7 @@ namespace MmInventory
     /// </summary>
     public void FillCellSnapshots(CellSnapshot[] buffer)
     {
-      int total = gridInventorySize.x * gridInventorySize.y;
+      int total = inventorySize.x * inventorySize.y;
       for (int i = 0; i < total; i++)
       {
         buffer[i] = new CellSnapshot

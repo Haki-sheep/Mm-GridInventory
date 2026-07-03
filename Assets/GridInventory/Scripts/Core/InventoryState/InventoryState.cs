@@ -48,10 +48,8 @@ namespace MmInventory
     /// </summary>
     public partial class InventoryState
     {
-        /// <summary> 背包ID </summary>
-        private int containerId;
-        /// <summary>背包尺寸</summary>
-        private readonly Vector2Int gridInventorySize;
+        private int inventoryStateId;
+        private readonly Vector2Int inventorySize;
 
         /// <summary>锚点数组 运行时记录每一个物品的锚点在哪里</summary>
         private IItemRuntime[] itemAnchorArray;
@@ -59,14 +57,9 @@ namespace MmInventory
         /// <summary>物品的全部占用格子信息</summary>
         private IItemRuntime[] occupancyOwnerArray;
 
-        /// <summary> 交换服务 </summary>
         private readonly InventorySwapService inventorySwapService;
-        /// <summary> 放置服务 </summary>
         private readonly InventoryPlacementService inventoryPlacementService;
-        /// <summary> 堆叠服务 </summary>
         private readonly InventoryStackableService inventoryStackableService;
-
-        public int ContainerId { get => containerId; set => containerId = value; }
 
         /// <summary>
         /// 初始化背包状态
@@ -74,7 +67,7 @@ namespace MmInventory
         /// <param name="gridInventorySize">背包尺寸</param>
         public InventoryState(Vector2Int gridInventorySize)
         {
-            this.gridInventorySize = gridInventorySize;
+            this.inventorySize = gridInventorySize;
             int totalCount = gridInventorySize.x * gridInventorySize.y;
             itemAnchorArray = new IItemRuntime[totalCount];
             occupancyOwnerArray = new IItemRuntime[totalCount];
@@ -89,7 +82,7 @@ namespace MmInventory
         /// <param name="position"></param>
         /// <returns></returns>
         private int ToIndex(Vector2Int position) =>
-            position.y * gridInventorySize.x + position.x;
+            position.y * inventorySize.x + position.x;
 
         /// <summary>
         /// 一维索引 → 二维坐标
@@ -97,7 +90,7 @@ namespace MmInventory
         /// <param name="index">一维索引</param>
         /// <returns>二维坐标</returns>
         private Vector2Int ToVector2Int(int index) =>
-            new Vector2Int(index % gridInventorySize.x, index / gridInventorySize.x);
+            new Vector2Int(index % inventorySize.x, index / inventorySize.x);
 
         /// <summary>
         /// 写入占用信息
@@ -178,8 +171,8 @@ namespace MmInventory
         /// <returns>是否在背包范围内</returns>
         public bool IsInside(Vector2Int position)
         {
-            return position.x >= 0 && position.x < gridInventorySize.x &&
-                   position.y >= 0 && position.y < gridInventorySize.y;
+            return position.x >= 0 && position.x < inventorySize.x &&
+                   position.y >= 0 && position.y < inventorySize.y;
         }
 
         /// <summary>
@@ -385,7 +378,7 @@ namespace MmInventory
         #region 存档功能
 
         /// <summary> 背包尺寸 </summary>
-        public Vector2Int GridSize => gridInventorySize;
+        public Vector2Int GridSize => inventorySize;
 
         /// <summary>
         /// 保存当前背包

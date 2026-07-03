@@ -13,18 +13,18 @@ namespace MmInventory.Editor
         /// <summary>
         /// 确保总库资产存在
         /// </summary>
-        public static ItemBaseDataListSo EnsureListAsset()
+        public static ItemTableDataListSo EnsureListAsset()
         {
-            var listSo = AssetDatabase.LoadAssetAtPath<ItemBaseDataListSo>(ItemBaseDataListSo.DefaultAssetPath);
+            var listSo = AssetDatabase.LoadAssetAtPath<ItemTableDataListSo>(ItemTableDataListSo.DefaultAssetPath);
             if (listSo != null)
                 return listSo;
 
-            string folder = Path.GetDirectoryName(ItemBaseDataListSo.DefaultAssetPath);
+            string folder = Path.GetDirectoryName(ItemTableDataListSo.DefaultAssetPath);
             if (!string.IsNullOrEmpty(folder) && !AssetDatabase.IsValidFolder(folder))
                 CreateFolderRecursive(folder);
 
-            listSo = ScriptableObject.CreateInstance<ItemBaseDataListSo>();
-            AssetDatabase.CreateAsset(listSo, ItemBaseDataListSo.DefaultAssetPath);
+            listSo = ScriptableObject.CreateInstance<ItemTableDataListSo>();
+            AssetDatabase.CreateAsset(listSo, ItemTableDataListSo.DefaultAssetPath);
             AssetDatabase.SaveAssets();
             return listSo;
         }
@@ -32,7 +32,7 @@ namespace MmInventory.Editor
         /// <summary>
         /// 在指定目录创建 SO
         /// </summary>
-        public static ItemBaseDataListSo CreateAsset(string folderPath, string assetName)
+        public static ItemTableDataListSo CreateAsset(string folderPath, string assetName)
         {
             string safeFolder = NormalizeAssetFolder(folderPath);
             string safeName = SanitizeAssetName(assetName);
@@ -45,7 +45,7 @@ namespace MmInventory.Editor
             string assetPath = $"{safeFolder}/{safeName}.asset";
             assetPath = AssetDatabase.GenerateUniqueAssetPath(assetPath);
 
-            var so = ScriptableObject.CreateInstance<ItemBaseDataListSo>();
+            var so = ScriptableObject.CreateInstance<ItemTableDataListSo>();
             AssetDatabase.CreateAsset(so, assetPath);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();

@@ -27,7 +27,7 @@ namespace MmInventory.Editor
         [Title("总库")]
         [Required]
         [OnValueChanged(nameof(OnListSoChanged))]
-        public ItemBaseDataListSo ListSo;
+        public ItemTableDataListSo ListSo;
 
         [Title("视图预制体列表")]
         [Required]
@@ -230,7 +230,7 @@ namespace MmInventory.Editor
                 itemType = EItemType.Equipment;
 
             int nextId = FindNextExcelItemId(registry);
-            registry.EditorAddItem(ItemBaseData.Create(
+            registry.EditorAddItem(ItemTableData.Create(
                 nextId,
                 "新物品",
                 string.Empty,
@@ -259,7 +259,7 @@ namespace MmInventory.Editor
             return count;
         }
 
-        private static int FindNextExcelItemId(ItemBaseDataListSo listSo)
+        private static int FindNextExcelItemId(ItemTableDataListSo listSo)
         {
             int maxId = -1;
             var itemList = listSo.ItemDataList;
@@ -319,7 +319,7 @@ namespace MmInventory.Editor
         /// <summary>
         /// 绘制视图预制体只读预览
         /// </summary>
-        private void DrawViewPrefabPreview(ItemBaseData item)
+        private void DrawViewPrefabPreview(ItemTableData item)
         {
             var viewRegistry = HomePage?.ViewPrefabListSo;
 

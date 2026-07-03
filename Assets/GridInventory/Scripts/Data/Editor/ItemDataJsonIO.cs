@@ -20,7 +20,7 @@ namespace MmInventory.Editor
         /// <summary>
         /// 导出到 JSON 文件
         /// </summary>
-        public static void ExportToFile(ItemBaseDataListSo listSo, IReadOnlyList<string> itemTypeNameList, string filePath)
+        public static void ExportToFile(ItemTableDataListSo listSo, IReadOnlyList<string> itemTypeNameList, string filePath)
         {
             var exportFile = BuildExportFile(listSo, itemTypeNameList);
             string json = JsonConvert.SerializeObject(exportFile, JsonSettings);
@@ -39,7 +39,7 @@ namespace MmInventory.Editor
         /// <summary>
         /// 构建导出对象
         /// </summary>
-        public static ItemDataExportFile BuildExportFile(ItemBaseDataListSo listSo, IReadOnlyList<string> itemTypeNameList)
+        public static ItemDataExportFile BuildExportFile(ItemTableDataListSo listSo, IReadOnlyList<string> itemTypeNameList)
         {
             var exportFile = new ItemDataExportFile();
             if (itemTypeNameList != null)
@@ -57,7 +57,7 @@ namespace MmInventory.Editor
             return exportFile;
         }
 
-        private static void AppendItemEntry(ItemDataExportFile exportFile, IItemBaseData item)
+        private static void AppendItemEntry(ItemDataExportFile exportFile, IItemTableData item)
         {
             exportFile.items.Add(new ItemDataJsonEntry
             {
@@ -75,9 +75,9 @@ namespace MmInventory.Editor
         /// <summary>
         /// JSON 转运行时列表
         /// </summary>
-        public static List<ItemBaseData> ToItemBaseDataList(IReadOnlyList<ItemDataJsonEntry> entryList)
+        public static List<ItemTableData> ToItemBaseDataList(IReadOnlyList<ItemDataJsonEntry> entryList)
         {
-            var itemList = new List<ItemBaseData>();
+            var itemList = new List<ItemTableData>();
             if (entryList == null) return itemList;
 
             for (int i = 0; i < entryList.Count; i++)
@@ -95,7 +95,7 @@ namespace MmInventory.Editor
                     stackType = EItemStackType.NoStackable;
                 }
 
-                itemList.Add(ItemBaseData.Create(
+                itemList.Add(ItemTableData.Create(
                     entry.excelItemId,
                     entry.name,
                     entry.iconPath,

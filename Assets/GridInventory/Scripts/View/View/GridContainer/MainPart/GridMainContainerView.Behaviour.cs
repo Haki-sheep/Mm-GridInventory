@@ -34,13 +34,14 @@ namespace MmInventory
 
             var startAnchorPos = itemView.ItemData.AnchorPos;
             var startIsRotated = itemView.ItemData.IsRotated;
+            // 记录鼠标相对物品锚点的偏移 后续算预览锚点用
             var startOffset = mouseOnGridPos - startAnchorPos;
 
-            // 移除被抓取物品
+            // 数据层先 RemoveAt 腾出占格 失败则不进入拖拽
             if (!gridInventoryService.TryRemoveItem(startAnchorPos).IsSuccess)
                 return false;
 
-            // 禁用Rect滚动
+            // 拖拽期间禁用滚动 避免 ScrollRect 抢输入
             if (ScrollRect is not null) ScrollRect.enabled = false;
 
             dragSession.Begin(itemView,
@@ -53,7 +54,6 @@ namespace MmInventory
             // 挂到 Canvas 脱离 scrollContent 避免滚轮滚动时物品跟着跳
             dragSession.DraggingItem.ItemRectTransform.SetParent(Canvas.transform, true);
 
-            // 设置拖拽层级
             HandlerDragPreview(EOnDragState.OnBeginDrag);
             SetTransformSibingIndex(EOnDragState.OnBeginDrag);
             return true;
@@ -64,12 +64,12 @@ namespace MmInventory
         #region B 拖拽中
         private void DraggingHandler(PointerEventData eventData)
         {
-            // 物品跟随鼠标
             if (dragSession.DraggingItem is null)
                 return;
+
+            // 物品 UI 跟随鼠标 不参与网格吸附
             dragSession.DraggingItem.ItemRectTransform.position = eventData.position;
 
-            // 解析当前悬停容器
             var lastHoverContainer = dragSession.HoverContainer;
             var hasHit = GridMainContainerManager.TryResolveHoverContainer(
                 eventData.position,
@@ -77,7 +77,7 @@ namespace MmInventory
                 out var mouseOnGridPos,
                 out var gridIndex);
 
-            // 如果什么容器都没命中 则清除预览
+            // 鼠标不在任何容器上 清掉两侧预览
             if (!hasHit)
             {
                 lastHoverContainer?.ClearDragPreview();
@@ -88,7 +88,7 @@ namespace MmInventory
 
             dragSession.HoverContainer = hoverContainer;
 
-            // 悬停在 B 容器且 B 不是 A 则在外部容器显示预览
+            // 悬停在外部容器 由落点容器算 CrossContainer 预览
             if (hoverContainer != dragSession.SourceContainer)
             {
                 lastHoverContainer?.ClearDragPreview();
@@ -102,18 +102,18 @@ namespace MmInventory
                 return;
             }
 
-            // 设置拖拽过程中物品在UI中的层级
             SetTransformSibingIndex(EOnDragState.OnDragging);
 
-            // 更新预览锚点
             dragSession.PreviewAnchorPos = GetPreviewAnchorPos(mouseOnGridPos,
                                                                dragSession.StartOffset,
                                                                dragSession.DraggingItem.ItemData);
 
+            // 锚点未变则跳过 减少 footprint 重算
             if (dragSession.CachedPreviewAnchorPos == dragSession.PreviewAnchorPos)
                 return;
 
             var previewAnchorPos = dragSession.PreviewAnchorPos;
+            // 当前朝向放不下时尝试自动旋转一次
             TryAutoRotateForPreview(dragSession.DraggingItem,
                                     ref previewAnchorPos,
                                     mouseOnGridPos,
@@ -139,7 +139,7 @@ namespace MmInventory
             var sourceContainer = dragSession.SourceContainer;
             GridMainContainerView hoverContainer;
 
-            // 解析落点容器
+            // 根据松手位置确定落点容器与最终预览锚点
             if (GridMainContainerManager.TryResolveHoverContainer(
                     eventData.position,
                     out hoverContainer,
@@ -151,23 +151,21 @@ namespace MmInventory
             }
             else
             {
+                // 落在空白处视为回到源容器原锚点
                 dragSession.PreviewAnchorPos = dragSession.StartAnchorPos;
                 hoverContainer = sourceContainer;
             }
 
             sourceContainer.ClearDragPreview();
 
-            // 跨容器交换逻辑
             if (hoverContainer != sourceContainer)
             {
                 hoverContainer.ClearDragPreview();
                 HandleCrossContainerEndDrag(sourceContainer, hoverContainer);
             }
-            // 同容器交换逻辑
             else
                 HandleLocalEndDrag();
 
-            // 清除高亮格子
             ClearCellHighlight();
             HandlerDragPreview(EOnDragState.OnEndDrag);
             SetTransformSibingIndex(EOnDragState.OnEndDrag);
@@ -200,6 +198,7 @@ namespace MmInventory
             if (!result.IsSuccess)
                 return;
 
+            // 玩家手动转过之后 关闭自动旋转
             dragSession.ManualRotationLocked = true;
 
             var itemDataA = result.ItemDataA;
@@ -212,6 +211,7 @@ namespace MmInventory
                     out var gridIndex))
                 return;
 
+            // 旋转后 footprint 变了 强制刷新预览缓存
             dragSession.InvalidatePreviewCache();
             if (hoverContainer != dragSession.SourceContainer)
             {
@@ -250,6 +250,7 @@ namespace MmInventory
                 return false;
 
             var itemData = itemView.ItemData;
+            // 正方形物品旋转无意义
             if (itemData.DataSize.x == itemData.DataSize.y)
                 return false;
 
@@ -266,6 +267,7 @@ namespace MmInventory
                 return true;
             }
 
+            // 旋转后仍放不下 转回原朝向
             gridInventoryService.TryRotateItem(itemData);
             previewAnchorPos = GetPreviewAnchorPos(mouseOnGridPos, dragOffset, itemData);
             return false;
@@ -279,6 +281,7 @@ namespace MmInventory
                                         ESwapPlaceMode swapPlaceMode)
         {
             var itemDataB = gridInventoryService.GetItemAt(previewAnchorPos);
+            // 只问 Service 能否放 不在 View 里写放置算法
             var state = gridInventoryService.JudgeDragPreviewState(itemView.ItemData,
                                                                  itemDataB,
                                                                  previewAnchorPos,
@@ -297,7 +300,8 @@ namespace MmInventory
         #endregion
 
 
-        #region E 跨容器交换
+        #region E 同容器与跨容器落点
+
         /// <summary>
         /// 同容器内结束拖拽
         /// </summary>
@@ -306,6 +310,7 @@ namespace MmInventory
             var itemView = dragSession.DraggingItem;
             itemView.ItemRectTransform.SetParent(itemContent, true);
 
+            // 一次 TryPlaceItem 完成放 堆叠 交换 失败时 Service 内回滚
             var result = gridInventoryService.TryPlaceItem(
                 itemView.ItemData, dragSession.StartAnchorPos, dragSession.PreviewAnchorPos);
 
@@ -319,6 +324,7 @@ namespace MmInventory
             var newItemDataB = result.ItemDataB;
             var displacedItemDataList = result.DisplacedItemDataList;
 
+            // 堆叠耗尽时 A 数据被消耗 销毁对应 ItemView
             if (newItemDataA is null)
             {
                 itemViewDict.Remove(itemView.ItemData.InstancedItemId);
@@ -326,9 +332,11 @@ namespace MmInventory
                 return;
             }
 
+            // 同步拖动物 UI 位置
             itemView.ItemRectTransform.localPosition =
                 GetItemUIPivotPos(newItemDataA.AnchorPos, newItemDataA.DataSize);
 
+            // 交换时同步被换物 B 的 UI
             if (newItemDataB is not null
                 && itemViewDict.TryGetValue(newItemDataB.InstancedItemId, out var targetItemView))
             {
@@ -336,6 +344,7 @@ namespace MmInventory
                     GetItemUIPivotPos(newItemDataB.AnchorPos, newItemDataB.DataSize);
             }
 
+            // 大换小 同步被挤开小物的 UI
             if (displacedItemDataList is not null && displacedItemDataList.Count > 0)
             {
                 foreach (var itemData in displacedItemDataList)
@@ -355,53 +364,41 @@ namespace MmInventory
         private void HandleCrossContainerEndDrag(GridMainContainerView sourceContainer,
                                                  GridMainContainerView hoverContainer)
         {
-            // 记录拖拽物 先给两侧容器拍快照 失败时整体还原
             var aitemView = dragSession.DraggingItem;
-            var aSnapshot = sourceContainer.gridInventoryService.CaptureSnapshot();
-            var bSnapshot = hoverContainer.gridInventoryService.CaptureSnapshot();
             var dropAnchorPos = dragSession.PreviewAnchorPos;
 
-            var result = hoverContainer.gridInventoryService.TryReceiveItem(
-                aitemView.ItemData, dropAnchorPos);
+            // Core 双背包事务 快照与 B→A 两步都在 Service 内完成
+            var result = sourceContainer.gridInventoryService.TryCrossContainerDrop(
+                hoverContainer.gridInventoryService,
+                aitemView.ItemData,
+                sourceContainer.dragSession.StartAnchorPos,
+                dropAnchorPos);
 
-            // 落点容器接收失败 回滚拖拽物
             if (!result.IsSuccess)
             {
+                // 失败只回滚拖拽物 UI 网格已由 Core 还原或未改动
                 sourceContainer.RollbackDragItem(aitemView);
                 return;
             }
 
-            // 解析落点容器接收结果 newA/B 引用仍是原 A/B 对象 锚点与占格已是 B 侧处理后的状态
             var newA = result.ItemDataA;
 
-           // A 侧数据层接收 B 换回来的物
-            if (!sourceContainer.gridInventoryService.TryReceiveSwapReturnItem(result,
-                                                                          sourceContainer.dragSession.StartAnchorPos,
-                                                                          dropAnchorPos))
-            {
-                // 双容器整体还原到落点前状态 拖拽物由回滚方法放回
-                sourceContainer.gridInventoryService.RestoreSnapshot(aSnapshot);
-                hoverContainer.gridInventoryService.RestoreSnapshot(bSnapshot);
-                sourceContainer.RollbackDragItem(aitemView);
-                return;
-            }
-
-            // 互换a和b的字典管理数据
+            // 拖动物 ItemView 从源容器字典迁到落点容器
             sourceContainer.RemoveItemView(aitemView);
             hoverContainer.AddItemView(aitemView);
 
-            // 跨容器堆叠满了的时候 newA会被销毁
+            // 跨容器堆叠满时 A 被消耗 newA 为 null
             if (newA is null)
             {
                 Destroy(aitemView.gameObject);
                 return;
             }
 
-            // 换走的
+            // 拖动物落到 B 侧新锚点
             aitemView.ItemRectTransform.localPosition =
                 hoverContainer.GetItemUIPivotPos(newA.AnchorPos, newA.DataSize);
 
-            // 换回来的
+            // B 换出的物或大换小小物 视图迁回 A 侧
             sourceContainer.ApplyCrossContainerReturnViews(result, hoverContainer);
         }
 
@@ -413,10 +410,13 @@ namespace MmInventory
         {
             switch (result.SwapState)
             {
+                // 等量或小换大 单个 B 从 B 容器迁到 A 容器
                 case ESwapState.Same:
                 case ESwapState.SmallToLarge:
                     MoveSingleReturnItemView(result.ItemDataB, fromContainer);
                     break;
+
+                // 大换小 多个小物逐个迁回 A
                 case ESwapState.LargeToSmall:
                     MoveDisplacedItemViews(result, fromContainer);
                     break;
@@ -425,15 +425,16 @@ namespace MmInventory
 
         /// <summary>
         /// 迁移等量或小换大的单个返回物视图
+        /// </summary>
         /// <param name="itemDataB">返回物数据</param>
         /// <param name="fromContainer">起始容器</param>
-        /// </summary>
         private void MoveSingleReturnItemView(ItemRtData itemDataB, GridMainContainerView fromContainer)
         {
             if (itemDataB is null
                 || !fromContainer.itemViewDict.TryGetValue(itemDataB.InstancedItemId, out var swapView))
                 return;
 
+            // ItemView 仍挂在 B 容器字典 迁到当前 A 容器并刷新坐标
             fromContainer.RemoveItemView(swapView);
             this.AddItemView(swapView);
 

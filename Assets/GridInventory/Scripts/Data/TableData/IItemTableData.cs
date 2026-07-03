@@ -9,7 +9,7 @@ namespace MmInventory
     /// 用于定义所有物品都应该存在的基础数据
     /// </summary>
 
-    public interface IItemBaseData
+    public interface IItemTableData
     {
         // ID
         public int ExcelItemId { get; }

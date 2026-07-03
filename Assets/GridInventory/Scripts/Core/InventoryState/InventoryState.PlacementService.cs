@@ -3,6 +3,7 @@ using UnityEngine;
 
 namespace MmInventory
 {
+
     public partial class InventoryState
     {
         /// <summary>
@@ -83,9 +84,9 @@ namespace MmInventory
                 anchorPos = Vector2Int.zero;
 
                 // 遍历所有背包格子 
-                for (int y = 0; y < inventoryState.gridInventorySize.y; y++)
+                for (int y = 0; y < inventoryState.inventorySize.y; y++)
                 {
-                    for (int x = 0; x < inventoryState.gridInventorySize.x; x++)
+                    for (int x = 0; x < inventoryState.inventorySize.x; x++)
                     {
                         // 计算候选锚点
                         var candidate = new Vector2Int(x, y);
