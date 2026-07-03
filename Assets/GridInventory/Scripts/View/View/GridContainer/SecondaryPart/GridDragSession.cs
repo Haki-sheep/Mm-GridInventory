@@ -33,10 +33,10 @@ namespace MmInventory
         public Vector2Int StartOffset { get; private set; }
 
         /// <summary> 拖拽起始容器 </summary>
-        public GridMainContainerView SourceContainer { get; private set; }
+        public GridContainerView SourceContainer { get; private set; }
 
         /// <summary> 当前悬停容器 </summary>
-        public GridMainContainerView HoverContainer { get; set; }
+        public GridContainerView HoverContainer { get; set; }
 
         /// <summary> 玩家手动旋转后锁定自动旋转 </summary>
         public bool ManualRotationLocked { get; set; }
@@ -52,7 +52,7 @@ namespace MmInventory
                           bool startIsRotated,
                           Vector2Int startOffset,
                           int startSiblingIndex,
-                          GridMainContainerView sourceContainer)
+                          GridContainerView sourceContainer)
         {
             IsActive = true;
             DraggingItem = itemView;

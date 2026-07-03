@@ -15,7 +15,7 @@ namespace MmInventory
     /// 此脚本放置了基础组件和Unity生命周期以及公共接口
     /// 如果你不想知道View层的具体实现细节 直接看这个脚本提供给外部的API即可
     /// </summary>
-    public partial class GridMainContainerView : SerializedMonoBehaviour, IGridContainer
+    public partial class GridContainerView : SerializedMonoBehaviour, IGridContainer
     {
 
         #region 字段与属性
@@ -38,6 +38,9 @@ namespace MmInventory
         [Header("自定义View组件")]
         private GridInventoryService gridInventoryService;
 
+        /// <summary> 逻辑服务 </summary>
+        internal GridInventoryService InventoryService => gridInventoryService;
+
         private ItemView[] itemViewsCache;
         private ItemView[] itemViews => itemViewsCache ??= itemContent.GetComponentsInChildren<ItemView>();
 
@@ -45,6 +48,14 @@ namespace MmInventory
         [Header("配置信息")]
         [SerializeField]
         private GameObject CellPrefab;
+
+        /// <summary> 容器角色 常驻或活跃 </summary>
+        [SerializeField]
+        private EGridContainerRole containerRole = EGridContainerRole.Neutral;
+
+        /// <summary> 容器角色 </summary>
+        public EGridContainerRole ContainerRole => containerRole;
+
         public const int gridSize = 100;
         public const int spacing = 0;
         public Vector2Int gridRowAndCloumns = Vector2Int.zero;

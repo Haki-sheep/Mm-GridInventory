@@ -105,6 +105,7 @@ namespace MmInventory
 
             /// <summary>
             /// 查找并设置第一个可放置锚点
+            /// 仅使用物品当前朝向
             /// </summary>
             /// <param name="itemData">物品数据</param>
             /// <param name="anchorPos">最终锚点</param>
@@ -113,6 +114,52 @@ namespace MmInventory
             {
                 if (!FindSetAtFirst(itemData, out anchorPos)) return false;
                 return SetAt(anchorPos, itemData);
+            }
+
+            /// <summary>
+            /// 查找首个空位并放置 优先保留当前朝向
+            /// 当前朝向全网格放不下且允许旋转时 旋转后再扫一遍
+            /// </summary>
+            /// <param name="itemData">物品数据</param>
+            /// <param name="anchorPos">最终锚点</param>
+            /// <returns>是否成功</returns>
+            public bool SetAtFirstWithRotate(IItemRuntime itemData, out Vector2Int anchorPos)
+            {
+                anchorPos = Vector2Int.zero;
+                if (itemData is null)
+                    return false;
+
+                // 第一遍 当前朝向找首个空位
+                if (SetAtFirst(itemData, out anchorPos))
+                    return true;
+
+                if (!CanTryRotateItem(itemData))
+                    return false;
+
+                var startIsRotated = itemData.IsRotated;
+                itemData.SetRotated(!startIsRotated);
+
+                // 第二遍 旋转后再找首个空位
+                if (SetAtFirst(itemData, out anchorPos))
+                    return true;
+
+                // 两遍都失败 还原朝向
+                itemData.SetRotated(startIsRotated);
+                return false;
+            }
+
+            /// <summary>
+            /// 是否允许为找空位而旋转
+            /// </summary>
+            private static bool CanTryRotateItem(IItemRuntime item)
+            {
+                if (item.DataSize.x == item.DataSize.y)
+                    return false;
+
+                if (item.ItemStackType == EItemStackType.Stackable)
+                    return false;
+
+                return true;
             }
             #endregion
 

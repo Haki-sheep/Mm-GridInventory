@@ -75,6 +75,7 @@ namespace MmInventory
             inventoryPlacementService = new InventoryPlacementService(this);
             inventoryStackableService = new InventoryStackableService(this);
             crossContainerService = new InventoryCrossContainerService(this);
+            quickMoveService = new InventoryQuickMoveService(this);
         }
 
         /// <summary>
@@ -210,12 +211,22 @@ namespace MmInventory
 
         /// <summary>
         /// 遍历所有格子 找到第一个可放置位置 并放置物品
+        /// 仅使用物品当前朝向
         /// </summary>
         /// <param name="itemData"> 物品数据 </param>
         /// <param name="anchorPos"> 锚点坐标 </param>
         /// <returns> 是否成功 </returns>
         public bool SetAtFirst(IItemRuntime itemData, out Vector2Int anchorPos) =>
         inventoryPlacementService.SetAtFirst(itemData, out anchorPos);
+
+        /// <summary>
+        /// 找首个空位并放置 当前朝向优先 放不下再旋转后重扫
+        /// </summary>
+        /// <param name="itemData"> 物品数据 </param>
+        /// <param name="anchorPos"> 锚点坐标 </param>
+        /// <returns> 是否成功 </returns>
+        public bool SetAtFirstWithRotate(IItemRuntime itemData, out Vector2Int anchorPos) =>
+        inventoryPlacementService.SetAtFirstWithRotate(itemData, out anchorPos);
         #endregion
 
         #region 堆叠功能
@@ -317,6 +328,24 @@ namespace MmInventory
         /// <returns></returns>
         public bool IsCover(Vector2Int aAnchorPos, Vector2Int bAnchorPos, Vector2Int aSize, Vector2Int bSize) =>
         inventoryPlacementService.IsCover(aAnchorPos, bAnchorPos, aSize, bSize);
+
+        /// <summary>
+        /// 收集所有锚点物品去重
+        /// </summary>
+        /// <param name="itemList">输出列表</param>
+        public void CollectAnchorItems(List<IItemRuntime> itemList)
+        {
+            itemList.Clear();
+            var idHashList = new HashSet<string>();
+            for (int i = 0; i < itemAnchorArray.Length; i++)
+            {
+                var item = itemAnchorArray[i];
+                if (item is null || !idHashList.Add(item.InstancedItemId))
+                    continue;
+
+                itemList.Add(item);
+            }
+        }
         #endregion
 
         #region 快照功能

@@ -12,6 +12,7 @@ namespace MmInventory
                             IPointerEnterHandler,
                             IPointerExitHandler,
                             IPointerDownHandler,
+                            IPointerClickHandler,
                             IBeginDragHandler,
                             IDragHandler,
                             IEndDragHandler
@@ -26,7 +27,10 @@ namespace MmInventory
         /// <summary> 运行时物品数据 </summary>
         public ItemRtData ItemData;
         /// <summary> 所属背包容器 </summary>
-        private GridMainContainerView ownerContainer;
+        private GridContainerView ownerContainer;
+
+        /// <summary> 是否正在拖拽 </summary>
+        private bool isDragging;
 
         // TODO: 以后可以使用事件系统来替代这些委托
         /// <summary> 鼠标进入物品 </summary>
@@ -39,7 +43,7 @@ namespace MmInventory
         /// <summary>
         /// 绑定背包容器
         /// </summary>
-        public void BindOwner(GridMainContainerView owner)
+        public void BindOwner(GridContainerView owner)
         {
             ownerContainer = owner;
         }
@@ -83,6 +87,23 @@ namespace MmInventory
         }
 
         /// <summary>
+        /// 鼠标点击物品 双击触发快捷互转
+        /// </summary>
+        public void OnPointerClick(PointerEventData eventData)
+        {
+            if (eventData.button != PointerEventData.InputButton.Left)
+                return;
+
+            if (isDragging)
+                return;
+
+            if (eventData.clickCount != 2)
+                return;
+
+            ownerContainer?.TryQuickTransferItem(this);
+        }
+
+        /// <summary>
         /// 鼠标进入物品
         /// </summary>
         public void OnPointerEnter(PointerEventData eventData)
@@ -103,6 +124,7 @@ namespace MmInventory
         public void OnBeginDrag(PointerEventData eventData)
         {
             if (eventData.button != PointerEventData.InputButton.Left) return;
+            isDragging = true;
             ownerContainer?.OnBeginDrag(this, eventData);
             OnItemPickUp?.Invoke();
         }
@@ -120,6 +142,7 @@ namespace MmInventory
         /// </summary>
         public void OnEndDrag(PointerEventData eventData)
         {
+            isDragging = false;
             ownerContainer?.OnEndDrag(eventData);
             OnItemPutDown?.Invoke();
         }

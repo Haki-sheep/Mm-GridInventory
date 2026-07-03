@@ -13,7 +13,7 @@ namespace MmInventory
     /// 看懂此脚本就能理解整个View层的网格同步与数据管理
     /// </summary>
 
-    public partial class GridMainContainerView
+    public partial class GridContainerView
     {
 
         #region 数据结构

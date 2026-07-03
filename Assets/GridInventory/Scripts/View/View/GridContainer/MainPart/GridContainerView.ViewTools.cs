@@ -21,7 +21,7 @@ namespace MmInventory
     /// 此脚本放置视图工具方法 是View这边的辅助逻辑
     /// 大多数是UI显示和操作相关的逻辑
     /// </summary>
-    public partial class GridMainContainerView
+    public partial class GridContainerView
     {
         /// <summary>
         /// 拖拽滚动速度

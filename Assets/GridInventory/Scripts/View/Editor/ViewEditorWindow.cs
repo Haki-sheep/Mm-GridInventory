@@ -12,10 +12,10 @@ namespace MmInventory.Editor
     {
         private const float LeftPanelWidth = 220f;
 
-        private readonly List<GridMainContainerView> containerList = new();
+        private readonly List<GridContainerView> containerList = new();
         private readonly List<ItemTableData> itemOptionList = new();
 
-        private GridMainContainerView selectedContainer;
+        private GridContainerView selectedContainer;
         private Vector2 containerScrollPos;
         private Vector2 itemScrollPos;
         private int selectedItemIndex;
@@ -98,7 +98,7 @@ namespace MmInventory.Editor
         /// <summary>
         /// 容器引用是否仍有效
         /// </summary>
-        private static bool IsContainerAlive(GridMainContainerView container)
+        private static bool IsContainerAlive(GridContainerView container)
         {
             return container != null;
         }
@@ -303,7 +303,7 @@ namespace MmInventory.Editor
 
             if (containerList.Count == 0)
             {
-                var foundList = Object.FindObjectsByType<GridMainContainerView>(
+                var foundList = Object.FindObjectsByType<GridContainerView>(
                     FindObjectsInactive.Include,
                     FindObjectsSortMode.None);
 

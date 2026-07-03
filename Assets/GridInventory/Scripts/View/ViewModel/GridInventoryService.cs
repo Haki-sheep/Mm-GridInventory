@@ -160,6 +160,21 @@ namespace MmInventory
 
         #endregion
 
+        #region 放置 - 快捷互转
+
+        /// <summary>
+        /// 快捷移动到目标容器
+        /// </summary>
+        public QuickMoveOpResult TryQuickMoveTo(GridInventoryService targetService, ItemRtData itemData)
+        {
+            if (targetService is null || itemData is null)
+                return QuickMoveOpResult.Fail();
+
+            return currentInventoryState.TryQuickMoveTo(targetService.currentInventoryState, itemData);
+        }
+
+        #endregion
+
         #region 放置 - 同容器
 
         /// <summary>

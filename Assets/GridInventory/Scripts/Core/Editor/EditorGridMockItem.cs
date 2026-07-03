@@ -112,6 +112,12 @@ namespace MmInventory.Editor
         CurrStackCount = stackCount
       };
     }
-  }
+
+        public void SetRotated(bool rotated)
+        {
+            IsRotated = rotated;
+            DataSize = new Vector2Int(DataSize.y, DataSize.x);
+        }
+    }
 }
 #endif

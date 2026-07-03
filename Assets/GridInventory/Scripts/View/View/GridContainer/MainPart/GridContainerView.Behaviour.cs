@@ -11,7 +11,7 @@ namespace MmInventory
     /// 此脚本放置行为方法 是View层的流程控制 
     /// ABC就是物品拖拽的三个阶段 D是物品旋转
     /// </summary>
-    public partial class GridMainContainerView
+    public partial class GridContainerView
     {
         /// <summary> 拖拽会话 </summary>
         private readonly GridDragSession dragSession = new();
@@ -143,7 +143,7 @@ namespace MmInventory
             if (dragSession.DraggingItem is null) return;
 
             var sourceContainer = dragSession.SourceContainer;
-            GridMainContainerView hoverContainer;
+            GridContainerView hoverContainer;
 
             // 根据松手位置确定落点容器与最终预览锚点
             if (GridMainContainerManager.TryResolveHoverContainer(
@@ -421,8 +421,8 @@ namespace MmInventory
         /// </summary>
         /// <param name="sourceContainer">起始容器</param>
         /// <param name="hoverContainer">落点容器</param>
-        private void HandleCrossContainerEndDrag(GridMainContainerView sourceContainer,
-                                                 GridMainContainerView hoverContainer)
+        private void HandleCrossContainerEndDrag(GridContainerView sourceContainer,
+                                                 GridContainerView hoverContainer)
         {
             var aitemView = dragSession.DraggingItem;
             var dropAnchorPos = dragSession.PreviewAnchorPos;
@@ -466,7 +466,7 @@ namespace MmInventory
         /// 按交换类型迁移跨容器返回物视图
         /// </summary>
         private void ApplyCrossContainerReturnViews(InventoryOpReport result,
-                                                    GridMainContainerView fromContainer)
+                                                    GridContainerView fromContainer)
         {
             switch (result.SwapState)
             {
@@ -488,7 +488,7 @@ namespace MmInventory
         /// </summary>
         /// <param name="itemDataB">返回物数据</param>
         /// <param name="fromContainer">起始容器</param>
-        private void MoveSingleReturnItemView(ItemRtData itemDataB, GridMainContainerView fromContainer)
+        private void MoveSingleReturnItemView(ItemRtData itemDataB, GridContainerView fromContainer)
         {
             if (itemDataB is null
                 || !fromContainer.itemViewDict.TryGetValue(itemDataB.InstancedItemId, out var swapView))
@@ -506,7 +506,7 @@ namespace MmInventory
         /// 迁移大换小被挤开物品视图
         /// </summary>
         private void MoveDisplacedItemViews(InventoryOpReport result,
-                                            GridMainContainerView fromContainer)
+                                            GridContainerView fromContainer)
         {
             if (result.DisplacedItemDataList is null || result.DisplacedItemDataList.Count == 0)
                 return;

@@ -5315,6 +5315,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4550892151032301569, guid: 41a838039270deb4884c0e6f645abdb7, type: 3}
+      propertyPath: containerRole
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4550892151032301569, guid: 41a838039270deb4884c0e6f645abdb7, type: 3}
       propertyPath: visibleHeight
       value: 500
       objectReference: {fileID: 0}
@@ -5329,7 +5333,7 @@ PrefabInstance:
     - target: {fileID: 4550892151032301569, guid: 41a838039270deb4884c0e6f645abdb7, type: 3}
       propertyPath: serializationData.Prefab
       value: 
-      objectReference: {fileID: 4550892151032301569, guid: 41a838039270deb4884c0e6f645abdb7, type: 3}
+      objectReference: {fileID: 0}
     - target: {fileID: 4550892151032301569, guid: 41a838039270deb4884c0e6f645abdb7, type: 3}
       propertyPath: gridCellViewList.Array.size
       value: 25
@@ -10696,9 +10700,13 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4550892151032301569, guid: 41a838039270deb4884c0e6f645abdb7, type: 3}
+      propertyPath: containerRole
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 4550892151032301569, guid: 41a838039270deb4884c0e6f645abdb7, type: 3}
       propertyPath: serializationData.Prefab
       value: 
-      objectReference: {fileID: 4550892151032301569, guid: 41a838039270deb4884c0e6f645abdb7, type: 3}
+      objectReference: {fileID: 0}
     - target: {fileID: 4608569521566685671, guid: 41a838039270deb4884c0e6f645abdb7, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0

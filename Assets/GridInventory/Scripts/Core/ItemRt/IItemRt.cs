@@ -37,6 +37,11 @@ namespace MmInventory
         void SetAnchorPos(Vector2Int anchorPos);
 
         /// <summary>
+        /// 设置旋转状态
+        /// </summary>
+        void SetRotated(bool rotated);
+
+        /// <summary>
         /// 克隆一份用于放置
         /// </summary>
         /// <param name="stackCount"></param>

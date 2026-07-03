@@ -65,36 +65,41 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets\GridInventory\Scripts\Core\InventoryState\InventoryState.StackableService.cs" />
+    <Compile Include="Assets\GridInventory\Scripts\View\View\GridContainer\MainPart\GridContainerView.Behaviour.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Core\InventoryState\InventoryState.Debug.cs" />
+    <Compile Include="Assets\GridInventory\Scripts\View\View\GridContainer\MainPart\GridContainerView.Compute.cs" />
     <Compile Include="Assets\GridInventory\Scripts\View\View\GridContainer\IGridContainer.cs" />
-    <Compile Include="Assets\GridInventory\Scripts\View\View\GridContainerMgr\GridMainContainerView.Gm.cs" />
-    <Compile Include="Assets\GridInventory\Scripts\View\View\GridContainer\MainPart\GridMainContainerView.cs" />
     <Compile Include="Assets\GridInventory\Scripts\View\ViewModel\GridInventoryService.cs" />
     <Compile Include="Assets\GridInventory\Scripts\View\View\GridContainer\SecondaryPart\GridCellView.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Core\InventoryCross\InventoryState.CrossContainerService.cs" />
-    <Compile Include="Assets\GridInventory\Scripts\View\View\GridContainer\MainPart\GridMainContainerView.Compute.cs" />
     <Compile Include="Assets\GridInventory\Scripts\View\View\GridContainerMgr\GridMainContainerManager.cs" />
+    <Compile Include="Assets\GridInventory\Scripts\View\View\GridContainer\MainPart\GridContainerView.ViewTools.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Data\TableData\ItemTableData.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Core\InventoryState\InventoryState.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Core\ItemRt\IItemRt.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Data\TableData\EItemType.cs" />
-    <Compile Include="Assets\GridInventory\Scripts\View\View\GridContainer\MainPart\GridMainContainerView.Behaviour.cs" />
+    <Compile Include="Assets\GridInventory\Scripts\View\View\GridContainerMgr\EGridContainerRole.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Data\View\ItemViewPrefabListSo.cs" />
+    <Compile Include="Assets\GridInventory\Scripts\View\View\GridContainerMgr\GridContainerView.Gm.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Data\LootSimulation\LootSimConfigSo.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Core\ItemRt\ItemRtDataMgr.cs" />
     <Compile Include="Assets\TutorialInfo\Scripts\Readme.cs" />
+    <Compile Include="Assets\GridInventory\Scripts\View\View\GridContainerMgr\GridInventoryEvents.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Data\TableData\IItemTableData.cs" />
     <Compile Include="Assets\GridInventory\Scripts\View\View\GridContainer\SecondaryPart\EDragPreviewState.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Core\InventoryState\InventoryState.PlacementService.cs" />
-    <Compile Include="Assets\GridInventory\Scripts\View\View\GridContainer\MainPart\GridMainContainerView.ViewTools.cs" />
+    <Compile Include="Assets\GridInventory\Scripts\Core\InventoryCross\InventoryState.QuickMoveService.cs" />
     <Compile Include="Assets\GridInventory\Scripts\View\View\ItemView\ItemView.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Core\Save\InventoryState.SaveService.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Data\TableData\ItemTableDataListSo.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Core\InventoryState\InventoryState.SwapService.cs" />
+    <Compile Include="Assets\GridInventory\Scripts\View\View\GridContainer\MainPart\GridContainerView.cs" />
+    <Compile Include="Assets\GridInventory\Scripts\View\View\GridContainer\MainPart\GridContainerView.QuickTransfer.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Core\Save\InventoryStateSaveData.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Core\Save\ItemSaveData.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Core\ItemRt\ItemRtData.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Core\InventoryCross\CrossContainerOpResult.cs" />
+    <Compile Include="Assets\GridInventory\Scripts\Core\InventoryCross\QuickMoveOpResult.cs" />
     <Compile Include="Assets\GridInventory\Scripts\View\View\GridContainer\SecondaryPart\GridDragSession.cs" />
   </ItemGroup>
   <ItemGroup>
