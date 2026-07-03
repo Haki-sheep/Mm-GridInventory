@@ -77,9 +77,10 @@ namespace MmInventory
                 out var mouseOnGridPos,
                 out var gridIndex);
 
-            // 鼠标不在任何容器上 清掉两侧预览
+            // 鼠标不在任何容器上 撤销预览期自动旋转
             if (!hasHit)
             {
+                RevertAutoRotationIfActive(dragSession.DraggingItem, dragSession);
                 lastHoverContainer?.ClearDragPreview();
                 ClearDragPreview();
                 dragSession.HoverContainer = null;
@@ -108,11 +109,16 @@ namespace MmInventory
                                                                dragSession.StartOffset,
                                                                dragSession.DraggingItem.ItemData);
 
-            // 锚点未变则跳过 减少 footprint 重算
-            if (dragSession.CachedPreviewAnchorPos == dragSession.PreviewAnchorPos)
-                return;
-
             var previewAnchorPos = dragSession.PreviewAnchorPos;
+
+            // 当前格不可放且曾自动旋转 先还原拖起朝向
+            TryRevertAutoRotationForPreview(dragSession.DraggingItem,
+                                            ref previewAnchorPos,
+                                            mouseOnGridPos,
+                                            dragSession.StartOffset,
+                                            ESwapPlaceMode.SameContainer,
+                                            dragSession);
+
             // 当前朝向放不下时尝试自动旋转一次
             TryAutoRotateForPreview(dragSession.DraggingItem,
                                     ref previewAnchorPos,
@@ -154,6 +160,7 @@ namespace MmInventory
                 // 落在空白处视为回到源容器原锚点
                 dragSession.PreviewAnchorPos = dragSession.StartAnchorPos;
                 hoverContainer = sourceContainer;
+                RevertAutoRotationIfActive(dragSession.DraggingItem, dragSession);
             }
 
             sourceContainer.ClearDragPreview();
@@ -198,8 +205,9 @@ namespace MmInventory
             if (!result.IsSuccess)
                 return;
 
-            // 玩家手动转过之后 关闭自动旋转
+            // 玩家手动转过之后 关闭自动旋转并清除自动旋转标记
             dragSession.ManualRotationLocked = true;
+            dragSession.AutoRotatedForPreview = false;
 
             var itemDataA = result.ItemDataA;
             ApplyItemViewRotation(dragSession.DraggingItem, itemDataA.IsRotated);
@@ -264,6 +272,7 @@ namespace MmInventory
             if (IsPreviewPlaceable(itemView, previewAnchorPos, swapPlaceMode))
             {
                 ApplyItemViewRotation(itemView, itemData.IsRotated);
+                sourceDragSession.AutoRotatedForPreview = true;
                 return true;
             }
 
@@ -287,6 +296,57 @@ namespace MmInventory
                                                                  previewAnchorPos,
                                                                  swapPlaceMode);
             return state != EDragPreviewState.CannotPlace;
+        }
+
+        /// <summary>
+        /// 预览格不可放且曾自动旋转过 则还原为拖起朝向
+        /// </summary>
+        private void TryRevertAutoRotationForPreview(ItemView itemView,
+                                                     ref Vector2Int previewAnchorPos,
+                                                     Vector2Int mouseOnGridPos,
+                                                     Vector2Int dragOffset,
+                                                     ESwapPlaceMode swapPlaceMode,
+                                                     GridDragSession session)
+        {
+            if (!session.AutoRotatedForPreview || session.ManualRotationLocked)
+                return;
+
+            if (itemView?.ItemData is null)
+                return;
+
+            if (IsPreviewPlaceable(itemView, previewAnchorPos, swapPlaceMode))
+                return;
+
+            if (!RevertAutoRotationIfActive(itemView, session))
+                return;
+
+            previewAnchorPos = GetPreviewAnchorPos(mouseOnGridPos, dragOffset, itemView.ItemData);
+            session.InvalidatePreviewCache();
+        }
+
+        /// <summary>
+        /// 将拖拽物数据和视图旋转还原为拖起状态
+        /// </summary>
+        private bool RevertAutoRotationIfActive(ItemView itemView, GridDragSession session)
+        {
+            if (!session.AutoRotatedForPreview || session.ManualRotationLocked)
+                return false;
+
+            if (itemView?.ItemData is null)
+                return false;
+
+            var itemData = itemView.ItemData;
+            if (itemData.IsRotated == session.StartIsRotated)
+            {
+                session.AutoRotatedForPreview = false;
+                return false;
+            }
+
+            itemData.SetRotated(session.StartIsRotated);
+            ApplyItemViewRotation(itemView, session.StartIsRotated);
+            session.AutoRotatedForPreview = false;
+            session.InvalidatePreviewCache();
+            return true;
         }
 
         /// <summary>

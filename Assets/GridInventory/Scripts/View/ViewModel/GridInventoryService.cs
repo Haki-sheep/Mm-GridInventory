@@ -53,14 +53,14 @@ namespace MmInventory
     /// </summary>
     public class GridInventoryService
     {
-        private InventoryState inventoryState;
+        private InventoryState currentInventoryState;
 
         /// <summary>
         /// new一个InventoryState数据层
         /// </summary>
         public void Init(Vector2Int gridSize)
         {
-            inventoryState = new InventoryState(gridSize);
+            currentInventoryState = new InventoryState(gridSize);
         }
 
         #region 创建与销毁
@@ -85,7 +85,7 @@ namespace MmInventory
             if (!SetAnchorAndPlaceItem(itemRtData, anchorPos))
             {
                 // 该位置已存在物品 尝试放置到第一个可放置位置 锚点由数据层同步
-                if (!inventoryState.SetAtFirst(itemRtData, out _))
+                if (!currentInventoryState.SetAtFirst(itemRtData, out _))
                 {
                     Debug.Log("创建物品失败 没有找到可放置位置");
                     return null;
@@ -110,7 +110,7 @@ namespace MmInventory
 
             // 创建运行时数据 锚点由数据层同步
             var itemRtData = ItemRtData.ItemTableData2ItemRtData(itemData);
-            if (!inventoryState.SetAtFirst(itemRtData, out _))
+            if (!currentInventoryState.SetAtFirst(itemRtData, out _))
             {
                 Debug.Log("创建物品失败 没有找到可放置位置");
                 return null;
@@ -124,8 +124,8 @@ namespace MmInventory
         /// </summary>
         public InventoryOpReport TryRemoveItem(Vector2Int anchorPos)
         {
-            var item = inventoryState.GetItemByMask(anchorPos) as ItemRtData;
-            if (item is null || !inventoryState.RemoveAtAny(anchorPos))
+            var item = currentInventoryState.GetItemByMask(anchorPos) as ItemRtData;
+            if (item is null || !currentInventoryState.RemoveAtAny(anchorPos))
                 return new InventoryOpReport(false, null);
 
             return new InventoryOpReport(true, item);
@@ -148,9 +148,9 @@ namespace MmInventory
                                                        Vector2Int sourceAnchor,
                                                        Vector2Int dropAnchor)
         {
-            var coreResult = InventoryCrossContainerService.TryCrossContainerDrop(
-                inventoryState,
-                targetService.inventoryState,
+            // 源 Service 持有的 currentInventoryState 作为 A 落点 Service 的 state 作为 B
+            var coreResult = currentInventoryState.TryCrossContainerDrop(
+                targetService.currentInventoryState,
                 dragItem,
                 sourceAnchor,
                 dropAnchor);
@@ -175,7 +175,7 @@ namespace MmInventory
             void RestoreItemA() => SetAnchorAndPlaceItem(itemDataA, anchorPosA);
 
             // 直接放
-            if (inventoryState.CanPlace(itemDataA, anchorPosB))
+            if (currentInventoryState.CanPlace(itemDataA, anchorPosB))
             {
                 if (!SetAnchorAndPlaceItem(itemDataA, anchorPosB))
                 {
@@ -185,12 +185,12 @@ namespace MmInventory
                 return new InventoryOpReport(true, itemDataA);
             }
 
-            var itemDataB = inventoryState.GetItemByMask(anchorPosB) as ItemRtData;
+            var itemDataB = currentInventoryState.GetItemByMask(anchorPosB) as ItemRtData;
 
             // 尝试堆叠
             if (itemDataB is not null
-                && inventoryState.CanStack(itemDataA, itemDataB)
-                && inventoryState.TryStack(itemDataA, itemDataB))
+                && currentInventoryState.CanStack(itemDataA, itemDataB)
+                && currentInventoryState.TryStack(itemDataA, itemDataB))
             {
                 if (itemDataA.CurrStackCount > 0)
                     RestoreItemA();
@@ -199,11 +199,11 @@ namespace MmInventory
             }
 
             // 尝试交换 TrySwap 失败时内部自行回滚 无需预演
-            if (inventoryState.TryGetSwapTargetItem(itemDataA, anchorPosB, out var swapTargetItem))
+            if (currentInventoryState.TryGetSwapTargetItem(itemDataA, anchorPosB, out var swapTargetItem))
             {
                 var swapDisplacedList = new List<IItemRuntime>();
-                var swapState = inventoryState.GetSwapState(itemDataA, swapTargetItem);
-                if (inventoryState.TrySwap(itemDataA,
+                var swapState = currentInventoryState.GetSwapState(itemDataA, swapTargetItem);
+                if (currentInventoryState.TrySwap(itemDataA,
                                            swapTargetItem,
                                            swapDisplacedList,
                                            anchorPosB))
@@ -233,7 +233,7 @@ namespace MmInventory
             if (itemData is null)
                 return false;
             // 锚点由数据层同步
-            return inventoryState.SetAtFirst(itemData, out _);
+            return currentInventoryState.SetAtFirst(itemData, out _);
         }
 
         #endregion
@@ -246,7 +246,7 @@ namespace MmInventory
         /// </summary>
         public ItemRtData GetItemAt(Vector2Int anyPos)
         {
-            return inventoryState.GetItemByMask(anyPos) as ItemRtData;
+            return currentInventoryState.GetItemByMask(anyPos) as ItemRtData;
         }
 
         #endregion
@@ -284,14 +284,14 @@ namespace MmInventory
                                                        Vector2Int dragPreviewAnchorPos,
                                                        ESwapPlaceMode swapPlaceMode = ESwapPlaceMode.SameContainer)
         {
-            if (inventoryState.CanPlace(itemDataA, dragPreviewAnchorPos))
+            if (currentInventoryState.CanPlace(itemDataA, dragPreviewAnchorPos))
                 return EDragPreviewState.CanPlace;
 
-            if (itemDataB is not null && inventoryState.CanStack(itemDataA, itemDataB))
+            if (itemDataB is not null && currentInventoryState.CanStack(itemDataA, itemDataB))
                 return EDragPreviewState.CanStack;
 
-            if (inventoryState.TryGetSwapTargetItem(itemDataA, dragPreviewAnchorPos, out var swapTargetItem) &&
-                inventoryState.CanSwap(itemDataA,
+            if (currentInventoryState.TryGetSwapTargetItem(itemDataA, dragPreviewAnchorPos, out var swapTargetItem) &&
+                currentInventoryState.CanSwap(itemDataA,
                                        swapTargetItem,
                                        dragPreviewAnchorPos,
                                        swapPlaceMode))
@@ -313,7 +313,7 @@ namespace MmInventory
             if (itemData is null)
                 return false;
 
-            return inventoryState.SetAt(anchorPos, itemData);
+            return currentInventoryState.SetAt(anchorPos, itemData);
         }
 
         /// <summary>

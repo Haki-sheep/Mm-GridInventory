@@ -192,7 +192,15 @@ namespace MmInventory
 
             // 在本容器坐标系下算预览锚点
             var previewAnchor = GetPreviewAnchorPos(mouseOnGridPos, dragOffset, itemView.ItemData);
-            
+
+            // 当前格不可放且曾自动旋转 先还原拖起朝向
+            TryRevertAutoRotationForPreview(itemView,
+                                            ref previewAnchor,
+                                            mouseOnGridPos,
+                                            dragOffset,
+                                            ESwapPlaceMode.CrossContainer,
+                                            sourceDragSession);
+
             // 尝试自动旋转
             TryAutoRotateForPreview(itemView,
                                     ref previewAnchor,
@@ -264,6 +272,7 @@ namespace MmInventory
             // 计算网格坐标
             if (!TryGetMouseInGridInfo(screenPos, out var mouseOnGridPos, out _))
             {
+                RevertAutoRotationIfActive(dragSession.DraggingItem, dragSession);
                 ClearDragPreview();
                 return;
             }
@@ -271,6 +280,12 @@ namespace MmInventory
             var previewAnchorPos = GetPreviewAnchorPos(mouseOnGridPos,
                                                        dragSession.StartOffset,
                                                        dragSession.DraggingItem.ItemData);
+            TryRevertAutoRotationForPreview(dragSession.DraggingItem,
+                                            ref previewAnchorPos,
+                                            mouseOnGridPos,
+                                            dragSession.StartOffset,
+                                            ESwapPlaceMode.SameContainer,
+                                            dragSession);
             TryAutoRotateForPreview(dragSession.DraggingItem,
                                     ref previewAnchorPos,
                                     mouseOnGridPos,

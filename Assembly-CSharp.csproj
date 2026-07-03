@@ -65,13 +65,13 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets\GridInventory\Scripts\Core\InventoryState\InventoryState.StackableService.cs" />
-    <Compile Include="Assets\GridInventory\Scripts\Core\InventoryCross\InventoryCrossContainerService.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Core\InventoryState\InventoryState.Debug.cs" />
     <Compile Include="Assets\GridInventory\Scripts\View\View\GridContainer\IGridContainer.cs" />
     <Compile Include="Assets\GridInventory\Scripts\View\View\GridContainerMgr\GridMainContainerView.Gm.cs" />
     <Compile Include="Assets\GridInventory\Scripts\View\View\GridContainer\MainPart\GridMainContainerView.cs" />
     <Compile Include="Assets\GridInventory\Scripts\View\ViewModel\GridInventoryService.cs" />
     <Compile Include="Assets\GridInventory\Scripts\View\View\GridContainer\SecondaryPart\GridCellView.cs" />
+    <Compile Include="Assets\GridInventory\Scripts\Core\InventoryCross\InventoryState.CrossContainerService.cs" />
     <Compile Include="Assets\GridInventory\Scripts\View\View\GridContainer\MainPart\GridMainContainerView.Compute.cs" />
     <Compile Include="Assets\GridInventory\Scripts\View\View\GridContainerMgr\GridMainContainerManager.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Data\TableData\ItemTableData.cs" />

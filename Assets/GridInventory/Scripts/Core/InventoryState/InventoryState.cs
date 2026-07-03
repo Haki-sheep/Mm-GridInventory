@@ -74,6 +74,7 @@ namespace MmInventory
             inventorySwapService = new InventorySwapService(this);
             inventoryPlacementService = new InventoryPlacementService(this);
             inventoryStackableService = new InventoryStackableService(this);
+            crossContainerService = new InventoryCrossContainerService(this);
         }
 
         /// <summary>

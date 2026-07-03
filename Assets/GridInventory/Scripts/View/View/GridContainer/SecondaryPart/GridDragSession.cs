@@ -41,6 +41,9 @@ namespace MmInventory
         /// <summary> 玩家手动旋转后锁定自动旋转 </summary>
         public bool ManualRotationLocked { get; set; }
 
+        /// <summary> 预览阶段是否由自动旋转改过朝向 </summary>
+        public bool AutoRotatedForPreview { get; set; }
+
         /// <summary>
         /// 开始拖拽会话
         /// </summary>
@@ -62,6 +65,7 @@ namespace MmInventory
             PreviewAnchorPos = startAnchorPos;
             CachedPreviewAnchorPos = Vector2Int.zero;
             ManualRotationLocked = false;
+            AutoRotatedForPreview = false;
         }
 
         /// <summary>
@@ -80,6 +84,7 @@ namespace MmInventory
             SourceContainer = null;
             HoverContainer = null;
             ManualRotationLocked = false;
+            AutoRotatedForPreview = false;
         }
 
         /// <summary>
