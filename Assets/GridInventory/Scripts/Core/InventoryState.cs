@@ -137,6 +137,7 @@ namespace MmInventory
 
         /// <summary>
         /// 设置锚点物品并更新占用信息
+        /// 锚点数据唯一写入口 物品锚点在此同步
         /// </summary>
         /// <param name="item">物品</param>
         /// <param name="anchorPos">锚点</param>
@@ -144,6 +145,7 @@ namespace MmInventory
         {
             itemAnchorArray[ToIndex(anchorPos)] = item;
             WriteOccupancy(item, anchorPos, true);
+            item.SetAnchorPos(anchorPos);
         }
 
         /// <summary>
@@ -263,6 +265,15 @@ namespace MmInventory
                                      swapPlaceMode);
 
         /// <summary>
+        /// 获取两物品的交换类型
+        /// </summary>
+        /// <param name="aItemData">拖动物品</param>
+        /// <param name="bItemData">目标物品</param>
+        /// <returns>交换类型</returns>
+        public ESwapState GetSwapState(IItemRuntime aItemData, IItemRuntime bItemData) =>
+        inventorySwapService.GetSwapState(aItemData, bItemData);
+
+        /// <summary>
         /// 尝试获取交换目标物品信息
         /// </summary>
         /// <param name="dragItemData">拖动物品</param>
@@ -312,6 +323,63 @@ namespace MmInventory
         /// <returns></returns>
         public bool IsCover(Vector2Int aAnchorPos, Vector2Int bAnchorPos, Vector2Int aSize, Vector2Int bSize) =>
         inventoryPlacementService.IsCover(aAnchorPos, bAnchorPos, aSize, bSize);
+        #endregion
+
+        #region 快照功能
+
+        /// <summary>
+        /// 背包快照 记录网格与物品锚点的完整状态
+        /// </summary>
+        public sealed class Snapshot
+        {
+            /// <summary> 锚点数组备份 </summary>
+            internal IItemRuntime[] itemAnchorArray;
+            /// <summary> 占用数组备份 </summary>
+            internal IItemRuntime[] occupancyOwnerArray;
+            /// <summary>
+            /// 物品锚点备份字典
+            /// </summary>
+            internal Dictionary<IItemRuntime, Vector2Int> anchorDict;
+        }
+
+        /// <summary>
+        /// 捕获当前背包快照
+        /// </summary>
+        /// <returns>快照对象</returns>
+        public Snapshot CaptureSnapshot()
+        {
+            var snapshot = new Snapshot
+            {
+                itemAnchorArray = (IItemRuntime[])itemAnchorArray.Clone(),
+                occupancyOwnerArray = (IItemRuntime[])occupancyOwnerArray.Clone(),
+                anchorDict = new Dictionary<IItemRuntime, Vector2Int>()
+            };
+
+            foreach (var item in itemAnchorArray)
+            {
+                if (item is null) continue;
+                snapshot.anchorDict[item] = item.AnchorPos;
+            }
+
+            return snapshot;
+        }
+
+        /// <summary>
+        /// 还原背包到快照状态
+        /// </summary>
+        /// <param name="snapshot">快照对象</param>
+        public void RestoreSnapshot(Snapshot snapshot)
+        {
+            if (snapshot is null) return;
+
+            // 克隆一份写回 保证快照可重复使用
+            itemAnchorArray = (IItemRuntime[])snapshot.itemAnchorArray.Clone();
+            occupancyOwnerArray = (IItemRuntime[])snapshot.occupancyOwnerArray.Clone();
+
+            foreach (var pair in snapshot.anchorDict)
+                pair.Key.SetAnchorPos(pair.Value);
+        }
+
         #endregion
 
         #region 存档功能

@@ -57,13 +57,13 @@ namespace MmInventory
                 itemData.CurrStackCount -= splitCount;
                 var newItemData = itemData.Clone(splitCount);
 
-                if (!inventoryState.SetAtFirst(newItemData, out var anchorPos))
+                // SetAtFirst 内部已同步锚点
+                if (!inventoryState.SetAtFirst(newItemData, out _))
                 {
                     itemData.CurrStackCount += splitCount;
                     return false;
                 }
 
-                newItemData.SetAnchorPos(anchorPos);
                 return true;
             }
         }

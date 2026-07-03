@@ -13,45 +13,17 @@ namespace MmInventory
     /// </summary>
     public partial class GridMainContainerView
     {
-        // 拖动运行时状态
-        private bool isDragging = false;
-
-        /// <summary> 拖拽中的物品 </summary>
-        private ItemView draggingItem;
-
-        /// <summary> 拖拽开始时候的锚点 </summary>
-        private Vector2Int dragStartAnchorPos;
-        /// <summary> 预览锚点缓存 避免重复刷新 </summary>
-        private Vector2Int cachedPreviewAnchorPos = Vector2Int.zero;
-        /// <summary> 拖拽物起始层级 </summary>
-        private int dragStartSiblingIndex = -1;
-        /// <summary>
-        /// 拖拽物起始旋转状态
-        /// </summary>
-        private bool dragStartIsRotated = false;
-
-        // 下面两个变量遵从一个公式:
-        // 抓取时:抓取相对偏移 = 鼠标位置 - 锚点位置
-        // 那么放置时:锚点位置 = 鼠标位置 - 抓取相对偏移
-        /// <summary> 抓取相对偏移 </summary>
-        private Vector2Int dragStartOffset;
-
-        [SerializeField, ReadOnly, LabelText("预览锚点")]
-        private Vector2Int dragPreviewAnchorPos;
+        /// <summary> 拖拽会话 </summary>
+        private readonly GridDragSession dragSession = new();
 
         /// <summary> 当前高亮格子索引 </summary>
         private int curHighLightCellIndex = -1;
 
-        /// <summary> 鼠标从哪个容器开始拖拽的 </summary>
-        private GridMainContainerView aContainer;
-        /// <summary> 鼠标悬停的背包容器 可能是新容器b 也可能是起始的a </summary>
-        private GridMainContainerView bContainer;
-
         /// <summary> footprint 预览高亮格子索引列表 </summary>
         private readonly List<int> previewFootprintCellIndexList = new();
 
-        /// <summary> 玩家手动旋转后锁定自动旋转 </summary>
-        private bool dragManualRotationLocked = false;
+        [ShowInInspector, ReadOnly, LabelText("预览锚点")]
+        private Vector2Int DebugPreviewAnchorPos => dragSession.PreviewAnchorPos;
 
         #region A 拿起
 
@@ -60,37 +32,26 @@ namespace MmInventory
             if (itemView is null || itemView.ItemData is null) return false;
             if (!TryGetMouseInGridInfo(eventData.position, out var mouseOnGridPos, out _)) return false;
 
-            // 设置拖拽物
-            draggingItem = itemView;
+            var startAnchorPos = itemView.ItemData.AnchorPos;
+            var startIsRotated = itemView.ItemData.IsRotated;
+            var startOffset = mouseOnGridPos - startAnchorPos;
+
+            // 移除被抓取物品
+            if (!gridInventoryService.TryRemoveItem(startAnchorPos).IsSuccess)
+                return false;
 
             // 禁用Rect滚动
             if (ScrollRect is not null) ScrollRect.enabled = false;
 
-            // 设置拖拽物起始锚点
-            dragStartAnchorPos = itemView.ItemData.AnchorPos;
-            dragStartIsRotated = itemView.ItemData.IsRotated;
-
-            // 物品拖拽的预览锚点 = 物品起始锚点
-            dragPreviewAnchorPos = dragStartAnchorPos;
-
-            // 抓取相对偏移 = 鼠标按下时所在锚点 - 物品起始锚点
-            dragStartOffset = mouseOnGridPos - dragStartAnchorPos;
-
-            // 移除被抓取物品
-            if (!gridInventoryService.TryRemoveItem(dragStartAnchorPos).IsSuccess)
-            {
-                if (ScrollRect is not null) ScrollRect.enabled = true;
-                draggingItem = null;
-                return false;
-            }
+            dragSession.Begin(itemView,
+                              startAnchorPos,
+                              startIsRotated,
+                              startOffset,
+                              itemView.ItemRectTransform.GetSiblingIndex(),
+                              this);
 
             // 挂到 Canvas 脱离 scrollContent 避免滚轮滚动时物品跟着跳
-            dragStartSiblingIndex = draggingItem.ItemRectTransform.GetSiblingIndex();
-            draggingItem.ItemRectTransform.SetParent(Canvas.transform, true);
-
-            aContainer = this;
-            bContainer = null;
-            dragManualRotationLocked = false;
+            dragSession.DraggingItem.ItemRectTransform.SetParent(Canvas.transform, true);
 
             // 设置拖拽层级
             HandlerDragPreview(EOnDragState.OnBeginDrag);
@@ -104,33 +65,40 @@ namespace MmInventory
         private void DraggingHandler(PointerEventData eventData)
         {
             // 物品跟随鼠标
-            if (draggingItem is null)
+            if (dragSession.DraggingItem is null)
                 return;
-            draggingItem.ItemRectTransform.position = eventData.position;
+            dragSession.DraggingItem.ItemRectTransform.position = eventData.position;
 
             // 解析当前悬停容器
-            var lastBContainer = bContainer;
+            var lastHoverContainer = dragSession.HoverContainer;
             var hasHit = GridMainContainerManager.TryResolveHoverContainer(
                 eventData.position,
-                out bContainer,
+                out var hoverContainer,
                 out var mouseOnGridPos,
                 out var gridIndex);
 
             // 如果什么容器都没命中 则清除预览
             if (!hasHit)
             {
-                lastBContainer?.ClearDragPreview();
+                lastHoverContainer?.ClearDragPreview();
                 ClearDragPreview();
+                dragSession.HoverContainer = null;
                 return;
             }
 
-            // 悬停在 B 容器且 B 不是 A 则在外部容器显示预览
-            if (bContainer != aContainer)
-            {
-                lastBContainer?.ClearDragPreview();
+            dragSession.HoverContainer = hoverContainer;
 
-                bContainer.HandleForeignDragPreview(
-                        draggingItem, dragStartOffset, mouseOnGridPos, gridIndex);
+            // 悬停在 B 容器且 B 不是 A 则在外部容器显示预览
+            if (hoverContainer != dragSession.SourceContainer)
+            {
+                lastHoverContainer?.ClearDragPreview();
+
+                hoverContainer.HandleForeignDragPreview(
+                        dragSession.DraggingItem,
+                        dragSession.StartOffset,
+                        mouseOnGridPos,
+                        gridIndex,
+                        dragSession);
                 return;
             }
 
@@ -138,16 +106,25 @@ namespace MmInventory
             SetTransformSibingIndex(EOnDragState.OnDragging);
 
             // 更新预览锚点
-            dragPreviewAnchorPos = GetPreviewAnchorPos(mouseOnGridPos, dragStartOffset, draggingItem.ItemData);
+            dragSession.PreviewAnchorPos = GetPreviewAnchorPos(mouseOnGridPos,
+                                                               dragSession.StartOffset,
+                                                               dragSession.DraggingItem.ItemData);
 
-            if (cachedPreviewAnchorPos == dragPreviewAnchorPos)
+            if (dragSession.CachedPreviewAnchorPos == dragSession.PreviewAnchorPos)
                 return;
 
-            TryAutoRotateForPreview(draggingItem, ref dragPreviewAnchorPos, mouseOnGridPos, dragStartOffset, ESwapPlaceMode.SameContainer);
+            var previewAnchorPos = dragSession.PreviewAnchorPos;
+            TryAutoRotateForPreview(dragSession.DraggingItem,
+                                    ref previewAnchorPos,
+                                    mouseOnGridPos,
+                                    dragSession.StartOffset,
+                                    ESwapPlaceMode.SameContainer,
+                                    dragSession);
+            dragSession.PreviewAnchorPos = previewAnchorPos;
 
-            if (cachedPreviewAnchorPos == dragPreviewAnchorPos)
+            if (dragSession.CachedPreviewAnchorPos == dragSession.PreviewAnchorPos)
                 return;
-            cachedPreviewAnchorPos = dragPreviewAnchorPos;
+            dragSession.CachedPreviewAnchorPos = dragSession.PreviewAnchorPos;
 
             HandlerDragPreview(EOnDragState.OnDragging);
         }
@@ -157,31 +134,34 @@ namespace MmInventory
         #region C 放下
         private void EndDragHandler(PointerEventData eventData)
         {
-            if (draggingItem is null) return;
+            if (dragSession.DraggingItem is null) return;
+
+            var sourceContainer = dragSession.SourceContainer;
+            GridMainContainerView hoverContainer;
 
             // 解析落点容器
             if (GridMainContainerManager.TryResolveHoverContainer(
                     eventData.position,
-                    out bContainer,
+                    out hoverContainer,
                     out var mouseOnGridPos,
                     out _))
             {
-                dragPreviewAnchorPos = bContainer.GetPreviewAnchorPos(
-                    mouseOnGridPos, dragStartOffset, draggingItem.ItemData);
+                dragSession.PreviewAnchorPos = hoverContainer.GetPreviewAnchorPos(
+                    mouseOnGridPos, dragSession.StartOffset, dragSession.DraggingItem.ItemData);
             }
             else
             {
-                dragPreviewAnchorPos = dragStartAnchorPos;
-                bContainer = aContainer;
+                dragSession.PreviewAnchorPos = dragSession.StartAnchorPos;
+                hoverContainer = sourceContainer;
             }
 
-            aContainer.ClearDragPreview();
+            sourceContainer.ClearDragPreview();
 
             // 跨容器交换逻辑
-            if (bContainer != aContainer)
+            if (hoverContainer != sourceContainer)
             {
-                bContainer.ClearDragPreview();
-                HandleCrossContainerEndDrag(aContainer, bContainer);
+                hoverContainer.ClearDragPreview();
+                HandleCrossContainerEndDrag(sourceContainer, hoverContainer);
             }
             // 同容器交换逻辑
             else
@@ -195,12 +175,7 @@ namespace MmInventory
             if (ScrollRect is not null)
                 ScrollRect.enabled = true;
             curHighLightCellIndex = -1;
-            draggingItem = null;
-            dragStartSiblingIndex = -1;
-            dragStartIsRotated = false;
-            dragManualRotationLocked = false;
-            aContainer = null;
-            bContainer = null;
+            dragSession.Clear();
         }
 
 
@@ -215,20 +190,20 @@ namespace MmInventory
         /// </summary>
         private void HandleDraggingItemRotation()
         {
-            if (!isDragging || Keyboard.current is null || !Keyboard.current.rKey.wasPressedThisFrame)
+            if (!dragSession.IsActive || Keyboard.current is null || !Keyboard.current.rKey.wasPressedThisFrame)
                 return;
 
-            if (draggingItem is null)
+            if (dragSession.DraggingItem is null)
                 return;
 
-            var result = gridInventoryService.TryRotateItem(draggingItem.ItemData);
+            var result = gridInventoryService.TryRotateItem(dragSession.DraggingItem.ItemData);
             if (!result.IsSuccess)
                 return;
 
-            dragManualRotationLocked = true;
+            dragSession.ManualRotationLocked = true;
 
             var itemDataA = result.ItemDataA;
-            ApplyItemViewRotation(draggingItem, itemDataA.IsRotated);
+            ApplyItemViewRotation(dragSession.DraggingItem, itemDataA.IsRotated);
 
             if (!GridMainContainerManager.TryResolveHoverContainer(
                     Input.mousePosition,
@@ -237,22 +212,25 @@ namespace MmInventory
                     out var gridIndex))
                 return;
 
-            cachedPreviewAnchorPos = new Vector2Int(int.MinValue, int.MinValue);
-            if (hoverContainer != aContainer)
+            dragSession.InvalidatePreviewCache();
+            if (hoverContainer != dragSession.SourceContainer)
             {
-                bContainer = hoverContainer;
+                dragSession.HoverContainer = hoverContainer;
                 ClearDragPreview();
                 hoverContainer.HandleForeignDragPreview(
-                    draggingItem,
-                    dragStartOffset,
+                    dragSession.DraggingItem,
+                    dragSession.StartOffset,
                     mouseOnGridPos,
-                    gridIndex);
+                    gridIndex,
+                    dragSession);
                 return;
             }
 
-            dragPreviewAnchorPos = GetPreviewAnchorPos(mouseOnGridPos, dragStartOffset, draggingItem.ItemData);
+            dragSession.PreviewAnchorPos = GetPreviewAnchorPos(mouseOnGridPos,
+                                                               dragSession.StartOffset,
+                                                               dragSession.DraggingItem.ItemData);
             HandlerDragPreview(EOnDragState.OnDragging);
-            cachedPreviewAnchorPos = dragPreviewAnchorPos;
+            dragSession.CachedPreviewAnchorPos = dragSession.PreviewAnchorPos;
         }
 
         /// <summary>
@@ -262,9 +240,10 @@ namespace MmInventory
                                              ref Vector2Int previewAnchorPos,
                                              Vector2Int mouseOnGridPos,
                                              Vector2Int dragOffset,
-                                             ESwapPlaceMode swapPlaceMode)
+                                             ESwapPlaceMode swapPlaceMode,
+                                             GridDragSession sourceDragSession)
         {
-            if (dragManualRotationLocked)
+            if (sourceDragSession.ManualRotationLocked)
                 return false;
 
             if (itemView?.ItemData is null)
@@ -324,11 +303,11 @@ namespace MmInventory
         /// </summary>
         private void HandleLocalEndDrag()
         {
-            var itemView = draggingItem;
+            var itemView = dragSession.DraggingItem;
             itemView.ItemRectTransform.SetParent(itemContent, true);
 
             var result = gridInventoryService.TryPlaceItem(
-                itemView.ItemData, dragStartAnchorPos, dragPreviewAnchorPos);
+                itemView.ItemData, dragSession.StartAnchorPos, dragSession.PreviewAnchorPos);
 
             if (!result.IsSuccess)
             {
@@ -371,42 +350,45 @@ namespace MmInventory
         /// <summary>
         /// 处理跨容器交换
         /// </summary>
-        /// <param name="aContainer">起始容器</param>
-        /// <param name="bContainer">落点容器</param>
-        private void HandleCrossContainerEndDrag(GridMainContainerView aContainer,
-                                                 GridMainContainerView bContainer)
+        /// <param name="sourceContainer">起始容器</param>
+        /// <param name="hoverContainer">落点容器</param>
+        private void HandleCrossContainerEndDrag(GridMainContainerView sourceContainer,
+                                                 GridMainContainerView hoverContainer)
         {
-            // 记录拖拽物 然后让落点容器尝试接收
-            var aitemView = draggingItem;
-            var result = bContainer.gridInventoryService.TryReceiveItem(
-                aitemView.ItemData, dragPreviewAnchorPos);
+            // 记录拖拽物 先给两侧容器拍快照 失败时整体还原
+            var aitemView = dragSession.DraggingItem;
+            var aSnapshot = sourceContainer.gridInventoryService.CaptureSnapshot();
+            var bSnapshot = hoverContainer.gridInventoryService.CaptureSnapshot();
+            var dropAnchorPos = dragSession.PreviewAnchorPos;
+
+            var result = hoverContainer.gridInventoryService.TryReceiveItem(
+                aitemView.ItemData, dropAnchorPos);
 
             // 落点容器接收失败 回滚拖拽物
             if (!result.IsSuccess)
             {
-                aContainer.RollbackDragItem(aitemView);
+                sourceContainer.RollbackDragItem(aitemView);
                 return;
             }
 
             // 解析落点容器接收结果 newA/B 引用仍是原 A/B 对象 锚点与占格已是 B 侧处理后的状态
             var newA = result.ItemDataA;
-            var newB = result.ItemDataB;
 
            // A 侧数据层接收 B 换回来的物
-            if (!aContainer.gridInventoryService.TryReceiveSwapReturnItem(result,
-                                                                          aContainer.dragStartAnchorPos,
-                                                                          bContainer.dragPreviewAnchorPos))
+            if (!sourceContainer.gridInventoryService.TryReceiveSwapReturnItem(result,
+                                                                          sourceContainer.dragSession.StartAnchorPos,
+                                                                          dropAnchorPos))
             {
-                // b和a都回滚
-                bContainer.gridInventoryService.TryRemoveItem(newA.AnchorPos);
-                bContainer.gridInventoryService.SetAnchorAndPlaceItem(newB, newB.AnchorPos);
-                aContainer.RollbackDragItem(aitemView);
+                // 双容器整体还原到落点前状态 拖拽物由回滚方法放回
+                sourceContainer.gridInventoryService.RestoreSnapshot(aSnapshot);
+                hoverContainer.gridInventoryService.RestoreSnapshot(bSnapshot);
+                sourceContainer.RollbackDragItem(aitemView);
                 return;
             }
 
             // 互换a和b的字典管理数据
-            aContainer.RemoveItemView(aitemView);
-            bContainer.AddItemView(aitemView);
+            sourceContainer.RemoveItemView(aitemView);
+            hoverContainer.AddItemView(aitemView);
 
             // 跨容器堆叠满了的时候 newA会被销毁
             if (newA is null)
@@ -417,10 +399,10 @@ namespace MmInventory
 
             // 换走的
             aitemView.ItemRectTransform.localPosition =
-                bContainer.GetItemUIPivotPos(newA.AnchorPos, newA.DataSize);
+                hoverContainer.GetItemUIPivotPos(newA.AnchorPos, newA.DataSize);
 
             // 换回来的
-            aContainer.ApplyCrossContainerReturnViews(result, bContainer);
+            sourceContainer.ApplyCrossContainerReturnViews(result, hoverContainer);
         }
 
         /// <summary>

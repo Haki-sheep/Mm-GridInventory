@@ -89,19 +89,19 @@ namespace MmInventory
 
         public void OnBeginDrag(ItemView itemView, PointerEventData eventData)
         {
-            isDragging = BeginDragHandler(itemView, eventData);
+            if (!BeginDragHandler(itemView, eventData))
+                return;
         }
 
         public void OnDragging(PointerEventData eventData)
         {
-              if (!isDragging) return;
+            if (!dragSession.IsActive) return;
             DraggingHandler(eventData);
         }
 
         public void OnEndDrag(PointerEventData eventData)
         {
-              if (!isDragging) return;
-            isDragging = false;
+            if (!dragSession.IsActive) return;
             EndDragHandler(eventData);
         }
 

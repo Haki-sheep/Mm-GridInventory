@@ -80,29 +80,23 @@ namespace MmInventory
                 var plan = GetSwapPlan(aItemData, bItemData);
                 if (plan.SwapState == ESwapState.CanNotSwap) return false;
 
-                int aIndex = inventoryState.ToIndex(plan.aItemData.AnchorPos);
-                int bIndex = inventoryState.ToIndex(plan.bItemData.AnchorPos);
-
-                var simAnchorArray = (IItemRuntime[])inventoryState.itemAnchorArray.Clone();
-                var simOccupancyArray = (IItemRuntime[])inventoryState.occupancyOwnerArray.Clone();
-                var realAnchorArray = inventoryState.itemAnchorArray;
-                var realOccupancyArray = inventoryState.occupancyOwnerArray;
-
-                inventoryState.itemAnchorArray = simAnchorArray;
-                inventoryState.occupancyOwnerArray = simOccupancyArray;
+                // 试算会真实改写网格与锚点 结束后整体还原
+                var snapshot = inventoryState.CaptureSnapshot();
+                // 拖拽物可能不在网格内 快照覆盖不到 需单独备份锚点
+                var aAnchorPos = plan.aItemData.AnchorPos;
+                var bAnchorPos = plan.bItemData.AnchorPos;
                 try
                 {
                     return TryExecuteSwap(plan,
-                                          aIndex,
-                                          bIndex,
                                           placeAnchorPos,
                                           simulateOldItemList,
                                           swapPlaceMode);
                 }
                 finally
                 {
-                    inventoryState.itemAnchorArray = realAnchorArray;
-                    inventoryState.occupancyOwnerArray = realOccupancyArray;
+                    inventoryState.RestoreSnapshot(snapshot);
+                    plan.aItemData.SetAnchorPos(aAnchorPos);
+                    plan.bItemData.SetAnchorPos(bAnchorPos);
                 }
             }
 
@@ -125,29 +119,19 @@ namespace MmInventory
                 if (plan.SwapState == ESwapState.CanNotSwap)
                     return false;
 
-                int aIndex = inventoryState.ToIndex(plan.aItemData.AnchorPos);
-                int bIndex = inventoryState.ToIndex(plan.bItemData.AnchorPos);
-
-                var backupItemArray = (IItemRuntime[])inventoryState.itemAnchorArray.Clone();
-                var backupOccupancyOwner = (IItemRuntime[])inventoryState.occupancyOwnerArray.Clone();
+                // 提交前拍快照 失败时整体还原 锚点由 SetItemData 在过程中同步
+                var snapshot = inventoryState.CaptureSnapshot();
+                var aAnchorPos = plan.aItemData.AnchorPos;
+                var bAnchorPos = plan.bItemData.AnchorPos;
 
                 bool shouldRollback = true;
                 try
                 {
                     var canSwap = TryExecuteSwap(plan,
-                                                 aIndex,
-                                                 bIndex,
                                                  placeAnchorPos,
                                                  oldItemDataList,
                                                  swapPlaceMode);
                     if (!canSwap) return false;
-
-                    for (int i = 0; i < inventoryState.itemAnchorArray.Length; i++)
-                    {
-                        var item = inventoryState.itemAnchorArray[i];
-                        if (item is null) continue;
-                        item.SetAnchorPos(inventoryState.ToVector2Int(i));
-                    }
 
                     shouldRollback = false;
                     return true;
@@ -156,8 +140,9 @@ namespace MmInventory
                 {
                     if (shouldRollback)
                     {
-                        inventoryState.itemAnchorArray = backupItemArray;
-                        inventoryState.occupancyOwnerArray = backupOccupancyOwner;
+                        inventoryState.RestoreSnapshot(snapshot);
+                        plan.aItemData.SetAnchorPos(aAnchorPos);
+                        plan.bItemData.SetAnchorPos(bAnchorPos);
                     }
                 }
             }
@@ -166,8 +151,6 @@ namespace MmInventory
             /// 在当前网格上执行交换分支
             /// </summary>
             private bool TryExecuteSwap(SwapPlan plan,
-                                        int aIndex,
-                                        int bIndex,
                                         Vector2Int placeAnchorPos,
                                         List<IItemRuntime> oldItemDataList,
                                         ESwapPlaceMode swapPlaceMode)
@@ -177,8 +160,6 @@ namespace MmInventory
                 {
                     case ESwapState.Same:
                         return SwapSameItem(plan,
-                                            aIndex,
-                                            bIndex,
                                             placeAnchorPos,
                                             swapPlaceMode);
 
@@ -286,6 +267,15 @@ namespace MmInventory
             #region 交换计划
 
             /// <summary>
+            /// 获取两物品的交换类型
+            /// </summary>
+            /// <param name="aItemData">拖动物品</param>
+            /// <param name="bItemData">目标物品</param>
+            /// <returns>交换类型</returns>
+            public ESwapState GetSwapState(IItemRuntime aItemData, IItemRuntime bItemData) =>
+                GetSwapPlan(aItemData, bItemData).SwapState;
+
+            /// <summary>
             /// 构建交换计划
             /// </summary>
             /// <param name="aItemData">拖动物品</param>
@@ -299,13 +289,10 @@ namespace MmInventory
                 if (aItemData.InstancedItemId == bItemData.InstancedItemId)
                     return new SwapPlan { SwapState = ESwapState.CanNotSwap };
 
-                var aAnchorPos = aItemData.AnchorPos;
                 var bAnchorPos = bItemData.AnchorPos;
 
-                if (aAnchorPos == bAnchorPos)
-                    return new SwapPlan { SwapState = ESwapState.CanNotSwap };
-
-                if (!inventoryState.IsInside(aAnchorPos) || !inventoryState.IsInside(bAnchorPos))
+                // 同容器两物不可能共占同一锚点 跨容器则坐标可相同 不能按坐标判非法
+                if (!inventoryState.IsInside(bAnchorPos))
                     return new SwapPlan { SwapState = ESwapState.CanNotSwap };
 
                 SwapPlan swapPlan = new();
@@ -342,14 +329,10 @@ namespace MmInventory
             /// 相同面积交换
             /// </summary>
             /// <param name="plan">交换计划</param>
-            /// <param name="aIndex">A索引</param>
-            /// <param name="bIndex">B索引</param>
             /// <param name="placeAnchorPos">放置锚点</param>
             /// <param name="swapPlaceMode">交换放置模式</param>
             /// <returns>是否成功</returns>
             public bool SwapSameItem(SwapPlan plan,
-                                     int aIndex,
-                                     int bIndex,
                                      Vector2Int placeAnchorPos,
                                      ESwapPlaceMode swapPlaceMode)
             {
@@ -359,9 +342,13 @@ namespace MmInventory
                 if (aItemData.IsRotated != bItemData.IsRotated)
                     return false;
 
+                // SetItemData 会同步改写锚点 先记录双方原锚点
+                var aOldAnchorPos = aItemData.AnchorPos;
+                var bOldAnchorPos = bItemData.AnchorPos;
+
                 if (swapPlaceMode == ESwapPlaceMode.CrossContainer)
                 {
-                    inventoryState.RemoveAt(bItemData.AnchorPos);
+                    inventoryState.RemoveAt(bOldAnchorPos);
                     if (!inventoryState.CanPlace(aItemData, placeAnchorPos))
                         return false;
 
@@ -369,18 +356,18 @@ namespace MmInventory
                     return true;
                 }
 
-                inventoryState.itemAnchorArray[aIndex] = null;
-                inventoryState.itemAnchorArray[bIndex] = null;
-                inventoryState.WriteOccupancy(aItemData, aItemData.AnchorPos, false);
-                inventoryState.WriteOccupancy(bItemData, bItemData.AnchorPos, false);
+                inventoryState.itemAnchorArray[inventoryState.ToIndex(aOldAnchorPos)] = null;
+                inventoryState.itemAnchorArray[inventoryState.ToIndex(bOldAnchorPos)] = null;
+                inventoryState.WriteOccupancy(aItemData, aOldAnchorPos, false);
+                inventoryState.WriteOccupancy(bItemData, bOldAnchorPos, false);
 
-                if (!inventoryState.CanPlace(aItemData, bItemData.AnchorPos))
+                if (!inventoryState.CanPlace(aItemData, bOldAnchorPos))
                     return false;
-                inventoryState.SetItemData(aItemData, bItemData.AnchorPos);
+                inventoryState.SetItemData(aItemData, bOldAnchorPos);
 
-                if (!inventoryState.CanPlace(bItemData, aItemData.AnchorPos))
+                if (!inventoryState.CanPlace(bItemData, aOldAnchorPos))
                     return false;
-                inventoryState.SetItemData(bItemData, aItemData.AnchorPos);
+                inventoryState.SetItemData(bItemData, aOldAnchorPos);
 
                 return true;
             }
@@ -423,7 +410,7 @@ namespace MmInventory
                 }
 
                 if (swapPlaceMode == ESwapPlaceMode.SameContainer)
-                    inventoryState.RemoveAt(largeItemData.AnchorPos);
+                    inventoryState.RemoveAt(largeOldAnchorPos);
                 foreach (var littleItem in tempLittleItemHashList)
                     inventoryState.RemoveAt(littleItem.AnchorPos);
 
@@ -522,8 +509,11 @@ namespace MmInventory
                 var smallItemData = plan.aItemData;
                 var largeItemData = plan.bItemData;
 
+                // SetItemData 会同步改写锚点 先记录小物原锚点
+                var smallOldAnchorPos = smallItemData.AnchorPos;
+
                 if (swapPlaceMode == ESwapPlaceMode.SameContainer)
-                    inventoryState.RemoveAt(smallItemData.AnchorPos);
+                    inventoryState.RemoveAt(smallOldAnchorPos);
                 inventoryState.RemoveAt(largeItemData.AnchorPos);
                 if (!inventoryState.CanPlace(smallItemData, placeAnchorPos))
                     return false;
@@ -532,14 +522,14 @@ namespace MmInventory
                 if (swapPlaceMode == ESwapPlaceMode.CrossContainer)
                     return true;
 
-                if (!inventoryState.CanPlace(largeItemData, smallItemData.AnchorPos))
+                if (!inventoryState.CanPlace(largeItemData, smallOldAnchorPos))
                 {
                     if (inventoryState.SetAtFirst(largeItemData, out _))
                         return true;
                     return false;
                 }
 
-                inventoryState.SetItemData(largeItemData, smallItemData.AnchorPos);
+                inventoryState.SetItemData(largeItemData, smallOldAnchorPos);
                 return true;
             }
 

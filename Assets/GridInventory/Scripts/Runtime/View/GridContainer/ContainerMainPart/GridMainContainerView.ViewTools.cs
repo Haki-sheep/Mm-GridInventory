@@ -102,10 +102,12 @@ namespace MmInventory
 
                 case EOnDragState.OnBeginDrag:
                 case EOnDragState.OnDragging:
-                    if (draggingItem is null || draggingItem.ItemData is null)
+                    if (dragSession.DraggingItem is null || dragSession.DraggingItem.ItemData is null)
                         return;
 
-                    UpdateFootprintCellPreview(draggingItem.ItemData, dragPreviewAnchorPos, swapPlaceMode);
+                    UpdateFootprintCellPreview(dragSession.DraggingItem.ItemData,
+                                               dragSession.PreviewAnchorPos,
+                                               swapPlaceMode);
                     break;
             }
         }
@@ -148,15 +150,15 @@ namespace MmInventory
             switch (state)
             {
                 case EOnDragState.OnBeginDrag:
-                    draggingItem.ItemRectTransform.SetAsLastSibling();
+                    dragSession.DraggingItem.ItemRectTransform.SetAsLastSibling();
                     break;
 
                 case EOnDragState.OnEndDrag:
-                    if (draggingItem is not null)
+                    if (dragSession.DraggingItem is not null)
                     {
-                        int maxIndex = Mathf.Max(0, draggingItem.ItemRectTransform.parent.childCount - 1);
-                        int safeIndex = Mathf.Clamp(dragStartSiblingIndex, 0, maxIndex);
-                        draggingItem.ItemRectTransform.SetSiblingIndex(safeIndex);
+                        int maxIndex = Mathf.Max(0, dragSession.DraggingItem.ItemRectTransform.parent.childCount - 1);
+                        int safeIndex = Mathf.Clamp(dragSession.StartSiblingIndex, 0, maxIndex);
+                        dragSession.DraggingItem.ItemRectTransform.SetSiblingIndex(safeIndex);
                     }
                     break;
             }
@@ -182,7 +184,8 @@ namespace MmInventory
         public void HandleForeignDragPreview(ItemView itemView,
                                              Vector2Int dragOffset,
                                              Vector2Int mouseOnGridPos,
-                                             int gridIndex)
+                                             int gridIndex,
+                                             GridDragSession sourceDragSession)
         {
             if (itemView is null || itemView.ItemData is null)
                 return;
@@ -195,10 +198,11 @@ namespace MmInventory
                                     ref previewAnchor,
                                     mouseOnGridPos,
                                     dragOffset,
-                                    ESwapPlaceMode.CrossContainer);
+                                    ESwapPlaceMode.CrossContainer,
+                                    sourceDragSession);
                                     
-            dragPreviewAnchorPos = previewAnchor;
-            cachedPreviewAnchorPos = previewAnchor;
+            dragSession.PreviewAnchorPos = previewAnchor;
+            dragSession.CachedPreviewAnchorPos = previewAnchor;
 
             UpdateFootprintCellPreview(itemView.ItemData,
                                        previewAnchor,
@@ -214,7 +218,7 @@ namespace MmInventory
         /// </summary>
         private void HandleScrollWithMouseWheel()
         {
-            if (!isDragging || ScrollRect == null || scrollContent == null)
+            if (!dragSession.IsActive || ScrollRect == null || scrollContent == null)
                 return;
 
             float wheel = Input.mouseScrollDelta.y;
@@ -251,11 +255,11 @@ namespace MmInventory
         /// </summary>
         private void HandleScrollWithItem(Vector2 screenPos)
         {
-            if (draggingItem is null)
+            if (dragSession.DraggingItem is null)
                 return;
 
             // 物品跟随鼠标
-            draggingItem.ItemRectTransform.position = screenPos;
+            dragSession.DraggingItem.ItemRectTransform.position = screenPos;
 
             // 计算网格坐标
             if (!TryGetMouseInGridInfo(screenPos, out var mouseOnGridPos, out _))
@@ -264,17 +268,21 @@ namespace MmInventory
                 return;
             }
 
-            dragPreviewAnchorPos = GetPreviewAnchorPos(mouseOnGridPos, dragStartOffset, draggingItem.ItemData);
-            TryAutoRotateForPreview(draggingItem,
-                                    ref dragPreviewAnchorPos,
+            var previewAnchorPos = GetPreviewAnchorPos(mouseOnGridPos,
+                                                       dragSession.StartOffset,
+                                                       dragSession.DraggingItem.ItemData);
+            TryAutoRotateForPreview(dragSession.DraggingItem,
+                                    ref previewAnchorPos,
                                     mouseOnGridPos,
-                                    dragStartOffset,
-                                    ESwapPlaceMode.SameContainer);
+                                    dragSession.StartOffset,
+                                    ESwapPlaceMode.SameContainer,
+                                    dragSession);
 
-            if (cachedPreviewAnchorPos == dragPreviewAnchorPos)
+            if (dragSession.CachedPreviewAnchorPos == previewAnchorPos)
                 return;
 
-            cachedPreviewAnchorPos = dragPreviewAnchorPos;
+            dragSession.PreviewAnchorPos = previewAnchorPos;
+            dragSession.CachedPreviewAnchorPos = previewAnchorPos;
             HandlerDragPreview(EOnDragState.OnDragging);
         }
 

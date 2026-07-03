@@ -253,7 +253,7 @@ namespace MmInventory
                                                ItemRtData itemData)
         {
             if (itemData is null)
-                return dragPreviewAnchorPos;
+                return dragSession.PreviewAnchorPos;
 
             Vector2Int anchorPosition = mouseOnGridPos - dragStartOffset;
             return ClampAnchorPositionToGrid(anchorPosition,
@@ -299,16 +299,15 @@ namespace MmInventory
         private void RollbackDragItem(ItemView itemView)
         {
             var resetData = itemView.ItemData;
-            resetData.SetRotated(dragStartIsRotated);
-            // 数据层位置重置
-            resetData.SetAnchorPos(dragStartAnchorPos);
-            gridInventoryService.SetAnchorAndPlaceItem(resetData, dragStartAnchorPos);
+            resetData.SetRotated(dragSession.StartIsRotated);
+            // 数据层位置重置 锚点由数据层同步
+            gridInventoryService.SetAnchorAndPlaceItem(resetData, dragSession.StartAnchorPos);
             // UI位置重置
             itemView.ItemRectTransform.localRotation =
                 Quaternion.Euler(0, 0, resetData.IsRotated ? 90f : 0f);
             itemView.ItemRectTransform.SetParent(itemContent, true);
             itemView.ItemRectTransform.localPosition =
-                GetItemUIPivotPos(dragStartAnchorPos, resetData.DataSize);
+                GetItemUIPivotPos(dragSession.StartAnchorPos, resetData.DataSize);
         }
 
         #endregion

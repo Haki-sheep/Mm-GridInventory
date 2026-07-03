@@ -84,13 +84,12 @@ namespace MmInventory
             // 尝试放到指定锚点
             if (!SetAnchorAndPlaceItem(itemRtData, anchorPos))
             {
-                // 该位置已存在物品 尝试放置到第一个可放置位置
-                if (!inventoryState.SetAtFirst(itemRtData, out var firstAnchor))
+                // 该位置已存在物品 尝试放置到第一个可放置位置 锚点由数据层同步
+                if (!inventoryState.SetAtFirst(itemRtData, out _))
                 {
                     Debug.Log("创建物品失败 没有找到可放置位置");
                     return null;
                 }
-                itemRtData.SetAnchorPos(firstAnchor);
             }
 
             return itemRtData;
@@ -109,15 +108,14 @@ namespace MmInventory
                 return null;
             }
 
-            // 创建运行时数据
+            // 创建运行时数据 锚点由数据层同步
             var itemRtData = ItemRtData.FromConfig(itemData);
-            if (!inventoryState.SetAtFirst(itemRtData, out var firstAnchor))
+            if (!inventoryState.SetAtFirst(itemRtData, out _))
             {
                 Debug.Log("创建物品失败 没有找到可放置位置");
                 return null;
             }
 
-            itemRtData.SetAnchorPos(firstAnchor);
             return itemRtData;
         }
 
@@ -167,13 +165,12 @@ namespace MmInventory
                 return new InventoryOpReport(true, null, itemDataB);
             }
 
-            if (inventoryState.TryGetSwapTargetItem(itemDataA, anchorPosB, out var swapTargetItem)
-                && inventoryState.CanSwap(itemDataA, swapTargetItem, anchorPosB, ESwapPlaceMode.CrossContainer))
+            if (inventoryState.TryGetSwapTargetItem(itemDataA, anchorPosB, out var swapTargetItem))
             {
                 // 小物品列表
                 var swapDisplacedList = new List<IItemRuntime>();
-                var swapState = GetSwapState(itemDataA, swapTargetItem as ItemRtData);
-                // 尝试交换
+                var swapState = inventoryState.GetSwapState(itemDataA, swapTargetItem);
+                // 尝试交换 TrySwap 失败时内部自行回滚 无需预演
                 if (inventoryState.TrySwap(itemDataA,
                                            swapTargetItem,
                                            swapDisplacedList,
@@ -291,12 +288,11 @@ namespace MmInventory
                 return new InventoryOpReport(true, null, itemDataB);
             }
 
-            // 尝试交换
-            if (inventoryState.TryGetSwapTargetItem(itemDataA, anchorPosB, out var swapTargetItem)
-                && inventoryState.CanSwap(itemDataA, swapTargetItem, anchorPosB))
+            // 尝试交换 TrySwap 失败时内部自行回滚 无需预演
+            if (inventoryState.TryGetSwapTargetItem(itemDataA, anchorPosB, out var swapTargetItem))
             {
                 var swapDisplacedList = new List<IItemRuntime>();
-                var swapState = GetSwapState(itemDataA, swapTargetItem as ItemRtData);
+                var swapState = inventoryState.GetSwapState(itemDataA, swapTargetItem);
                 if (inventoryState.TrySwap(itemDataA,
                                            swapTargetItem,
                                            swapDisplacedList,
@@ -309,6 +305,8 @@ namespace MmInventory
                                                  swapState);
                 }
 
+                // 交换失败 数据层已自行回滚 这里把拖起的 A 放回原位
+                RestoreItemA();
                 return new InventoryOpReport(false, itemDataA, swapTargetItem as ItemRtData, swapState: swapState);
             }
 
@@ -324,10 +322,8 @@ namespace MmInventory
         {
             if (itemData is null)
                 return false;
-            if (!inventoryState.SetAtFirst(itemData, out var anchorPos))
-                return false;
-            itemData.SetAnchorPos(anchorPos);
-            return true;
+            // 锚点由数据层同步
+            return inventoryState.SetAtFirst(itemData, out _);
         }
 
         #endregion
@@ -400,15 +396,27 @@ namespace MmInventory
 
         /// <summary>
         /// 设置锚点并占用格子
+        /// 锚点由数据层 SetItemData 统一同步 此处不再手动写入
         /// </summary>
         public bool SetAnchorAndPlaceItem(ItemRtData itemData, Vector2Int anchorPos)
         {
             if (itemData is null)
                 return false;
 
-            itemData.SetAnchorPos(anchorPos);
             return inventoryState.SetAt(anchorPos, itemData);
         }
+
+        /// <summary>
+        /// 捕获背包快照
+        /// </summary>
+        public InventoryState.Snapshot CaptureSnapshot() =>
+            inventoryState.CaptureSnapshot();
+
+        /// <summary>
+        /// 还原背包快照
+        /// </summary>
+        public void RestoreSnapshot(InventoryState.Snapshot snapshot) =>
+            inventoryState.RestoreSnapshot(snapshot);
 
         /// <summary>
         /// IGridItem列表转ItemRtData列表
@@ -419,23 +427,6 @@ namespace MmInventory
             for (int i = 0; i < gridItemList.Count; i++)
                 itemRtDataList.Add((ItemRtData)gridItemList[i]);
             return itemRtDataList;
-        }
-
-        /// <summary>
-        /// 获取交换类型
-        /// </summary>
-        private static ESwapState GetSwapState(ItemRtData itemDataA, ItemRtData itemDataB)
-        {
-            if (itemDataA is null || itemDataB is null)
-                return ESwapState.CanNotSwap;
-
-            int sizeA = itemDataA.DataSize.x * itemDataA.DataSize.y;
-            int sizeB = itemDataB.DataSize.x * itemDataB.DataSize.y;
-
-            if (sizeA == sizeB)
-                return ESwapState.Same;
-
-            return sizeA > sizeB ? ESwapState.LargeToSmall : ESwapState.SmallToLarge;
         }
 
         #endregion
