@@ -88,6 +88,11 @@ namespace MmInventory
         void Start()
         {
             gridInventoryService = new GridInventoryService();
+
+            // 有存档则 Core 已 SetAt 直接重建 UI 否则走场景预摆物注册
+            if (TryRestoreFromSaveOnStart())
+                return;
+
             gridInventoryService.Init(gridRowAndCloumns);
             RegisterSceneItemViews();
         }

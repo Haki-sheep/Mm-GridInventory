@@ -1,5 +1,6 @@
 #if UNITY_EDITOR
 using System.Collections.Generic;
+using System.IO;
 using UnityEditor;
 using UnityEngine;
 
@@ -17,7 +18,7 @@ namespace MmInventory.Editor
 
         private GridContainerView selectedContainer;
         private Vector2 containerScrollPos;
-        private Vector2 itemScrollPos;
+        private Vector2 gmPanelScrollPos;
         private int selectedItemIndex;
         private int spawnAnchorX;
         private int spawnAnchorY;
@@ -72,7 +73,7 @@ namespace MmInventory.Editor
             SanitizeContainerRefs();
             DrawToolbar();
 
-            using (new EditorGUILayout.HorizontalScope())
+            using (new EditorGUILayout.HorizontalScope(GUILayout.ExpandHeight(true)))
             {
                 DrawContainerPanel();
                 DrawGmPanel();
@@ -157,24 +158,33 @@ namespace MmInventory.Editor
         /// </summary>
         private void DrawGmPanel()
         {
-            using (new EditorGUILayout.VerticalScope())
+            gmPanelScrollPos = EditorGUILayout.BeginScrollView(
+                gmPanelScrollPos,
+                GUILayout.ExpandWidth(true),
+                GUILayout.ExpandHeight(true));
+
+            if (!IsContainerAlive(selectedContainer))
             {
-                if (!IsContainerAlive(selectedContainer))
-                {
-                    EditorGUILayout.HelpBox("请选择一个背包容器", MessageType.Info);
-                    return;
-                }
-
-                EditorGUILayout.LabelField("容器信息", EditorStyles.boldLabel);
-                EditorGUILayout.LabelField("名称", selectedContainer.ContainerName);
-                EditorGUILayout.LabelField("行列", selectedContainer.gridRowAndCloumns.ToString());
-                EditorGUILayout.LabelField("运行状态", Application.isPlaying ? "Play" : "Edit");
-
-                EditorGUILayout.Space(8f);
-                DrawSpawnPanel();
-                EditorGUILayout.Space(8f);
-                DrawItemListPanel();
+                EditorGUILayout.HelpBox("请选择一个背包容器", MessageType.Info);
+                EditorGUILayout.EndScrollView();
+                return;
             }
+
+            EditorGUILayout.LabelField("容器信息", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("名称", selectedContainer.ContainerName);
+            EditorGUILayout.LabelField("行列", selectedContainer.gridRowAndCloumns.ToString());
+            EditorGUILayout.LabelField("存档 ID", selectedContainer.ContainerId.ToString());
+            EditorGUILayout.LabelField("自动存档", selectedContainer.EnablePersistence ? "开" : "关");
+            EditorGUILayout.LabelField("运行状态", Application.isPlaying ? "Play" : "Edit");
+
+            EditorGUILayout.Space(8f);
+            DrawSpawnPanel();
+            EditorGUILayout.Space(8f);
+            DrawPersistPanel();
+            EditorGUILayout.Space(8f);
+            DrawItemListPanel();
+
+            EditorGUILayout.EndScrollView();
         }
 
         /// <summary>
@@ -223,6 +233,126 @@ namespace MmInventory.Editor
         }
 
         /// <summary>
+        /// GM 存读档区
+        /// </summary>
+        private void DrawPersistPanel()
+        {
+            EditorGUILayout.LabelField("存档", EditorStyles.boldLabel);
+
+            int containerId = selectedContainer.ContainerId;
+            string savePath = ResolveSaveFilePath(containerId);
+            bool hasSaveFile = containerId > 0 && GridInventoryService.HasSaveFile(containerId);
+
+            EditorGUILayout.LabelField("路径", savePath, EditorStyles.wordWrappedMiniLabel);
+            EditorGUILayout.LabelField("状态", hasSaveFile ? "已有存档" : "无存档");
+
+            if (containerId <= 0)
+            {
+                EditorGUILayout.HelpBox("containerId 需大于 0 才能存读档", MessageType.Warning);
+                return;
+            }
+
+            if (!Application.isPlaying)
+            {
+                EditorGUILayout.HelpBox("存读档需在 Play 模式下使用", MessageType.Warning);
+
+                using (new EditorGUI.DisabledScope(!hasSaveFile))
+                {
+                    if (GUILayout.Button("删除存档文件"))
+                        DeleteSaveFile(savePath);
+                }
+
+                return;
+            }
+
+            if (!selectedContainer.IsInventoryReady)
+            {
+                EditorGUILayout.HelpBox("容器逻辑尚未初始化", MessageType.Warning);
+                return;
+            }
+
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                if (GUILayout.Button("保存"))
+                    SaveSelectedContainer();
+
+                using (new EditorGUI.DisabledScope(!hasSaveFile))
+                {
+                    if (GUILayout.Button("读取"))
+                        LoadSelectedContainer();
+                }
+
+                using (new EditorGUI.DisabledScope(!hasSaveFile))
+                {
+                    if (GUILayout.Button("删除存档"))
+                        DeleteSaveFile(savePath);
+                }
+            }
+        }
+
+        /// <summary>
+        /// 保存选中容器
+        /// </summary>
+        private void SaveSelectedContainer()
+        {
+            if (!IsContainerAlive(selectedContainer))
+                return;
+
+            bool isSuccess = selectedContainer.TrySaveToDiskForce();
+            statusMessage = isSuccess
+                ? $"已保存 {selectedContainer.ContainerName} -> inventory_{selectedContainer.ContainerId}.json"
+                : $"保存失败 {selectedContainer.ContainerName}";
+            Repaint();
+        }
+
+        /// <summary>
+        /// 读取选中容器
+        /// </summary>
+        private void LoadSelectedContainer()
+        {
+            if (!IsContainerAlive(selectedContainer))
+                return;
+
+            bool isSuccess = selectedContainer.TryLoadFromDisk();
+            statusMessage = isSuccess
+                ? $"已读取 {selectedContainer.ContainerName} <- inventory_{selectedContainer.ContainerId}.json"
+                : $"读取失败 {selectedContainer.ContainerName}";
+            Repaint();
+        }
+
+        /// <summary>
+        /// 删除存档文件
+        /// </summary>
+        private void DeleteSaveFile(string savePath)
+        {
+            if (string.IsNullOrEmpty(savePath) || !File.Exists(savePath))
+            {
+                statusMessage = "无存档可删";
+                return;
+            }
+
+            if (!EditorUtility.DisplayDialog("删除存档", $"确认删除\n{savePath}", "删除", "取消"))
+                return;
+
+            File.Delete(savePath);
+            statusMessage = $"已删除 {savePath}";
+            Repaint();
+        }
+
+        /// <summary>
+        /// 解析存档路径
+        /// </summary>
+        private static string ResolveSaveFilePath(int containerId)
+        {
+            if (containerId <= 0)
+                return "（未配置 containerId）";
+
+            return Path.Combine(
+                Application.persistentDataPath,
+                $"inventory_{containerId}.json");
+        }
+
+        /// <summary>
         /// 容器内物品列表
         /// </summary>
         private void DrawItemListPanel()
@@ -236,7 +366,6 @@ namespace MmInventory.Editor
             }
 
             var itemViewList = selectedContainer.GetItemViewList();
-            itemScrollPos = EditorGUILayout.BeginScrollView(itemScrollPos, GUILayout.MinHeight(160f));
 
             if (itemViewList.Count == 0)
             {
@@ -262,8 +391,6 @@ namespace MmInventory.Editor
                     }
                 }
             }
-
-            EditorGUILayout.EndScrollView();
         }
 
         /// <summary>

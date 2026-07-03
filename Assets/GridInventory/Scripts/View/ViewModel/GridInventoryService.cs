@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.IO;
 using UnityEngine;
 
 namespace MmInventory
@@ -54,6 +55,12 @@ namespace MmInventory
     public class GridInventoryService
     {
         private InventoryState currentInventoryState;
+
+        /// <summary> 扫描锚点物品临时列表 </summary>
+        private readonly List<IItemRuntime> tempCollectItemList = new();
+
+        /// <summary> 当前网格尺寸 </summary>
+        public Vector2Int GridSize => currentInventoryState?.GridSize ?? Vector2Int.zero;
 
         /// <summary>
         /// new一个InventoryState数据层
@@ -355,6 +362,61 @@ namespace MmInventory
             var itemRtDataList = new List<ItemRtData>(gridItemList.Count);
             for (int i = 0; i < gridItemList.Count; i++)
                 itemRtDataList.Add((ItemRtData)gridItemList[i]);
+            return itemRtDataList;
+        }
+
+        #endregion
+
+        #region 存档
+
+        /// <summary>
+        /// 是否存在指定容器存档
+        /// </summary>
+        public static bool HasSaveFile(int containerId)
+        {
+            string path = Path.Combine(
+                Application.persistentDataPath,
+                $"inventory_{containerId}.json");
+            return File.Exists(path);
+        }
+
+        /// <summary>
+        /// 读取存档并替换当前逻辑层
+        /// </summary>
+        public bool TryLoadInventory(int containerId)
+        {
+            var loadedState = InventoryState.Load(containerId);
+            if (loadedState is null)
+                return false;
+
+            currentInventoryState = loadedState;
+            return true;
+        }
+
+        /// <summary>
+        /// 保存当前逻辑层到磁盘
+        /// </summary>
+        public bool TrySaveInventory(int containerId)
+        {
+            if (currentInventoryState is null)
+                return false;
+
+            currentInventoryState.Save(containerId);
+            return true;
+        }
+
+        /// <summary>
+        /// 获取当前容器全部物品运行时数据
+        /// </summary>
+        public List<ItemRtData> GetAllItemRtDataList()
+        {
+            var itemRtDataList = new List<ItemRtData>();
+            if (currentInventoryState is null)
+                return itemRtDataList;
+
+            currentInventoryState.CollectAnchorItems(tempCollectItemList);
+            for (int i = 0; i < tempCollectItemList.Count; i++)
+                itemRtDataList.Add((ItemRtData)tempCollectItemList[i]);
             return itemRtDataList;
         }
 
