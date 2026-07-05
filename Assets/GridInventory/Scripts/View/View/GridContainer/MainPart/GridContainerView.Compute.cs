@@ -75,11 +75,14 @@ namespace MmInventory
         /// </summary>
         private ItemView SpawnItemView(ItemRtData itemRtData)
         {
+            // 旋转时 DataSize 为占格尺寸 预制体仍按表尺寸取
+            Vector2Int prefabSize = ResolveViewPrefabSize(itemRtData);
+
             // 按尺寸取视图预制体
             var prefabList = ItemViewPrefabListSo.Instance;
-            if (prefabList is null || !prefabList.TryGetPrefab(itemRtData.DataSize, out var prefab))
+            if (prefabList is null || !prefabList.TryGetPrefab(prefabSize, out var prefab))
             {
-                Debug.LogWarning($"创建物品UI失败 未找到尺寸 {itemRtData.DataSize} 的预制体");
+                Debug.LogWarning($"创建物品UI失败 未找到尺寸 {prefabSize} 的预制体");
                 return null;
             }
 
@@ -98,6 +101,28 @@ namespace MmInventory
             // 注册到字典
             itemViewDict[itemRtData.InstancedItemId] = itemView;
             return itemView;
+        }
+
+        /// <summary>
+        /// 解析视图预制体尺寸
+        /// 旋转时 DataSize 已是占格尺寸 需换回表尺寸取预制体
+        /// </summary>
+        private static Vector2Int ResolveViewPrefabSize(ItemRtData itemRtData)
+        {
+            if (itemRtData.IsRotated)
+                return new Vector2Int(itemRtData.DataSize.y, itemRtData.DataSize.x);
+
+            return itemRtData.DataSize;
+        }
+
+        /// <summary>
+        /// 同步物品视图位置与旋转
+        /// </summary>
+        private void SyncItemViewPlacement(ItemView itemView, ItemRtData itemData)
+        {
+            ApplyItemViewRotation(itemView, itemData.IsRotated);
+            itemView.ItemRectTransform.localPosition =
+                GetItemUIPivotPos(itemData.AnchorPos, itemData.DataSize);
         }
 
 

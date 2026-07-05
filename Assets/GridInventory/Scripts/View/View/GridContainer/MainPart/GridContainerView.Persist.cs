@@ -55,15 +55,13 @@ namespace MmInventory
         /// </summary>
         private void ClearAllItemViewsOnly()
         {
-            var itemViewList = GetItemViewList();
-            for (int i = 0; i < itemViewList.Count; i++)
+            // 场景预摆物可能尚未进字典 需按 ItemContent 子节点全清
+            var itemViewArray = itemContent.GetComponentsInChildren<ItemView>(true);
+            for (int i = 0; i < itemViewArray.Length; i++)
             {
-                var itemView = itemViewList[i];
+                var itemView = itemViewArray[i];
                 if (itemView is null)
                     continue;
-
-                if (itemView.ItemData is not null)
-                    itemViewDict.Remove(itemView.ItemData.InstancedItemId);
 
                 Destroy(itemView.gameObject);
             }
@@ -77,6 +75,7 @@ namespace MmInventory
         /// </summary>
         private void RebuildItemViewsFromCore()
         {
+            Canvas.ForceUpdateCanvases();
             ClearAllItemViewsOnly();
 
             var itemRtDataList = gridInventoryService.GetAllItemRtDataList();
@@ -87,9 +86,7 @@ namespace MmInventory
                 if (itemView is null)
                     continue;
 
-                ApplyItemViewRotation(itemView, itemData.IsRotated);
-                itemView.ItemRectTransform.localPosition =
-                    GetItemUIPivotPos(itemData.AnchorPos, itemData.DataSize);
+                SyncItemViewPlacement(itemView, itemData);
             }
         }
 

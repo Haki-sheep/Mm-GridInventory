@@ -2182,6 +2182,10 @@ PrefabInstance:
       value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 4550892151032301569, guid: 41a838039270deb4884c0e6f645abdb7, type: 3}
+      propertyPath: containerRole
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 4550892151032301569, guid: 41a838039270deb4884c0e6f645abdb7, type: 3}
       propertyPath: visibleHeight
       value: 400
       objectReference: {fileID: 0}
@@ -10709,7 +10713,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4550892151032301569, guid: 41a838039270deb4884c0e6f645abdb7, type: 3}
       propertyPath: containerRole
-      value: 2
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4550892151032301569, guid: 41a838039270deb4884c0e6f645abdb7, type: 3}
       propertyPath: serializationData.Prefab
