@@ -87,14 +87,20 @@ namespace MmInventory
         }
 
         /// <summary>
-        /// 鼠标点击物品 双击触发快捷互转
+        /// 鼠标点击物品 左键双击快捷互转 右键打开菜单
         /// </summary>
         public void OnPointerClick(PointerEventData eventData)
         {
-            if (eventData.button != PointerEventData.InputButton.Left)
+            if (isDragging)
                 return;
 
-            if (isDragging)
+            if (eventData.button == PointerEventData.InputButton.Right)
+            {
+                ItemMenuPanel.Instance?.Show(this, eventData.position);
+                return;
+            }
+
+            if (eventData.button != PointerEventData.InputButton.Left)
                 return;
 
             if (eventData.clickCount != 2)
@@ -124,6 +130,7 @@ namespace MmInventory
         public void OnBeginDrag(PointerEventData eventData)
         {
             if (eventData.button != PointerEventData.InputButton.Left) return;
+            ItemMenuPanel.Instance?.Hide();
             isDragging = true;
             ownerContainer?.OnBeginDrag(this, eventData);
             OnItemPickUp?.Invoke();
