@@ -10,6 +10,10 @@ namespace MmInventory
         [SerializeField]
         private ItemTableDataListSo listSo;
 
+        /// <summary> 物品视图预制体尺寸表 </summary>
+        [SerializeField]
+        private ItemViewPrefabListSo viewPrefabListSo;
+
         /// <summary> 物品数据字典 key物品ExcelID value物品配置表数据 </summary>
         private Dictionary<int, IItemTableData> itemDataDict = new();
         public IReadOnlyDictionary<int, IItemTableData> ItemDataDict => itemDataDict;
@@ -17,7 +21,25 @@ namespace MmInventory
         private void Awake()
         {
             Instance = this;
+            EnsureViewPrefabListLoaded();
             RegisterItemData();
+        }
+
+        /// <summary>
+        /// 预热视图预制体尺寸表
+        /// </summary>
+        private void EnsureViewPrefabListLoaded()
+        {
+            if (ItemViewPrefabListSo.Instance != null)
+                return;
+
+            if (viewPrefabListSo != null)
+            {
+                _ = viewPrefabListSo.EntryList;
+                return;
+            }
+
+            ItemViewPrefabListSo.EnsureLoaded();
         }
 
         /// <summary>

@@ -60,6 +60,24 @@ namespace MmInventory
         /// <summary> 运行时单例 </summary>
         public static ItemViewPrefabListSo Instance => instance;
 
+        /// <summary>
+        /// 确保预制体尺寸表已加载
+        /// </summary>
+        public static ItemViewPrefabListSo EnsureLoaded()
+        {
+            if (instance != null)
+                return instance;
+
+#if UNITY_EDITOR
+            instance = UnityEditor.AssetDatabase.LoadAssetAtPath<ItemViewPrefabListSo>(DefaultAssetPath);
+            if (instance != null)
+                return instance;
+#endif
+
+            Debug.LogError("ItemViewPrefabListSo 未加载 请在 ItemRtDataMgr 配置 ViewPrefabListSo 引用");
+            return null;
+        }
+
         [SerializeField]
         private List<ItemViewPrefabEntry> entryList = new();
 

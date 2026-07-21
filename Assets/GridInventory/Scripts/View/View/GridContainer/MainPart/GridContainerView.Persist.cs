@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 namespace MmInventory
@@ -33,8 +34,18 @@ namespace MmInventory
                 return false;
 
             ValidateLoadedGridSize();
-            RebuildItemViewsFromCore();
+            StartCoroutine(RebuildItemViewsAfterBootstrap());
             return true;
+        }
+
+        /// <summary>
+        /// 等 Bootstrap 完成后再重建物品 UI
+        /// </summary>
+        private IEnumerator RebuildItemViewsAfterBootstrap()
+        {
+            yield return null;
+            ItemViewPrefabListSo.EnsureLoaded();
+            RebuildItemViewsFromCore();
         }
 
         /// <summary>

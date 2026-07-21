@@ -79,8 +79,14 @@ namespace MmInventory
             Vector2Int prefabSize = ResolveViewPrefabSize(itemRtData);
 
             // 按尺寸取视图预制体
-            var prefabList = ItemViewPrefabListSo.Instance;
-            if (prefabList is null || !prefabList.TryGetPrefab(prefabSize, out var prefab))
+            var prefabList = ItemViewPrefabListSo.EnsureLoaded();
+            if (prefabList is null)
+            {
+                Debug.LogWarning("创建物品UI失败 ItemViewPrefabListSo 未加载");
+                return null;
+            }
+
+            if (!prefabList.TryGetPrefab(prefabSize, out var prefab))
             {
                 Debug.LogWarning($"创建物品UI失败 未找到尺寸 {prefabSize} 的预制体");
                 return null;
