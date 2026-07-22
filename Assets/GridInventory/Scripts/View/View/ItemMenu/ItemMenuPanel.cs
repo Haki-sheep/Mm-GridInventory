@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 namespace MmInventory
@@ -37,6 +38,16 @@ namespace MmInventory
         /// <summary> 当前关联物品视图 </summary>
         public ItemView CurrentItemView { get; private set; }
 
+        [SerializeField]
+        private Button useButton;
+        [SerializeField]
+        private Button Trans;
+        [SerializeField]
+        private Button Split;
+        [SerializeField]
+        private Button Throw;
+
+#region 生命周期
         /// <summary>
         /// 初始化单例
         /// </summary>
@@ -44,6 +55,10 @@ namespace MmInventory
         {
             instance = this;
             gameObject.SetActive(false);
+        }
+        private void Start()
+        {
+            InitButton();
         }
 
         /// <summary>
@@ -63,7 +78,7 @@ namespace MmInventory
             if (!gameObject.activeSelf)
                 return;
 
-            if (Input.GetMouseButtonDown(0))
+            if (Mouse.current.leftButton.wasPressedThisFrame)
             {
                 // 左键未点在菜单按钮上则关闭
                 if (!IsPointerOverMenuButton())
@@ -76,6 +91,7 @@ namespace MmInventory
                 Hide();
             }
         }
+
 
         /// <summary>
         /// 显示菜单
@@ -100,6 +116,10 @@ namespace MmInventory
             CurrentItemView = null;
             gameObject.SetActive(false);
         }
+
+        #endregion
+
+        #region 辅助方法
 
         /// <summary>
         /// 将屏幕坐标对齐到面板 pivot
@@ -152,7 +172,7 @@ namespace MmInventory
 
             var pointerData = new PointerEventData(EventSystem.current)
             {
-                position = Input.mousePosition
+                position = Mouse.current.position.ReadValue()
             };
 
             raycastResultList.Clear();
@@ -163,5 +183,39 @@ namespace MmInventory
             hitObject = raycastResultList[0].gameObject;
             return hitObject is not null;
         }
+
+        #endregion
+
+
+        #region 按钮功能
+
+        private void InitButton(){
+            useButton.onClick.AddListener(OnUseButtonClick);
+            Trans.onClick.AddListener(OnTransButtonClick);
+            Split.onClick.AddListener(OnSplitButtonClick);
+            Throw.onClick.AddListener(OnThrowButtonClick);
+        }
+
+        private void OnUseButtonClick()
+        {
+            Debug.Log("OnUseButtonClick");
+        }
+
+        private void OnTransButtonClick()
+        {
+            Debug.Log("OnTransButtonClick");
+        }
+
+        private void OnSplitButtonClick()
+        {
+            Debug.Log("OnSplitButtonClick");
+        }
+
+        private void OnThrowButtonClick()
+        {
+            Debug.Log("OnThrowButtonClick");
+        }
+
+        #endregion
     }
 }

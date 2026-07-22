@@ -664,6 +664,17 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &357584214 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 7143190914317493123, guid: 0cf48f9588b90b5458ea769af8552f65, type: 3}
+  m_PrefabInstance: {fileID: 3454255631129765835}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
 --- !u!1001 &398409587
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1003,6 +1014,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2e430f7b37cbc1a43ab00487f122b895, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MmInventory.GridCellView
+--- !u!114 &439882774 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 7379792141225698787, guid: 0cf48f9588b90b5458ea769af8552f65, type: 3}
+  m_PrefabInstance: {fileID: 3454255631129765835}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
 --- !u!1001 &456067422
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -3470,6 +3492,17 @@ RectTransform:
   m_CorrespondingSourceObject: {fileID: 5446894062457444746, guid: 41a838039270deb4884c0e6f645abdb7, type: 3}
   m_PrefabInstance: {fileID: 524169861}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &554640236 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1240554316085204976, guid: 0cf48f9588b90b5458ea769af8552f65, type: 3}
+  m_PrefabInstance: {fileID: 3454255631129765835}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
 --- !u!1001 &560094396
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -7706,6 +7739,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MmInventory.ItemDataMgr
   listSo: {fileID: 11400000, guid: 9812c3730764ede4196f2c174988dc3b, type: 2}
+  viewPrefabListSo: {fileID: 0}
 --- !u!4 &1362466784
 Transform:
   m_ObjectHideFlags: 0
@@ -9308,6 +9342,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2e430f7b37cbc1a43ab00487f122b895, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MmInventory.GridCellView
+--- !u!114 &1943345881 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 4080907216161865279, guid: 0cf48f9588b90b5458ea769af8552f65, type: 3}
+  m_PrefabInstance: {fileID: 3454255631129765835}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
 --- !u!1001 &1946230910
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -9921,6 +9966,22 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 8923456789012345678, guid: 0cf48f9588b90b5458ea769af8552f65, type: 3}
+      propertyPath: Split
+      value: 
+      objectReference: {fileID: 439882774}
+    - target: {fileID: 8923456789012345678, guid: 0cf48f9588b90b5458ea769af8552f65, type: 3}
+      propertyPath: Throw
+      value: 
+      objectReference: {fileID: 357584214}
+    - target: {fileID: 8923456789012345678, guid: 0cf48f9588b90b5458ea769af8552f65, type: 3}
+      propertyPath: Trans
+      value: 
+      objectReference: {fileID: 554640236}
+    - target: {fileID: 8923456789012345678, guid: 0cf48f9588b90b5458ea769af8552f65, type: 3}
+      propertyPath: useButton
+      value: 
+      objectReference: {fileID: 1943345881}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
