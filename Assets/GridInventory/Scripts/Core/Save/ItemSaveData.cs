@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace MmInventory
@@ -30,6 +29,9 @@ namespace MmInventory
         /// <summary> 堆叠类型 </summary>
         public EItemStackType itemStackType;
 
+        /// <summary> 稀有度 </summary>
+        public EItemRarity itemRarity;
+
         /// <summary> 物品是否旋转 </summary>
         public bool rotated;
 
@@ -38,6 +40,10 @@ namespace MmInventory
         /// </summary>
         public static ItemSaveData ItemRtToItemSaveData(IItemRuntime item)
         {
+            var eRarity = EItemRarity.White;
+            if (item is ItemRtData itemRtData)
+                eRarity = itemRtData.ItemRarity;
+
             var save = new ItemSaveData
             {
                 instancedItemId = item.InstancedItemId,
@@ -47,12 +53,11 @@ namespace MmInventory
                 hasStackCount = item.CurrStackCount,
                 maxStackCount = item.MaxStackCount,
                 itemStackType = item.ItemStackType,
+                itemRarity = eRarity,
                 rotated = item.IsRotated
             };
 
             return save;
         }
     }
-
-   
 }

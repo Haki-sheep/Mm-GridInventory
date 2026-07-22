@@ -26,6 +26,9 @@ namespace MmInventory
         // 类型
         public EItemType ItemType { get; }
         
+        // 稀有度
+        public EItemRarity ItemRarity { get; }
+
         // 堆叠类型
         public EItemStackType ItemStackType { get; }
         

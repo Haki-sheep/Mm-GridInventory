@@ -9,9 +9,9 @@ namespace MmInventory
     public enum EItemType : byte
     {
         Equipment,
+        Weapon,
         Material,
-        Consumable,
-        Container,
-        TestType
+        FoodOrWater,
+        Medicine
     }
 }

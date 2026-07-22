@@ -72,8 +72,10 @@
     <Compile Include="Assets\GridInventory\Scripts\Data\Editor\EItemTypeCodeGenerator.cs" />
     <Compile Include="Assets\GridInventory\Scripts\View\Editor\ViewEditorWindow.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Data\Editor\ItemDataEditorWindow.cs" />
+    <Compile Include="Assets\GridInventory\Scripts\Data\Editor\LootSimModelDrawers.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Core\Editor\GridInventoryDebugWindow.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Data\Editor\LootSimConfigSoEditorUtil.cs" />
+    <Compile Include="Assets\GridInventory\Scripts\Data\Editor\ChineseLabelDrawer.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Core\Editor\GridInventoryDebugSession.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Data\Editor\ItemDataEditorPages.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Data\Editor\ItemViewPrefabListSoEditorUtil.cs" />

@@ -68,17 +68,20 @@
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\TMP_TextEventHandler.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\EnvMapAnimator.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\TMP_TextSelector_A.cs" />
+    <Compile Include="Assets\GridInventory\Scripts\Data\LootSimulation\ELootGrade.cs" />
     <Compile Include="Assets\GridInventory\Scripts\View\View\GridContainer\MainPart\GridContainerView.Behaviour.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Core\InventoryState\InventoryState.Debug.cs" />
     <Compile Include="Assets\GridInventory\Scripts\View\View\GridContainer\MainPart\GridContainerView.Compute.cs" />
     <Compile Include="Assets\GridInventory\Scripts\View\View\GridContainer\IGridContainer.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\Benchmark02.cs" />
+    <Compile Include="Assets\GridInventory\Scripts\Data\LootSimulation\LootRuntime.cs" />
     <Compile Include="Assets\GridInventory\Scripts\View\ViewModel\GridInventoryService.cs" />
     <Compile Include="Assets\GridInventory\Scripts\View\View\GridContainer\SecondaryPart\GridCellView.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Core\InventoryCross\InventoryState.CrossContainerService.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\TMP_ExampleScript_01.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\TMPro_InstructionOverlay.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\VertexShakeB.cs" />
+    <Compile Include="Assets\GridInventory\Scripts\Data\ChineseLabelAttribute.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\VertexJitter.cs" />
     <Compile Include="Assets\GridInventory\Scripts\View\View\GridContainerMgr\GridMainContainerManager.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\TMP_UiFrameRateCounter.cs" />
@@ -113,11 +116,13 @@
     <Compile Include="Assets\GridInventory\Scripts\View\View\GridContainerMgr\GridInventoryEvents.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Data\TableData\IItemTableData.cs" />
     <Compile Include="Assets\GridInventory\Scripts\View\View\GridContainer\SecondaryPart\EDragPreviewState.cs" />
+    <Compile Include="Assets\GridInventory\Scripts\Data\LootSimulation\ContainerLootBinder.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\CameraController.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\Benchmark03.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Core\InventoryState\InventoryState.PlacementService.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Core\InventoryCross\InventoryState.QuickMoveService.cs" />
     <Compile Include="Assets\GridInventory\Scripts\View\View\ItemView\ItemView.cs" />
+    <Compile Include="Assets\GridInventory\Scripts\Data\TableData\EItemRarity.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Core\Save\InventoryState.SaveService.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\DropdownSample.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\VertexColorCycler.cs" />
@@ -136,6 +141,7 @@
     <Compile Include="Assets\GridInventory\Scripts\Core\InventoryCross\CrossContainerOpResult.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\TextMeshProFloatingText.cs" />
     <Compile Include="Assets\GridInventory\Scripts\Core\InventoryCross\QuickMoveOpResult.cs" />
+    <Compile Include="Assets\GridInventory\Scripts\Data\LootSimulation\LootSimModels.cs" />
     <Compile Include="Assets\GridInventory\Scripts\View\View\GridContainer\SecondaryPart\GridDragSession.cs" />
   </ItemGroup>
   <ItemGroup>

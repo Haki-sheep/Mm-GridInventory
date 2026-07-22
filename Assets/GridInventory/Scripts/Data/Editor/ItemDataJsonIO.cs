@@ -67,6 +67,7 @@ namespace MmInventory.Editor
                 dataSizeX = item.DataSize.x,
                 dataSizeY = item.DataSize.y,
                 itemType = item.ItemType.ToString(),
+                itemRarity = item.ItemRarity.ToString(),
                 itemStackType = item.ItemStackType.ToString(),
                 maxStackCount = item.MaxStackCount
             });
@@ -95,6 +96,14 @@ namespace MmInventory.Editor
                     stackType = EItemStackType.NoStackable;
                 }
 
+                var eItemRarity = EItemRarity.White;
+                if (!string.IsNullOrEmpty(entry.itemRarity)
+                    && !TryParseItemRarity(entry.itemRarity, out eItemRarity))
+                {
+                    Debug.LogWarning($"未知 ItemRarity {entry.itemRarity} 已回退为白");
+                    eItemRarity = EItemRarity.White;
+                }
+
                 itemList.Add(ItemTableData.Create(
                     entry.excelItemId,
                     entry.name,
@@ -102,10 +111,47 @@ namespace MmInventory.Editor
                     new Vector2Int(entry.dataSizeX, entry.dataSizeY),
                     itemType,
                     stackType,
-                    entry.maxStackCount));
+                    entry.maxStackCount,
+                    eItemRarity));
             }
 
             return itemList;
+        }
+
+        /// <summary>
+        /// 解析稀有度 兼容旧英文名
+        /// </summary>
+        private static bool TryParseItemRarity(string rawName, out EItemRarity eItemRarity)
+        {
+            if (Enum.TryParse(rawName, true, out eItemRarity))
+                return true;
+
+            switch (rawName)
+            {
+                case "Common":
+                case "白":
+                    eItemRarity = EItemRarity.White;
+                    return true;
+                case "Uncommon":
+                case "蓝":
+                    eItemRarity = EItemRarity.Blue;
+                    return true;
+                case "Rare":
+                case "紫":
+                    eItemRarity = EItemRarity.Purple;
+                    return true;
+                case "Epic":
+                case "金":
+                    eItemRarity = EItemRarity.Gold;
+                    return true;
+                case "Legendary":
+                case "红":
+                    eItemRarity = EItemRarity.Red;
+                    return true;
+                default:
+                    eItemRarity = EItemRarity.White;
+                    return false;
+            }
         }
     }
 }

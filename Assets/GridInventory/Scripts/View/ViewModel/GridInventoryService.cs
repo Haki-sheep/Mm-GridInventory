@@ -78,7 +78,7 @@ namespace MmInventory
         public ItemRtData CreatItem(int excelItemId, Vector2Int anchorPos)
         {
             // 获取模版数据
-            var itemData = ItemRtDataMgr.Instance.GetItemData<IItemTableData>(excelItemId);
+            var itemData = ResolveItemTableData(excelItemId);
             if (itemData is null)
             {
                 Debug.Log($"创建物品失败 没有找到模版为ID:{excelItemId}的物品");
@@ -107,16 +107,36 @@ namespace MmInventory
         /// </summary>
         public ItemRtData CreatItemAtFirstEmpty(int excelItemId)
         {
+            return CreatItemAtFirstEmpty(excelItemId, 1);
+        }
+
+        /// <summary>
+        /// 创建物品并放到首个空位 指定堆叠数
+        /// </summary>
+        public ItemRtData CreatItemAtFirstEmpty(int excelItemId, int stackCount)
+        {
             // 获取模版数据
-            var itemData = ItemRtDataMgr.Instance.GetItemData<IItemTableData>(excelItemId);
+            var itemData = ResolveItemTableData(excelItemId);
             if (itemData is null)
             {
                 Debug.Log($"创建物品失败 没有找到模版为ID:{excelItemId}的物品");
                 return null;
             }
 
+            int clampedStack = stackCount;
+            if (itemData.ItemStackType == EItemStackType.NoStackable)
+                clampedStack = 1;
+            else
+                clampedStack = Mathf.Clamp(stackCount, 1, Mathf.Max(1, itemData.MaxStackCount));
+
             // 创建运行时数据 锚点由数据层同步
-            var itemRtData = ItemRtData.ItemTableData2ItemRtData(itemData);
+            var itemRtData = ItemRtData.ItemTableData2ItemRtData(itemData, clampedStack);
+            if (currentInventoryState is null)
+            {
+                Debug.Log("创建物品失败 背包逻辑未初始化");
+                return null;
+            }
+
             if (!currentInventoryState.SetAtFirst(itemRtData, out _))
             {
                 Debug.Log("创建物品失败 没有找到可放置位置");
@@ -124,6 +144,73 @@ namespace MmInventory
             }
 
             return itemRtData;
+        }
+
+        /// <summary>
+        /// 创建物品并放到随机可放置空位 指定堆叠数
+        /// </summary>
+        public ItemRtData CreatItemAtRandomEmpty(int excelItemId, int stackCount)
+        {
+            var itemData = ResolveItemTableData(excelItemId);
+            if (itemData is null)
+            {
+                Debug.Log($"创建物品失败 没有找到模版为ID:{excelItemId}的物品");
+                return null;
+            }
+
+            int clampedStack = stackCount;
+            if (itemData.ItemStackType == EItemStackType.NoStackable)
+                clampedStack = 1;
+            else
+                clampedStack = Mathf.Clamp(stackCount, 1, Mathf.Max(1, itemData.MaxStackCount));
+
+            var itemRtData = ItemRtData.ItemTableData2ItemRtData(itemData, clampedStack);
+            if (currentInventoryState is null)
+            {
+                Debug.Log("创建物品失败 背包逻辑未初始化");
+                return null;
+            }
+
+            if (!currentInventoryState.SetAtRandom(itemRtData, out _))
+            {
+                Debug.Log("创建物品失败 没有找到可放置位置");
+                return null;
+            }
+
+            return itemRtData;
+        }
+
+        /// <summary>
+        /// 解析物品模版 优先运行时管理器 其次配表资产
+        /// </summary>
+        private static IItemTableData ResolveItemTableData(int excelItemId)
+        {
+            if (ItemRtDataMgr.Instance != null)
+            {
+                var runtimeData = ItemRtDataMgr.Instance.GetItemData<IItemTableData>(excelItemId);
+                if (runtimeData != null)
+                    return runtimeData;
+            }
+
+            var listSo = ItemTableDataListSo.Instance;
+#if UNITY_EDITOR
+            if (listSo is null)
+            {
+                listSo = UnityEditor.AssetDatabase.LoadAssetAtPath<ItemTableDataListSo>(
+                    ItemTableDataListSo.DefaultAssetPath);
+            }
+#endif
+            if (listSo is null)
+                return null;
+
+            var itemList = listSo.ItemDataList;
+            for (int i = 0; i < itemList.Count; i++)
+            {
+                if (itemList[i].ExcelItemId == excelItemId)
+                    return itemList[i];
+            }
+
+            return null;
         }
 
         /// <summary>
@@ -374,10 +461,31 @@ namespace MmInventory
         /// </summary>
         public static bool HasSaveFile(int containerId)
         {
-            string path = Path.Combine(
+            string path = GetSaveFilePath(containerId);
+            return File.Exists(path);
+        }
+
+        /// <summary>
+        /// 删除指定容器存档
+        /// </summary>
+        public static bool TryDeleteSaveFile(int containerId)
+        {
+            string path = GetSaveFilePath(containerId);
+            if (!File.Exists(path))
+                return false;
+
+            File.Delete(path);
+            return true;
+        }
+
+        /// <summary>
+        /// 存档路径
+        /// </summary>
+        public static string GetSaveFilePath(int containerId)
+        {
+            return Path.Combine(
                 Application.persistentDataPath,
                 $"inventory_{containerId}.json");
-            return File.Exists(path);
         }
 
         /// <summary>

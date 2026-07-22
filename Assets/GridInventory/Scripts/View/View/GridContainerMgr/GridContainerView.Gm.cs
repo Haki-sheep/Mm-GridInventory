@@ -37,7 +37,35 @@ namespace MmInventory
         /// </summary>
         public ItemView CreatItemUIAtFirstEmpty(int excelItemId)
         {
-            var itemRtData = gridInventoryService.CreatItemAtFirstEmpty(excelItemId);
+            return CreatItemUIAtFirstEmpty(excelItemId, 1);
+        }
+
+        /// <summary>
+        /// 投放到首个可放置空位 指定堆叠数
+        /// </summary>
+        public ItemView CreatItemUIAtFirstEmpty(int excelItemId, int stackCount)
+        {
+            var itemRtData = gridInventoryService.CreatItemAtFirstEmpty(excelItemId, stackCount);
+            if (itemRtData is null) return null;
+
+            var itemView = SpawnItemView(itemRtData);
+            if (itemView is null)
+            {
+                gridInventoryService.TryRemoveItem(itemRtData.AnchorPos);
+                return null;
+            }
+
+            itemView.ItemRectTransform.localPosition =
+                GetItemUIPivotPos(itemRtData.AnchorPos, itemRtData.DataSize);
+            return itemView;
+        }
+
+        /// <summary>
+        /// 投放到随机可放置空位 指定堆叠数
+        /// </summary>
+        public ItemView CreatItemUIAtRandomEmpty(int excelItemId, int stackCount)
+        {
+            var itemRtData = gridInventoryService.CreatItemAtRandomEmpty(excelItemId, stackCount);
             if (itemRtData is null) return null;
 
             var itemView = SpawnItemView(itemRtData);

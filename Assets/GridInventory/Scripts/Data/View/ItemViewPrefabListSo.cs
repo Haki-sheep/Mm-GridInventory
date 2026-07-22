@@ -12,14 +12,17 @@ namespace MmInventory
     {
         /// <summary> 网格占用宽 </summary>
         [SerializeField]
+        [ChineseLabel("宽")]
         private int width = 1;
 
         /// <summary> 网格占用高 </summary>
         [SerializeField]
+        [ChineseLabel("高")]
         private int height = 1;
 
         /// <summary> 对应视图预制体 </summary>
         [SerializeField]
+        [ChineseLabel("视图预制体")]
         private GameObject prefab;
 
         public Vector2Int Size => new Vector2Int(width, height);

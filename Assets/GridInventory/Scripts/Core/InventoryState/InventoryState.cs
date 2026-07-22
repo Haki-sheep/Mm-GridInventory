@@ -220,6 +220,12 @@ namespace MmInventory
         inventoryPlacementService.SetAtFirst(itemData, out anchorPos);
 
         /// <summary>
+        /// 在可放置锚点中随机选一个并放置
+        /// </summary>
+        public bool SetAtRandom(IItemRuntime itemData, out Vector2Int anchorPos) =>
+            inventoryPlacementService.SetAtRandom(itemData, out anchorPos);
+
+        /// <summary>
         /// 找首个空位并放置 当前朝向优先 放不下再旋转后重扫
         /// </summary>
         /// <param name="itemData"> 物品数据 </param>

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace MmInventory
@@ -13,6 +14,9 @@ namespace MmInventory
         {
             /// <summary> 背包状态引用 </summary>
             private readonly InventoryState inventoryState;
+
+            /// <summary> 随机落点临时列表 </summary>
+            private readonly List<Vector2Int> tempRandomAnchorList = new();
 
             /// <summary>
             /// 初始化放置服务
@@ -113,6 +117,45 @@ namespace MmInventory
             public bool SetAtFirst(IItemRuntime itemData, out Vector2Int anchorPos)
             {
                 if (!FindSetAtFirst(itemData, out anchorPos)) return false;
+                return SetAt(anchorPos, itemData);
+            }
+
+            /// <summary>
+            /// 在全部可放置锚点中随机选一个
+            /// </summary>
+            public bool FindSetAtRandom(IItemRuntime itemData, out Vector2Int anchorPos)
+            {
+                anchorPos = Vector2Int.zero;
+                if (itemData is null)
+                    return false;
+
+                tempRandomAnchorList.Clear();
+                for (int y = 0; y < inventoryState.inventorySize.y; y++)
+                {
+                    for (int x = 0; x < inventoryState.inventorySize.x; x++)
+                    {
+                        var candidate = new Vector2Int(x, y);
+                        if (CanPlace(itemData, candidate))
+                            tempRandomAnchorList.Add(candidate);
+                    }
+                }
+
+                if (tempRandomAnchorList.Count == 0)
+                    return false;
+
+                int index = UnityEngine.Random.Range(0, tempRandomAnchorList.Count);
+                anchorPos = tempRandomAnchorList[index];
+                return true;
+            }
+
+            /// <summary>
+            /// 随机空位放置
+            /// </summary>
+            public bool SetAtRandom(IItemRuntime itemData, out Vector2Int anchorPos)
+            {
+                if (!FindSetAtRandom(itemData, out anchorPos))
+                    return false;
+
                 return SetAt(anchorPos, itemData);
             }
 

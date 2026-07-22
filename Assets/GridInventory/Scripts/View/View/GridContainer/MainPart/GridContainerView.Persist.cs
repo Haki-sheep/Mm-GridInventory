@@ -33,7 +33,15 @@ namespace MmInventory
             if (!gridInventoryService.TryLoadInventory(containerId))
                 return false;
 
-            ValidateLoadedGridSize();
+            // 尺寸不一致的旧存档不可用 丢弃后按视图尺寸初始化
+            if (gridInventoryService.GridSize != gridRowAndCloumns)
+            {
+                Debug.LogWarning(
+                    $"[{name}] 存档网格 {gridInventoryService.GridSize} 与视图配置 {gridRowAndCloumns} 不一致 已忽略并删除旧存档");
+                GridInventoryService.TryDeleteSaveFile(containerId);
+                return false;
+            }
+
             StartCoroutine(RebuildItemViewsAfterBootstrap());
             return true;
         }
@@ -49,16 +57,20 @@ namespace MmInventory
         }
 
         /// <summary>
-        /// 校验存档网格与视图配置是否一致
+        /// Core 网格与视图尺寸对齐 不一致则清空并重建
         /// </summary>
-        private void ValidateLoadedGridSize()
+        public void EnsureCoreGridMatchesView()
         {
-            Vector2Int loadedGridSize = gridInventoryService.GridSize;
-            if (loadedGridSize == gridRowAndCloumns)
+            if (gridInventoryService is null)
+                return;
+
+            if (gridInventoryService.GridSize == gridRowAndCloumns)
                 return;
 
             Debug.LogWarning(
-                $"[{name}] 存档网格 {loadedGridSize} 与视图配置 {gridRowAndCloumns} 不一致");
+                $"[{name}] Core网格 {gridInventoryService.GridSize} 与视图 {gridRowAndCloumns} 不一致 已按视图重建");
+            ClearAllItems();
+            gridInventoryService.Init(gridRowAndCloumns);
         }
 
         /// <summary>
@@ -144,7 +156,15 @@ namespace MmInventory
             if (!gridInventoryService.TryLoadInventory(containerId))
                 return false;
 
-            ValidateLoadedGridSize();
+            if (gridInventoryService.GridSize != gridRowAndCloumns)
+            {
+                Debug.LogWarning(
+                    $"[{name}] 存档网格 {gridInventoryService.GridSize} 与视图配置 {gridRowAndCloumns} 不一致 已取消读取并恢复视图尺寸");
+                gridInventoryService.Init(gridRowAndCloumns);
+                ClearAllItemViewsOnly();
+                return false;
+            }
+
             RebuildItemViewsFromCore();
             return true;
         }

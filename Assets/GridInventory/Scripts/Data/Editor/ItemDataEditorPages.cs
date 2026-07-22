@@ -420,15 +420,22 @@ namespace MmInventory.Editor
 
     /// <summary>
     /// 容器投放模拟页签
-    /// 配置随机池与规则 执行在 View Editor
+    /// 配置密度档与 content 候选池 执行在 View Editor
     /// </summary>
     public sealed class ItemLootSimPage
     {
+        private static readonly string[] GradeNameList = { "A", "B", "C", "D" };
+
         [HideInInspector]
         public ItemDataEditorWindow Window;
 
         [HideInInspector]
         public ItemDataEditorHomePage HomePage;
+
+        /// <summary> 期望预览用缓存 </summary>
+        private readonly Dictionary<EItemRarity, float> expectedRarityDict = new();
+
+        private static readonly string[] RarityNameList = { "白", "蓝", "紫", "金", "红" };
 
         public ItemLootSimPage(ItemDataEditorWindow window, ItemDataEditorHomePage homePage)
         {
@@ -451,10 +458,10 @@ namespace MmInventory.Editor
         private void DrawLootSimGuide()
         {
             EditorGUILayout.HelpBox(
-                "方案 A\n" +
-                "· 此页：随机池 权重 容器筛选等配置（LootSimConfigSo）\n" +
-                "· View Editor：Play 模式下向场景容器投放与模拟\n" +
-                "· 后续随机算法读取同一份 LootSimConfigSo",
+                "名词解释\n" +
+                "· A~D 只管空箱率与稀有度权重\n" +
+                "· 内容方向配最少/最多物品个数 以及允许类型\n" +
+                "· 实际投放 先按档位判空箱 再从内容区间随机 N 然后每轮 roll 稀有度并从总表抽一件 放不下跳过",
                 MessageType.Info);
 
             var configSo = HomePage?.LootSimConfigSo;
@@ -473,14 +480,190 @@ namespace MmInventory.Editor
 
                 if (GUILayout.Button("打开 View Editor", GUILayout.Height(24f)))
                     EditorApplication.ExecuteMenuItem("Tools/MmInventory/View Editor");
+
+                if (GUILayout.Button("保存配置", GUILayout.Height(24f)))
+                {
+                    configSo.EditorSave();
+                    Window?.MarkDirty();
+                }
+            }
+
+            EditorGUILayout.Space(8f);
+            DrawDensitySection(configSo);
+            EditorGUILayout.Space(8f);
+            DrawContentSection(configSo);
+        }
+
+        /// <summary>
+        /// 绘制 A~D 密度档
+        /// </summary>
+        private void DrawDensitySection(LootSimConfigSo configSo)
+        {
+            EditorGUILayout.LabelField("密度档 A~D", EditorStyles.boldLabel);
+
+            var serializedObject = new SerializedObject(configSo);
+            serializedObject.Update();
+            var densityProperty = serializedObject.FindProperty("densityProfiles");
+            if (densityProperty is null || !densityProperty.isArray)
+            {
+                EditorGUILayout.HelpBox("densityProfiles 字段缺失", MessageType.Error);
+                return;
+            }
+
+            while (densityProperty.arraySize < 4)
+                densityProperty.InsertArrayElementAtIndex(densityProperty.arraySize);
+
+            if (densityProperty.arraySize > 4)
+                densityProperty.arraySize = 4;
+
+            EditorGUI.BeginChangeCheck();
+            for (int i = 0; i < 4; i++)
+            {
+                var elementProperty = densityProperty.GetArrayElementAtIndex(i);
+                EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+                EditorGUILayout.LabelField($"等级 {GradeNameList[i]}", EditorStyles.boldLabel);
+                EditorGUILayout.PropertyField(elementProperty, GUIContent.none, true);
+                DrawExpectedPreview(configSo, (ELootGrade)i);
+                EditorGUILayout.EndVertical();
+                EditorGUILayout.Space(4f);
+            }
+
+            if (EditorGUI.EndChangeCheck())
+            {
+                serializedObject.ApplyModifiedProperties();
+                EditorUtility.SetDirty(configSo);
+                Window?.MarkDirty();
+            }
+            else
+            {
+                serializedObject.ApplyModifiedProperties();
+            }
+        }
+
+        /// <summary>
+        /// 绘制 content 候选表
+        /// </summary>
+        private void DrawContentSection(LootSimConfigSo configSo)
+        {
+            EditorGUILayout.LabelField("内容方向候选池", EditorStyles.boldLabel);
+
+            var serializedObject = new SerializedObject(configSo);
+            serializedObject.Update();
+            var contentProperty = serializedObject.FindProperty("contentTableList");
+            if (contentProperty is null)
+            {
+                EditorGUILayout.HelpBox("contentTableList 字段缺失", MessageType.Error);
+                return;
+            }
+
+            EditorGUI.BeginChangeCheck();
+            EditorGUILayout.PropertyField(contentProperty, new GUIContent("内容方向表"), true);
+            if (EditorGUI.EndChangeCheck())
+            {
+                serializedObject.ApplyModifiedProperties();
+                EditorUtility.SetDirty(configSo);
+                Window?.MarkDirty();
+            }
+            else
+            {
+                serializedObject.ApplyModifiedProperties();
+            }
+
+            DrawContentPoolWarnings(configSo);
+        }
+
+        /// <summary>
+        /// 期望预览 空箱与稀有度占比
+        /// </summary>
+        private void DrawExpectedPreview(LootSimConfigSo configSo, ELootGrade grade)
+        {
+            if (!configSo.TryGetDensity(grade, out var density) || density is null)
+                return;
+
+            EditorGUILayout.LabelField($"空箱率 {density.EmptyChance:P0}", EditorStyles.miniLabel);
+
+            LootRuntime.CalcRarityShareDict(density, expectedRarityDict);
+            if (expectedRarityDict.Count == 0)
+            {
+                EditorGUILayout.HelpBox("稀有度权重未配置", MessageType.Warning);
+                return;
+            }
+
+            foreach (var pair in expectedRarityDict)
+            {
+                EditorGUILayout.LabelField(
+                    $"· {GetRarityLabel(pair.Key)} 占比 {pair.Value:P0}",
+                    EditorStyles.miniLabel);
+            }
+        }
+
+        /// <summary>
+        /// 候选类型覆盖预警
+        /// </summary>
+        private void DrawContentPoolWarnings(LootSimConfigSo configSo)
+        {
+            var contentTableList = configSo.ContentTableList;
+            if (contentTableList is null || contentTableList.Count == 0)
+            {
+                EditorGUILayout.HelpBox("尚未配置任何内容方向", MessageType.Warning);
+                return;
             }
 
             EditorGUILayout.Space(6f);
-            EditorGUILayout.LabelField("待扩展", EditorStyles.boldLabel);
-            EditorGUILayout.LabelField("· 随机物品池条目");
-            EditorGUILayout.LabelField("· 权重与数量范围");
-            EditorGUILayout.LabelField("· 容器标签筛选");
-            EditorGUILayout.LabelField("· 一键随机填充（调用 View Editor）");
+            EditorGUILayout.LabelField("总表覆盖检查", EditorStyles.boldLabel);
+
+            for (int i = 0; i < contentTableList.Count; i++)
+            {
+                var table = contentTableList[i];
+                if (table is null)
+                    continue;
+
+                if (string.IsNullOrEmpty(table.ContentId))
+                {
+                    EditorGUILayout.HelpBox($"第 {i} 张表 contentId 为空", MessageType.Warning);
+                    continue;
+                }
+
+                var allowedList = table.AllowedItemTypeList;
+                if (allowedList is null || allowedList.Count == 0)
+                {
+                    EditorGUILayout.HelpBox($"[{table.ContentId}] 未勾选任何允许类型", MessageType.Warning);
+                    continue;
+                }
+
+                int countMin = Mathf.Max(0, table.ItemCountMin);
+                int countMax = Mathf.Max(countMin, table.ItemCountMax);
+                EditorGUILayout.LabelField(
+                    $"[{table.ContentId}] 件数 {countMin}~{countMax} 期望约 {LootRuntime.CalcExpectedRollCount(table):0.##}",
+                    EditorStyles.miniBoldLabel);
+                for (int t = 0; t < allowedList.Count; t++)
+                {
+                    var eItemType = allowedList[t];
+                    for (int rarityIndex = 0; rarityIndex <= (int)EItemRarity.Red; rarityIndex++)
+                    {
+                        var eItemRarity = (EItemRarity)rarityIndex;
+                        int count = LootRuntime.CountTableItems(eItemType, eItemRarity);
+                        if (count > 0)
+                            continue;
+
+                        EditorGUILayout.HelpBox(
+                            $"[{table.ContentId}] 类型 {eItemType} + {GetRarityLabel(eItemRarity)} 总表无条目 抽中将降级",
+                            MessageType.Warning);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// 稀有度中文名
+        /// </summary>
+        private static string GetRarityLabel(EItemRarity eItemRarity)
+        {
+            int index = (int)eItemRarity;
+            if (index < 0 || index >= RarityNameList.Length)
+                return eItemRarity.ToString();
+
+            return RarityNameList[index];
         }
     }
 }

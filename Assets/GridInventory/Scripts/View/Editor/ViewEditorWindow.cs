@@ -23,9 +23,12 @@ namespace MmInventory.Editor
         private int spawnAnchorX;
         private int spawnAnchorY;
         private bool spawnAtFirstEmpty;
+        private bool syncSelectionToInspector;
         private string statusMessage = "就绪";
 
         private string[] itemLabels = System.Array.Empty<string>();
+
+        private const string SyncSelectionPrefKey = "MmInventory.ViewEditor.SyncSelectionToInspector";
 
         /// <summary>
         /// 打开窗口
@@ -41,6 +44,7 @@ namespace MmInventory.Editor
         private void OnEnable()
         {
             EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
+            syncSelectionToInspector = EditorPrefs.GetBool(SyncSelectionPrefKey, false);
             RefreshContainers();
             RefreshItemOptions();
         }
@@ -117,6 +121,15 @@ namespace MmInventory.Editor
                 if (GUILayout.Button("刷新配表", EditorStyles.toolbarButton, GUILayout.Width(72f)))
                     RefreshItemOptions();
 
+                EditorGUI.BeginChangeCheck();
+                syncSelectionToInspector = GUILayout.Toggle(
+                    syncSelectionToInspector,
+                    "同步Inspector",
+                    EditorStyles.toolbarButton,
+                    GUILayout.Width(96f));
+                if (EditorGUI.EndChangeCheck())
+                    EditorPrefs.SetBool(SyncSelectionPrefKey, syncSelectionToInspector);
+
                 GUILayout.FlexibleSpace();
                 GUILayout.Label(statusMessage, EditorStyles.miniLabel);
             }
@@ -143,7 +156,8 @@ namespace MmInventory.Editor
                     if (GUILayout.Toggle(isSelected, label, "Button"))
                     {
                         selectedContainer = container;
-                        Selection.activeGameObject = container.gameObject;
+                        if (syncSelectionToInspector)
+                            Selection.activeGameObject = container.gameObject;
                     }
                 }
                 EditorGUILayout.EndScrollView();
@@ -179,6 +193,8 @@ namespace MmInventory.Editor
 
             EditorGUILayout.Space(8f);
             DrawSpawnPanel();
+            EditorGUILayout.Space(8f);
+            DrawLootPanel();
             EditorGUILayout.Space(8f);
             DrawPersistPanel();
             EditorGUILayout.Space(8f);
@@ -229,6 +245,120 @@ namespace MmInventory.Editor
                     selectedContainer.ClearAllItems();
                     statusMessage = $"已清空 {selectedContainer.ContainerName}";
                 }
+            }
+        }
+
+        /// <summary>
+        /// Loot 配置投放区
+        /// </summary>
+        private void DrawLootPanel()
+        {
+            EditorGUILayout.LabelField("随机投放", EditorStyles.boldLabel);
+
+            if (!Application.isPlaying)
+            {
+                EditorGUILayout.HelpBox("随机投放需在 Play 模式下使用", MessageType.Warning);
+                return;
+            }
+
+            if (!selectedContainer.IsInventoryReady)
+            {
+                EditorGUILayout.HelpBox("容器逻辑尚未初始化", MessageType.Warning);
+                return;
+            }
+
+            var binder = selectedContainer.GetComponent<ContainerLootBinder>();
+            if (binder is null)
+            {
+                EditorGUILayout.HelpBox(
+                    "选中容器缺少 ContainerLootBinder 可一键挂载后在此配置",
+                    MessageType.Warning);
+                if (GUILayout.Button("挂载 ContainerLootBinder"))
+                {
+                    Undo.AddComponent<ContainerLootBinder>(selectedContainer.gameObject);
+                    statusMessage = $"已挂载 ContainerLootBinder {selectedContainer.ContainerName}";
+                }
+
+                return;
+            }
+
+            var binderSo = new SerializedObject(binder);
+            binderSo.Update();
+            EditorGUI.BeginChangeCheck();
+            DrawBinderContentIdField(binderSo);
+            EditorGUILayout.PropertyField(binderSo.FindProperty("grade"), new GUIContent("密度等级"));
+            EditorGUILayout.PropertyField(binderSo.FindProperty("alreadyLooted"), new GUIContent("已搜过"));
+            if (EditorGUI.EndChangeCheck())
+            {
+                binderSo.ApplyModifiedProperties();
+                EditorUtility.SetDirty(binder);
+            }
+            else
+            {
+                binderSo.ApplyModifiedProperties();
+            }
+
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                if (GUILayout.Button("确保已投放"))
+                {
+                    bool ok = binder.EnsureLooted();
+                    statusMessage = ok
+                        ? $"确保已投放完成 {selectedContainer.ContainerName} 已搜过={binder.AlreadyLooted}"
+                        : $"确保已投放失败 {selectedContainer.ContainerName}";
+                }
+
+                if (GUILayout.Button("按配置强制重投"))
+                {
+                    var result = binder.ForceRefill();
+                    statusMessage =
+                        $"强制重投 {selectedContainer.ContainerName} " +
+                        $"空箱={result.WasEmptyRoll} 候选={result.CandidateCount} " +
+                        $"放入={result.PlacedCount} 跳过={result.SkippedCount}";
+                }
+            }
+
+            if (GUILayout.Button("重置已搜过标记"))
+            {
+                binder.ResetLootedFlag();
+                statusMessage = $"已重置标记 {selectedContainer.ContainerName}";
+            }
+        }
+
+        /// <summary>
+        /// 内容方向 优先从配置表下拉
+        /// </summary>
+        private static void DrawBinderContentIdField(SerializedObject binderSo)
+        {
+            var contentIdProperty = binderSo.FindProperty("contentId");
+            if (contentIdProperty is null)
+                return;
+
+            var configSo = LootSimConfigSo.EnsureLoaded();
+            var contentTableList = configSo != null ? configSo.ContentTableList : null;
+            if (contentTableList is null || contentTableList.Count == 0)
+            {
+                EditorGUILayout.PropertyField(contentIdProperty, new GUIContent("内容方向"));
+                return;
+            }
+
+            var labelList = new List<string>(contentTableList.Count);
+            int selectedIndex = 0;
+            string currentId = contentIdProperty.stringValue;
+            for (int i = 0; i < contentTableList.Count; i++)
+            {
+                var table = contentTableList[i];
+                string contentId = table != null ? table.ContentId : string.Empty;
+                labelList.Add(string.IsNullOrEmpty(contentId) ? $"(空_{i})" : contentId);
+                if (contentId == currentId)
+                    selectedIndex = i;
+            }
+
+            int newIndex = EditorGUILayout.Popup("内容方向", selectedIndex, labelList.ToArray());
+            if (newIndex >= 0 && newIndex < contentTableList.Count)
+            {
+                var table = contentTableList[newIndex];
+                contentIdProperty.stringValue = table != null ? table.ContentId : string.Empty;
             }
         }
 

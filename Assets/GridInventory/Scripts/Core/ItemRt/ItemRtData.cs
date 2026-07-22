@@ -30,6 +30,9 @@ namespace MmInventory
         /// <summary> 是否可堆叠 </summary>
         [SerializeField] private EItemStackType itemStackType;
 
+        /// <summary> 稀有度 抽取与存档用 不做表现 </summary>
+        [SerializeField] private EItemRarity itemRarity;
+
         /// <summary> 注意旋转只有两种情况 0 和 90 </summary>
         [SerializeField] private bool isRotated;
 
@@ -40,6 +43,7 @@ namespace MmInventory
         public string InstancedItemId => instancedItemId;
         public EItemStackType ItemStackType => itemStackType;
         public int MaxStackCount => maxStackCount;
+        public EItemRarity ItemRarity => itemRarity;
 
         public int CurrStackCount
         {
@@ -58,7 +62,8 @@ namespace MmInventory
                           bool isRotated,
                           int maxStackCount = 1,
                           EItemStackType itemStackType = EItemStackType.NoStackable,
-                          string instancedItemId = null)
+                          string instancedItemId = null,
+                          EItemRarity itemRarity = EItemRarity.White)
         {
             this.excelItemId = excelItemId;
             this.dataSize = dataSize;
@@ -66,6 +71,7 @@ namespace MmInventory
             this.isRotated = isRotated;
             this.maxStackCount = maxStackCount;
             this.itemStackType = itemStackType;
+            this.itemRarity = itemRarity;
             this.instancedItemId = string.IsNullOrEmpty(instancedItemId)
                 ? Guid.NewGuid().ToString()
                 : instancedItemId;
@@ -83,7 +89,8 @@ namespace MmInventory
                 save.rotated,
                 save.maxStackCount,
                 save.itemStackType,
-                save.instancedItemId);
+                save.instancedItemId,
+                save.itemRarity);
 
             item.SetAnchorPos(save.anchorPos);
             return item;
@@ -101,7 +108,9 @@ namespace MmInventory
                                     curStackCount,
                                     isRotated,
                                     config.MaxStackCount,
-                                    config.ItemStackType);
+                                    config.ItemStackType,
+                                    null,
+                                    config.ItemRarity);
         }
 
         /// <summary>
@@ -146,7 +155,9 @@ namespace MmInventory
                 stackCount,
                 isRotated,
                 maxStackCount,
-                itemStackType);
+                itemStackType,
+                null,
+                itemRarity);
         }
 
     }

@@ -20,12 +20,15 @@ namespace MmInventory
         public Image itemImage;
         public RectTransform ItemRectTransform;
 
-        [SerializeField]
-
         /// <summary> 配置表物品ID </summary>
+        [SerializeField]
+        [ChineseLabel("配置表物品ID")]
         private int excelItemId;
+
         /// <summary> 运行时物品数据 </summary>
         public ItemRtData ItemData;
+
+        public int ExcelItemId => ItemData != null ? ItemData.ExcelItemId : excelItemId;
         /// <summary> 所属背包容器 </summary>
         private GridContainerView ownerContainer;
 
@@ -67,6 +70,7 @@ namespace MmInventory
         {
             BindViewComponents();
             ItemData = itemRtData;
+            excelItemId = itemRtData != null ? itemRtData.ExcelItemId : 0;
         }
 
         /// <summary>

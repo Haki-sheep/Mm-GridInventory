@@ -12,3 +12,61 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4e7355aaeda9ec348b5b9ebf0a2931d4, type: 3}
   m_Name: LootSimConfig
   m_EditorClassIdentifier: Assembly-CSharp::MmInventory.LootSimConfigSo
+  densityProfiles:
+  - emptyChance: 0.05
+    rarityWeightList:
+    - itemRarity: 0
+      weight: 35
+    - itemRarity: 1
+      weight: 30
+    - itemRarity: 2
+      weight: 20
+    - itemRarity: 3
+      weight: 10
+    - itemRarity: 4
+      weight: 5
+  - emptyChance: 0.1
+    rarityWeightList:
+    - itemRarity: 0
+      weight: 50
+    - itemRarity: 1
+      weight: 28
+    - itemRarity: 2
+      weight: 15
+    - itemRarity: 3
+      weight: 5
+    - itemRarity: 4
+      weight: 2
+  - emptyChance: 0.15
+    rarityWeightList:
+    - itemRarity: 0
+      weight: 65
+    - itemRarity: 1
+      weight: 25
+    - itemRarity: 2
+      weight: 8
+    - itemRarity: 3
+      weight: 2
+    - itemRarity: 4
+      weight: 0
+  - emptyChance: 0.2
+    rarityWeightList:
+    - itemRarity: 0
+      weight: 80
+    - itemRarity: 1
+      weight: 15
+    - itemRarity: 2
+      weight: 5
+    - itemRarity: 3
+      weight: 0
+    - itemRarity: 4
+      weight: 0
+  contentTableList:
+  - contentId: Default
+    itemCountMin: 2
+    itemCountMax: 8
+    allowedItemTypeList: 0001020304
+  - contentId: "\u51B0\u7BB1"
+    itemCountMin: 2
+    itemCountMax: 5
+    allowedItemTypeList: 030402

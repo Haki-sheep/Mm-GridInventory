@@ -25,6 +25,7 @@ namespace MmInventory.Editor
         public int dataSizeX;
         public int dataSizeY;
         public string itemType;
+        public string itemRarity;
         public string itemStackType;
         public int maxStackCount;
     }
