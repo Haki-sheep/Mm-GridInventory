@@ -372,6 +372,8 @@ namespace MmInventory
             SyncStretchFillRect(itemContent);
             SyncGridLayoutGroupSettings();
             RebuildGridCellInstances(cellCount);
+            SyncVerticalScrollbarVisibility(contentHeight);
+            NotifyNameBarHost();
 
             gridCellViewList = gridContent.GetComponentsInChildren<GridCellView>();
 
@@ -379,6 +381,85 @@ namespace MmInventory
             if (!Application.isPlaying)
                 EditorUtility.SetDirty(this);
 #endif
+        }
+
+        /// <summary>
+        /// 内容高度未超过可视高度时隐藏竖向滚动条
+        /// 滚动条在容器外侧时禁止改 Visibility 否则会挤压 Viewport 挡住末列
+        /// </summary>
+        private void SyncVerticalScrollbarVisibility(float contentHeight)
+        {
+            var scrollRect = ScrollRect;
+            if (scrollRect == null)
+                return;
+
+            // 内容装得下就不需要滚动条
+            bool needScroll = contentHeight > visibleHeight + 0.01f;
+
+            Scrollbar scrollbar = scrollRect.verticalScrollbar;
+            if (scrollbar == null)
+            {
+                var scrollbarRect = FindChildRectTransform(transform, "Scrollbar Vertical");
+                if (scrollbarRect != null)
+                    scrollbar = scrollbarRect.GetComponent<Scrollbar>();
+                if (scrollbar != null)
+                    scrollRect.verticalScrollbar = scrollbar;
+            }
+
+            if (scrollbar != null)
+                scrollbar.gameObject.SetActive(needScroll);
+
+            // 外侧滚动条布局保持 Permanent 只切启用与显隐
+            scrollRect.verticalScrollbarVisibility = ScrollRect.ScrollbarVisibility.Permanent;
+            scrollRect.vertical = needScroll;
+
+            // 外侧滚动条 用负 spacing 抵消 Permanent 对 Viewport 的右缩进
+            if (scrollbar != null)
+            {
+                var sbRect = scrollbar.transform as RectTransform;
+                float sbWidth = sbRect != null ? Mathf.Abs(sbRect.sizeDelta.x) : 20f;
+                if (sbWidth < 1f)
+                    sbWidth = 20f;
+                scrollRect.verticalScrollbarSpacing = -sbWidth;
+            }
+
+            // 清掉 AutoHideAndExpandViewport 可能留下的右缩进
+            RectTransform viewport = scrollRect.viewport;
+            if (viewport != null)
+            {
+                viewport.anchorMin = Vector2.zero;
+                viewport.anchorMax = Vector2.one;
+                viewport.pivot = new Vector2(0f, 1f);
+                viewport.offsetMin = Vector2.zero;
+                viewport.offsetMax = Vector2.zero;
+            }
+
+            if (!needScroll && scrollContent != null)
+            {
+                Vector2 pos = scrollContent.anchoredPosition;
+                pos.y = 0f;
+                scrollContent.anchoredPosition = pos;
+            }
+
+#if UNITY_EDITOR
+            if (!Application.isPlaying)
+            {
+                EditorUtility.SetDirty(scrollRect);
+                if (viewport != null)
+                    EditorUtility.SetDirty(viewport);
+                if (scrollbar != null)
+                    EditorUtility.SetDirty(scrollbar.gameObject);
+            }
+#endif
+        }
+
+        /// <summary>
+        /// 通知外层名称栏外壳同步布局
+        /// </summary>
+        private void NotifyNameBarHost()
+        {
+            var nameBar = GetComponentInParent<GridContainerNameBar>();
+            nameBar?.SyncAfterContainerBuilt();
         }
 
         /// <summary>

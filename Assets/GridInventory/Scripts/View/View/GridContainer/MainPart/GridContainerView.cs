@@ -20,29 +20,78 @@ namespace MmInventory
 
         #region 字段与属性
         /// <summary>滚动内容壳层 ScrollRect.content </summary>
+        [System.NonSerialized]
         private RectTransform scrollContentCache;
-        private RectTransform scrollContent => scrollContentCache ??= ScrollRect.content;
+        private RectTransform scrollContent
+        {
+            get
+            {
+                if (scrollContentCache == null)
+                    scrollContentCache = ScrollRect != null ? ScrollRect.content : null;
+                return scrollContentCache;
+            }
+        }
 
         /// <summary>网格内容容器 用于坐标转换</summary>
+        [System.NonSerialized]
         private RectTransform gridContentCache;
-        private RectTransform gridContent => gridContentCache ??= FindChildRectTransform(scrollContent, "GridContent");
+        private RectTransform gridContent
+        {
+            get
+            {
+                if (gridContentCache == null)
+                    gridContentCache = FindChildRectTransform(scrollContent, "GridContent");
+                return gridContentCache;
+            }
+        }
 
         /// <summary>网格内容布局组 用于提供格子Size等基础参数</summary>
+        [System.NonSerialized]
         private GridLayoutGroup contentLayoutGroupCache;
-        private GridLayoutGroup contentLayoutGroup => contentLayoutGroupCache ??= gridContent.GetComponent<GridLayoutGroup>();
+        private GridLayoutGroup contentLayoutGroup
+        {
+            get
+            {
+                if (contentLayoutGroupCache == null && gridContent != null)
+                    contentLayoutGroupCache = gridContent.GetComponent<GridLayoutGroup>();
+                return contentLayoutGroupCache;
+            }
+        }
 
         /// <summary>物品内容容器 用于承载物品</summary>
+        [System.NonSerialized]
         private RectTransform itemContentCache;
-        private RectTransform itemContent => itemContentCache ??= FindChildRectTransform(scrollContent, "ItemContent");
+        private RectTransform itemContent
+        {
+            get
+            {
+                if (itemContentCache == null)
+                    itemContentCache = FindChildRectTransform(scrollContent, "ItemContent");
+                return itemContentCache;
+            }
+        }
+
+        /// <summary> 物品层 外部适配遮罩用 </summary>
+        public RectTransform ItemContent => itemContent;
 
         [Header("自定义View组件")]
+        [System.NonSerialized]
         private GridInventoryService gridInventoryService;
 
         /// <summary> 逻辑服务 </summary>
         internal GridInventoryService InventoryService => gridInventoryService;
 
+        [System.NonSerialized]
         private ItemView[] itemViewsCache;
-        private ItemView[] itemViews => itemViewsCache ??= itemContent.GetComponentsInChildren<ItemView>();
+        private ItemView[] itemViews
+        {
+            get
+            {
+                if (itemViewsCache == null && itemContent != null)
+                    itemViewsCache = itemContent.GetComponentsInChildren<ItemView>();
+                return itemViewsCache;
+            }
+        }
 
 
         [Header("配置信息")]
@@ -56,29 +105,77 @@ namespace MmInventory
         /// <summary> 容器角色 </summary>
         public EGridContainerRole ContainerRole => containerRole;
 
-        public const int gridSize = 100;
+        /// <summary> 标准格子边长 </summary>
+        [SerializeField]
+        [LabelText("格子大小")]
+        private int gridSize = 100;
+
+        /// <summary> 格子间距 </summary>
         public const int spacing = 0;
+
+        /// <summary> 标准格子边长 </summary>
+        public int GridCellSize => gridSize;
+
         public Vector2Int gridRowAndCloumns = Vector2Int.zero;
 
         /// <summary> 可视高度 父容器显示区域高度 </summary>
         [SerializeField]
         private int visibleHeight = 700;
 
+        /// <summary> 可视高度 </summary>
+        public int VisibleHeight => visibleHeight;
+
         // 下列组件皆为自动获取
         /// <summary>滚动区域 用于拖拽物品时临时禁用不然拖拽物品过程中会触发父级视图滚动</summary>
+        [System.NonSerialized]
         private ScrollRect scrollRectCache;
-        private ScrollRect ScrollRect => scrollRectCache ??= GetComponent<ScrollRect>();
+        private ScrollRect ScrollRect
+        {
+            get
+            {
+                if (scrollRectCache == null)
+                    scrollRectCache = GetComponent<ScrollRect>();
+                return scrollRectCache;
+            }
+        }
 
         /// <summary>容器RectTransform 用于设置整体容器大小</summary>
+        [System.NonSerialized]
         private RectTransform containertRectTransformCache;
-        private RectTransform ContainertRectTransform => containertRectTransformCache ??= ScrollRect.content as RectTransform;
+        private RectTransform ContainertRectTransform
+        {
+            get
+            {
+                if (containertRectTransformCache == null && ScrollRect != null)
+                    containertRectTransformCache = ScrollRect.content as RectTransform;
+                return containertRectTransformCache;
+            }
+        }
 
         /// <summary>Canvas 用于保证网格坐标计算的正确性</summary>
+        [System.NonSerialized]
         private Canvas canvasCache;
-        private Canvas Canvas => canvasCache ??= GetComponentInParent<Canvas>();
+        private Canvas Canvas
+        {
+            get
+            {
+                if (canvasCache == null)
+                    canvasCache = GetComponentInParent<Canvas>();
+                return canvasCache;
+            }
+        }
 
+        [System.NonSerialized]
         private Camera canvasCameraCache;
-        private Camera CanvasCamera => canvasCameraCache ??= Canvas.worldCamera;
+        private Camera CanvasCamera
+        {
+            get
+            {
+                if (canvasCameraCache == null && Canvas != null)
+                    canvasCameraCache = Canvas.worldCamera;
+                return canvasCameraCache;
+            }
+        }
  
 
         #endregion

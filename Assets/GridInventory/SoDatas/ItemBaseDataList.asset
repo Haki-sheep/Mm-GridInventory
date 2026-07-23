@@ -30,118 +30,6 @@ MonoBehaviour:
     itemStackType: 0
     maxStackCount: 1
   - excelItemId: 3
-    name: "\u65B9\u5F62\u6A21\u5757B"
-    iconPath: 
-    dataSize: {x: 2, y: 2}
-    itemType: 1
-    itemRarity: 1
-    itemStackType: 0
-    maxStackCount: 1
-  - excelItemId: 4
-    name: "\u5C0F\u5200"
-    iconPath: 
-    dataSize: {x: 1, y: 1}
-    itemType: 1
-    itemRarity: 0
-    itemStackType: 0
-    maxStackCount: 1
-  - excelItemId: 5
-    name: "\u6B65\u67AA"
-    iconPath: 
-    dataSize: {x: 2, y: 3}
-    itemType: 1
-    itemRarity: 2
-    itemStackType: 0
-    maxStackCount: 1
-  - excelItemId: 6
-    name: "\u5E9F\u94C1"
-    iconPath: 
-    dataSize: {x: 1, y: 1}
-    itemType: 2
-    itemRarity: 0
-    itemStackType: 1
-    maxStackCount: 20
-  - excelItemId: 7
-    name: "\u5E03\u6599"
-    iconPath: 
-    dataSize: {x: 1, y: 1}
-    itemType: 2
-    itemRarity: 0
-    itemStackType: 1
-    maxStackCount: 30
-  - excelItemId: 8
-    name: "\u6728\u677F"
-    iconPath: 
-    dataSize: {x: 2, y: 1}
-    itemType: 2
-    itemRarity: 0
-    itemStackType: 1
-    maxStackCount: 10
-  - excelItemId: 9
-    name: "\u7F50\u5934"
-    iconPath: 
-    dataSize: {x: 1, y: 1}
-    itemType: 3
-    itemRarity: 0
-    itemStackType: 1
-    maxStackCount: 5
-  - excelItemId: 10
-    name: "\u74F6\u88C5\u6C34"
-    iconPath: 
-    dataSize: {x: 1, y: 2}
-    itemType: 3
-    itemRarity: 0
-    itemStackType: 1
-    maxStackCount: 5
-  - excelItemId: 11
-    name: "\u538B\u7F29\u997C\u5E72"
-    iconPath: 
-    dataSize: {x: 1, y: 1}
-    itemType: 3
-    itemRarity: 0
-    itemStackType: 1
-    maxStackCount: 10
-  - excelItemId: 12
-    name: "\u7EF7\u5E26"
-    iconPath: 
-    dataSize: {x: 1, y: 1}
-    itemType: 4
-    itemRarity: 0
-    itemStackType: 1
-    maxStackCount: 10
-  - excelItemId: 13
-    name: "\u533B\u7597\u5305"
-    iconPath: 
-    dataSize: {x: 2, y: 2}
-    itemType: 4
-    itemRarity: 1
-    itemStackType: 0
-    maxStackCount: 1
-  - excelItemId: 14
-    name: "\u6B62\u75DB\u836F"
-    iconPath: 
-    dataSize: {x: 1, y: 1}
-    itemType: 4
-    itemRarity: 0
-    itemStackType: 1
-    maxStackCount: 8
-  - excelItemId: 15
-    name: "\u5934\u76D4"
-    iconPath: 
-    dataSize: {x: 1, y: 1}
-    itemType: 0
-    itemRarity: 1
-    itemStackType: 0
-    maxStackCount: 1
-  - excelItemId: 16
-    name: "\u62A4\u7532\u677F"
-    iconPath: 
-    dataSize: {x: 2, y: 2}
-    itemType: 0
-    itemRarity: 2
-    itemStackType: 0
-    maxStackCount: 1
-  - excelItemId: 17
     name: "\u957F\u6761\u96F6\u4EF6"
     iconPath: 
     dataSize: {x: 1, y: 2}
@@ -149,7 +37,23 @@ MonoBehaviour:
     itemRarity: 0
     itemStackType: 0
     maxStackCount: 1
-  - excelItemId: 18
+  - excelItemId: 4
+    name: "\u5934\u76D4"
+    iconPath: 
+    dataSize: {x: 1, y: 1}
+    itemType: 0
+    itemRarity: 1
+    itemStackType: 0
+    maxStackCount: 1
+  - excelItemId: 5
+    name: "\u62A4\u7532\u677F"
+    iconPath: 
+    dataSize: {x: 2, y: 2}
+    itemType: 0
+    itemRarity: 2
+    itemStackType: 0
+    maxStackCount: 1
+  - excelItemId: 6
     name: "\u5927\u578B\u7BB1\u4F53"
     iconPath: 
     dataSize: {x: 3, y: 2}
@@ -157,7 +61,7 @@ MonoBehaviour:
     itemRarity: 3
     itemStackType: 0
     maxStackCount: 1
-  - excelItemId: 19
+  - excelItemId: 7
     name: "\u91CD\u578B\u76FE\u724C"
     iconPath: 
     dataSize: {x: 3, y: 3}
@@ -165,7 +69,23 @@ MonoBehaviour:
     itemRarity: 4
     itemStackType: 0
     maxStackCount: 1
-  - excelItemId: 20
+  - excelItemId: 1001
+    name: "\u5C0F\u5200"
+    iconPath: 
+    dataSize: {x: 1, y: 1}
+    itemType: 1
+    itemRarity: 0
+    itemStackType: 0
+    maxStackCount: 1
+  - excelItemId: 1002
+    name: "\u65B9\u5F62\u6A21\u5757B"
+    iconPath: 
+    dataSize: {x: 2, y: 2}
+    itemType: 1
+    itemRarity: 1
+    itemStackType: 0
+    maxStackCount: 1
+  - excelItemId: 1003
     name: "\u5F39\u836F\u76D2"
     iconPath: 
     dataSize: {x: 2, y: 1}
@@ -173,3 +93,83 @@ MonoBehaviour:
     itemRarity: 1
     itemStackType: 1
     maxStackCount: 5
+  - excelItemId: 1004
+    name: "\u6B65\u67AA"
+    iconPath: 
+    dataSize: {x: 2, y: 3}
+    itemType: 1
+    itemRarity: 2
+    itemStackType: 0
+    maxStackCount: 1
+  - excelItemId: 2001
+    name: "\u5E9F\u94C1"
+    iconPath: 
+    dataSize: {x: 1, y: 1}
+    itemType: 2
+    itemRarity: 0
+    itemStackType: 1
+    maxStackCount: 20
+  - excelItemId: 2002
+    name: "\u5E03\u6599"
+    iconPath: 
+    dataSize: {x: 1, y: 1}
+    itemType: 2
+    itemRarity: 0
+    itemStackType: 1
+    maxStackCount: 30
+  - excelItemId: 2003
+    name: "\u6728\u677F"
+    iconPath: 
+    dataSize: {x: 2, y: 1}
+    itemType: 2
+    itemRarity: 0
+    itemStackType: 1
+    maxStackCount: 10
+  - excelItemId: 3001
+    name: "\u7F50\u5934"
+    iconPath: 
+    dataSize: {x: 1, y: 1}
+    itemType: 3
+    itemRarity: 0
+    itemStackType: 1
+    maxStackCount: 5
+  - excelItemId: 3002
+    name: "\u74F6\u88C5\u6C34"
+    iconPath: 
+    dataSize: {x: 1, y: 2}
+    itemType: 3
+    itemRarity: 0
+    itemStackType: 1
+    maxStackCount: 5
+  - excelItemId: 3003
+    name: "\u538B\u7F29\u997C\u5E72"
+    iconPath: 
+    dataSize: {x: 1, y: 1}
+    itemType: 3
+    itemRarity: 0
+    itemStackType: 1
+    maxStackCount: 10
+  - excelItemId: 4001
+    name: "\u7EF7\u5E26"
+    iconPath: 
+    dataSize: {x: 1, y: 1}
+    itemType: 4
+    itemRarity: 0
+    itemStackType: 1
+    maxStackCount: 10
+  - excelItemId: 4002
+    name: "\u6B62\u75DB\u836F"
+    iconPath: 
+    dataSize: {x: 1, y: 1}
+    itemType: 4
+    itemRarity: 0
+    itemStackType: 1
+    maxStackCount: 8
+  - excelItemId: 4003
+    name: "\u533B\u7597\u5305"
+    iconPath: 
+    dataSize: {x: 2, y: 2}
+    itemType: 4
+    itemRarity: 1
+    itemStackType: 0
+    maxStackCount: 1

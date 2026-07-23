@@ -7,7 +7,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Unity.Cursor.Editor", "Unit
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Assembly-CSharp-Editor", "Assembly-CSharp-Editor.csproj", "{D5A450C1-A428-4D61-EACC-4EDA36C0517C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Assembly-CSharp-firstpass", "Assembly-CSharp-firstpass.csproj", "{6B7111D5-C77D-B0A9-0E7C-C9CCE0D86E16}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sirenix.OdinInspector.Modules.Unity.Addressables", "Sirenix.OdinInspector.Modules.Unity.Addressables.csproj", "{A920E0D2-8D39-CD2A-5A6B-370C90562AB1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Assembly-CSharp-Editor-firstpass", "Assembly-CSharp-Editor-firstpass.csproj", "{E1F5DA84-3078-6B62-D00A-E78C968AFC11}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sirenix.OdinInspector.Modules.UnityMathematics", "Sirenix.OdinInspector.Modules.UnityMathematics.csproj", "{D0B26CFA-793B-B7A3-76EC-89F34E78B145}"
 EndProject
@@ -29,10 +33,18 @@ Global
 		{D5A450C1-A428-4D61-EACC-4EDA36C0517C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D5A450C1-A428-4D61-EACC-4EDA36C0517C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D5A450C1-A428-4D61-EACC-4EDA36C0517C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6B7111D5-C77D-B0A9-0E7C-C9CCE0D86E16}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6B7111D5-C77D-B0A9-0E7C-C9CCE0D86E16}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6B7111D5-C77D-B0A9-0E7C-C9CCE0D86E16}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6B7111D5-C77D-B0A9-0E7C-C9CCE0D86E16}.Release|Any CPU.Build.0 = Release|Any CPU
 		{A920E0D2-8D39-CD2A-5A6B-370C90562AB1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{A920E0D2-8D39-CD2A-5A6B-370C90562AB1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A920E0D2-8D39-CD2A-5A6B-370C90562AB1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A920E0D2-8D39-CD2A-5A6B-370C90562AB1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E1F5DA84-3078-6B62-D00A-E78C968AFC11}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E1F5DA84-3078-6B62-D00A-E78C968AFC11}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E1F5DA84-3078-6B62-D00A-E78C968AFC11}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E1F5DA84-3078-6B62-D00A-E78C968AFC11}.Release|Any CPU.Build.0 = Release|Any CPU
 		{D0B26CFA-793B-B7A3-76EC-89F34E78B145}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{D0B26CFA-793B-B7A3-76EC-89F34E78B145}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D0B26CFA-793B-B7A3-76EC-89F34E78B145}.Release|Any CPU.ActiveCfg = Release|Any CPU

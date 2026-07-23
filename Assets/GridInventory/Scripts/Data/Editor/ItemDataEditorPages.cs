@@ -15,6 +15,7 @@ namespace MmInventory.Editor
     public sealed class ItemDataEditorHomePage
     {
         private const string LastJsonPathKey = "MmInventory.ItemDataEditor.LastJsonPath";
+        private const string LastExcelPathKey = "MmInventory.ItemDataEditor.LastExcelPath";
 
         [HideInInspector]
         public ItemDataEditorWindow Window;
@@ -78,12 +79,12 @@ namespace MmInventory.Editor
         {
             DrawLabeledButtonRow("Excel", () =>
             {
-                EditorGUI.BeginDisabledGroup(true);
+                // 延后弹窗 避免打断 OnInspectorGUI 布局组
                 if (GUILayout.Button("导出 Excel", GUILayout.Height(24f), GUILayout.ExpandWidth(true)))
-                { }
+                    EditorApplication.delayCall += ExportExcel;
+
                 if (GUILayout.Button("导入 Excel", GUILayout.Height(24f), GUILayout.ExpandWidth(true)))
-                { }
-                EditorGUI.EndDisabledGroup();
+                    EditorApplication.delayCall += ImportExcel;
             });
 
             GUILayout.Space(6f);
@@ -91,11 +92,87 @@ namespace MmInventory.Editor
             DrawLabeledButtonRow("JSON", () =>
             {
                 if (GUILayout.Button("导出 JSON", GUILayout.Height(24f), GUILayout.ExpandWidth(true)))
-                    ExportJson();
+                    EditorApplication.delayCall += ExportJson;
 
                 if (GUILayout.Button("导入 JSON", GUILayout.Height(24f), GUILayout.ExpandWidth(true)))
-                    ImportJson();
+                    EditorApplication.delayCall += ImportJson;
             });
+        }
+
+        private void ExportExcel()
+        {
+            string defaultPath = EditorPrefs.GetString(LastExcelPathKey, ItemDataExcelIO.GetDefaultAbsolutePath());
+            string filePath = EditorUtility.SaveFilePanel(
+                "导出物品 Excel",
+                Path.GetDirectoryName(defaultPath),
+                Path.GetFileNameWithoutExtension(defaultPath),
+                "xlsx");
+
+            if (string.IsNullOrEmpty(filePath)) return;
+
+            try
+            {
+                ItemDataExcelIO.ExportToFile(ListSo, EnumNameList, filePath);
+                EditorPrefs.SetString(LastExcelPathKey, filePath);
+                AssetDatabase.Refresh();
+                Debug.Log($"Excel 导出完成 {filePath}");
+            }
+            catch (IOException ex)
+            {
+                EditorUtility.DisplayDialog("导出失败", $"文件可能被 Excel 占用\n{ex.Message}", "确定");
+            }
+            catch (Exception ex)
+            {
+                EditorUtility.DisplayDialog("导出失败", ex.Message, "确定");
+            }
+        }
+
+        private void ImportExcel()
+        {
+            string defaultPath = EditorPrefs.GetString(LastExcelPathKey, ItemDataExcelIO.GetDefaultAbsolutePath());
+            string filePath = EditorUtility.OpenFilePanel("导入物品 Excel", Path.GetDirectoryName(defaultPath), "xlsx");
+            if (string.IsNullOrEmpty(filePath)) return;
+
+            try
+            {
+                var exportFile = ItemDataExcelIO.ImportFromFile(filePath);
+                EditorPrefs.SetString(LastExcelPathKey, filePath);
+                ApplyImportFile(exportFile);
+                Debug.Log($"Excel 导入完成 {filePath}");
+            }
+            catch (IOException ex)
+            {
+                EditorUtility.DisplayDialog("导入失败", $"文件可能被 Excel 占用\n{ex.Message}", "确定");
+            }
+            catch (Exception ex)
+            {
+                EditorUtility.DisplayDialog("导入失败", ex.Message, "确定");
+            }
+        }
+
+        /// <summary>
+        /// 将导入结果写入总库与枚举
+        /// </summary>
+        private void ApplyImportFile(ItemDataExportFile exportFile)
+        {
+            if (exportFile == null) return;
+
+            if (exportFile.itemTypes != null && exportFile.itemTypes.Count > 0)
+            {
+                EnumNameList.Clear();
+                EnumNameList.AddRange(exportFile.itemTypes);
+                EItemTypeCodeGenerator.WriteEnum(EnumNameList, EnumFilePath);
+            }
+
+            if (ListSo != null && exportFile.items != null)
+            {
+                var itemList = ItemDataJsonIO.ToItemBaseDataList(exportFile.items);
+                ListSo.EditorReplaceItems(itemList);
+                ListSo.EditorSave();
+            }
+
+            Window?.ClearDirty();
+            Window?.RequestTreeRebuild();
         }
 
         private static void DrawLabeledButtonRow(string title, Action drawButtonRow)
@@ -130,23 +207,7 @@ namespace MmInventory.Editor
 
             var exportFile = ItemDataJsonIO.ImportFromFile(filePath);
             EditorPrefs.SetString(LastJsonPathKey, filePath);
-
-            if (exportFile.itemTypes != null && exportFile.itemTypes.Count > 0)
-            {
-                EnumNameList.Clear();
-                EnumNameList.AddRange(exportFile.itemTypes);
-                EItemTypeCodeGenerator.WriteEnum(EnumNameList, EnumFilePath);
-            }
-
-            if (ListSo != null && exportFile.items != null)
-            {
-                var itemList = ItemDataJsonIO.ToItemBaseDataList(exportFile.items);
-                ListSo.EditorReplaceItems(itemList);
-                ListSo.EditorSave();
-            }
-
-            Window?.ClearDirty();
-            Window?.RequestTreeRebuild();
+            ApplyImportFile(exportFile);
         }
 
         /// <summary>

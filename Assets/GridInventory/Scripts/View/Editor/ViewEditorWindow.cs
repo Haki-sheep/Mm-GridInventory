@@ -310,11 +310,19 @@ namespace MmInventory.Editor
 
                 if (GUILayout.Button("按配置强制重投"))
                 {
-                    var result = binder.ForceRefill();
-                    statusMessage =
-                        $"强制重投 {selectedContainer.ContainerName} " +
-                        $"空箱={result.WasEmptyRoll} 候选={result.CandidateCount} " +
-                        $"放入={result.PlacedCount} 跳过={result.SkippedCount}";
+                    try
+                    {
+                        var result = binder.ForceRefill();
+                        statusMessage =
+                            $"强制重投并打开揭幕 {selectedContainer.ContainerName} " +
+                            $"空箱={result.WasEmptyRoll} 候选={result.CandidateCount} " +
+                            $"放入={result.PlacedCount} 跳过={result.SkippedCount}";
+                    }
+                    catch (System.Exception ex)
+                    {
+                        statusMessage = $"强制重投异常 {ex.Message}";
+                        Debug.LogException(ex);
+                    }
                 }
             }
 

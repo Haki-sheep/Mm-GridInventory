@@ -30,7 +30,7 @@ namespace MmInventory
         /// <summary> 是否可堆叠 </summary>
         [SerializeField] private EItemStackType itemStackType;
 
-        /// <summary> 稀有度 抽取与存档用 不做表现 </summary>
+        /// <summary> 稀有度 抽取与存档用 </summary>
         [SerializeField] private EItemRarity itemRarity;
 
         /// <summary> 注意旋转只有两种情况 0 和 90 </summary>
